@@ -46,6 +46,10 @@ class SyncWorker(
 
         val result = repository.sync()
 
+        // Frettirnar eru sottar i somu ferd. Their eru sjalfstaedar: mistakist
+        // taer breytir tad engu um baenina, sem er adalatridid.
+        repository.syncNews()
+
         when (result) {
             is EpisodeRepository.SyncResult.Downloaded ->
                 Log.i(TAG, "Sótti bæn: ${result.episode.title}")

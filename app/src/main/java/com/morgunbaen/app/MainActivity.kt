@@ -86,6 +86,8 @@ private fun MainScreen() {
     var weekendHour by remember { mutableIntStateOf(prefs.weekendHour) }
     var weekendMinute by remember { mutableIntStateOf(prefs.weekendMinute) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
+    var newsEnabled by remember { mutableStateOf(prefs.newsEnabled) }
+    var newsFirstrun by remember { mutableStateOf(prefs.newsFirstrun) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -99,6 +101,7 @@ private fun MainScreen() {
                 cachedTitle = prefs.cachedTitle
                 cachedDate = prefs.cachedFirstrun
                 cachedEpisodeId = prefs.cachedEpisodeId
+                newsFirstrun = prefs.newsFirstrun
                 health = checkHealth(prefs)
             }
         }
@@ -275,6 +278,8 @@ private fun MainScreen() {
                                 syncing = false
                                 cachedTitle = prefs.cachedTitle
                                 cachedDate = prefs.cachedFirstrun
+                                cachedEpisodeId = prefs.cachedEpisodeId
+                                newsFirstrun = prefs.newsFirstrun
                                 status = when (result) {
                                     is EpisodeRepository.SyncResult.Downloaded ->
                                         context.getString(R.string.sync_downloaded)
@@ -390,6 +395,27 @@ private fun MainScreen() {
                         onCheckedChange = {
                             vibrate = it
                             prefs.vibrateEnabled = it
+                        }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Frettirnar eru naesti dagskrarlidur a eftir Morgunbaeninni,
+                    // svo tetta speglar utsendinguna sjalfa.
+                    SettingRow(
+                        label = stringResource(R.string.news_label),
+                        description = when {
+                            !newsEnabled -> stringResource(R.string.news_desc_off)
+                            newsFirstrun.isTodays() -> stringResource(
+                                R.string.news_ready,
+                                newsFirstrun!!.substringAfter('T').substring(0, 5)
+                            )
+                            else -> stringResource(R.string.news_missing)
+                        },
+                        checked = newsEnabled,
+                        onCheckedChange = {
+                            newsEnabled = it
+                            prefs.newsEnabled = it
                         }
                     )
 
@@ -771,6 +797,13 @@ private fun openDeviceCare(context: Context) {
             }
         )
     }
+}
+
+/** Er tessi timastimpill fra deginum i dag? */
+private fun String?.isTodays(): Boolean {
+    val raw = this ?: return false
+    val date = raw.substringBefore('T').substringBefore(' ')
+    return date == SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 }
 
 /** "2026-08-13T06:55:00" -> "13. ágúst" */

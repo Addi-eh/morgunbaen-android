@@ -34,6 +34,10 @@ class EpisodeRepository(private val context: Context) {
     private val audioDir: File
         get() = File(context.deviceStorage.filesDir, "baenir").apply { mkdirs() }
 
+    /** Sama og audioDir en fyrir frettatima. */
+    private val newsDir: File
+        get() = File(context.deviceStorage.filesDir, "frettir").apply { mkdirs() }
+
     sealed class SyncResult {
         /** Ny baen naadist og er tilbuin. */
         data class Downloaded(val episode: Episode) : SyncResult()
@@ -156,6 +160,116 @@ class EpisodeRepository(private val context: Context) {
         if (stream != null) return PlaybackSource.Stream(stream)
         return null
     }
+
+    // ------------------------------------------------------------------
+    //  Frettir
+    // ------------------------------------------------------------------
+
+    /**
+     * Saekir nyjasta frettatima DAGSINS I DAG.
+     *
+     * Grunnreglan er onnur en fyrir baenina: gomul baen er i lagi, gamlar
+     * frettir eru tad ekki. Vid geymum tvi ALDREI frettatima fra i gaer -
+     * betra ad sleppa theim en ad vekja folk med urelttum frettum.
+     */
+    fun syncNews(): Boolean {
+        // Fyrst: henda tvi sem er ordid gamalt, hvad sem gerist naest.
+        discardStaleNews()
+
+        val today = todayString()
+
+        val newest = try {
+            client.fetchEpisodes(RuvClient.FRETTIR_PROGRAM_ID)
+                .filter { it.firstrun.substringBefore('T').substringBefore(' ') == today }
+                // Ekki thaettir sem eru ekki komnir - firstrun getur verid
+                // framtidarskrad i dagskra.
+                .filter { it.firstrun <= nowString() }
+                .maxByOrNull { it.firstrun }
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki í fréttir", e)
+            null
+        } ?: return false
+
+        // Eigum vid tennan nu tegar?
+        val existing = prefs.newsFilePath?.let { File(it) }
+        if (prefs.newsEpisodeId == newest.id && existing != null && existing.exists()) {
+            return true
+        }
+
+        if (newest.isHls) {
+            Log.i(TAG, "Fréttir eru HLS - sleppt")
+            return false
+        }
+
+        val extension = newest.fileUrl.substringBefore('?').substringAfterLast('.', "mp3")
+        val target = File(newsDir, "frettir_${newest.id}.$extension")
+        val temp = File(newsDir, "frettir_${newest.id}.part")
+
+        return try {
+            downloadTo(newest.fileUrl, temp)
+            if (temp.length() < MIN_VALID_BYTES) {
+                temp.delete()
+                return false
+            }
+            temp.renameTo(target)
+
+            newsDir.listFiles()?.forEach { f ->
+                if (f.absolutePath != target.absolutePath) f.delete()
+            }
+
+            prefs.newsFilePath = target.absolutePath
+            prefs.newsEpisodeId = newest.id
+            prefs.newsTitle = newest.title
+            prefs.newsFirstrun = newest.firstrun
+            Log.i(TAG, "Sótti fréttatíma: ${newest.firstrun}")
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Niðurhal frétta mistókst", e)
+            temp.delete()
+            false
+        }
+    }
+
+    /**
+     * Hendir frettatima sem er ekki fra i dag.
+     *
+     * Tetta er kallad ADUR en reynt er ad saekja nyjan - annars gaeti
+     * appid spilad gaerdagsfrettir ef netid er nidri i morgunsarid.
+     * Betra ad tegja en ad ljuga.
+     */
+    private fun discardStaleNews() {
+        val stored = prefs.newsFirstrun ?: return
+        val storedDate = stored.substringBefore('T').substringBefore(' ')
+        if (storedDate == todayString()) return
+
+        Log.i(TAG, "Hendi úreltum fréttatíma frá $storedDate")
+        prefs.newsFilePath?.let { File(it).delete() }
+        prefs.newsFilePath = null
+        prefs.newsEpisodeId = null
+        prefs.newsTitle = null
+        prefs.newsFirstrun = null
+    }
+
+    /**
+     * Frettatimi dagsins, ef hann er til og notandinn vill hann.
+     * Skilar null annars - tha spilar appid einfaldlega ekki frettir.
+     */
+    fun newsPlaybackSource(): File? {
+        if (!prefs.newsEnabled) return null
+
+        val firstrun = prefs.newsFirstrun ?: return null
+        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return null
+
+        val path = prefs.newsFilePath ?: return null
+        val file = File(path)
+        return if (file.exists() && file.length() > MIN_VALID_BYTES) file else null
+    }
+
+    private fun todayString(): String =
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+    private fun nowString(): String =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date())
 
     /**
      * Eigum vid thatt dagsins i dag?

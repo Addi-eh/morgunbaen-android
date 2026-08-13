@@ -130,6 +130,13 @@ class RuvClient {
         /** "Morgunbæn og orð dagsins" a Ras 1. */
         const val MORGUNBAEN_PROGRAM_ID = 25329
 
+        /**
+         * "Fréttir" - allir utvarpsfrettatimar. Hver fluttningur er stakur
+         * ~5 min thattur og firstrun ber nakvaeman utsendingartima
+         * ("2026-08-13T07:00:00"), svo haegt er ad velja rettan med vissu.
+         */
+        const val FRETTIR_PROGRAM_ID = 39025
+
         /** Slod a thattinn i Spilara RUV - notud tegar baenin er deilt. */
         fun episodeWebUrl(episodeId: String): String =
             "https://www.ruv.is/utvarp/spila/morgunbaen-og-ord-dagsins/" +

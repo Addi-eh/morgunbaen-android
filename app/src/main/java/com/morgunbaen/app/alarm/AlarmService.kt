@@ -46,6 +46,14 @@ class AlarmService : Service() {
      * -1 tydir ad vid hofum ekki breytt neinu og megum tvi ekki skila neinu.
      */
     private var originalAlarmVolume = -1
+
+    /**
+     * Hvar i rodinni vid erum. Baenin fyrst, sidan frettir (ef valid),
+     * loks varahljod sem spilar tar til slokkt er.
+     */
+    private var stage = Stage.PRAYER
+
+    private enum class Stage { PRAYER, NEWS, FALLBACK }
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: Prefs
 
@@ -65,6 +73,8 @@ class AlarmService : Service() {
     }
 
     private fun startAlarm() {
+        stage = Stage.PRAYER
+
         // Halda ordgjafanum vakandi medan spilad er.
         acquireWakeLock()
 
@@ -199,16 +209,16 @@ class AlarmService : Service() {
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
                         if (state == Player.STATE_ENDED) {
-                            // Baenin er buin - vid stoppum EKKI sjalfkrafa,
-                            // tvi tá gaeti notandinn sofnad aftur.
-                            // Spilum varahljod tar til slokkt er a vekjaranum.
-                            playFallbackTone()
+                            // Vid stoppum ALDREI sjalfkrafa tegar efni klarast
+                            // - tha gaeti notandinn sofnad aftur. Vid faerum
+                            // okkur bara a naesta stig.
+                            advanceToNextStage()
                         }
                     }
 
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                        Log.w(TAG, "Spilun mistókst - skipti í varahljóð", error)
-                        playFallbackTone()
+                        Log.w(TAG, "Spilun mistókst - held áfram", error)
+                        advanceToNextStage()
                     }
                 })
 
@@ -304,6 +314,59 @@ class AlarmService : Service() {
 
     // ------------------------------------------------------------------
 
+    /**
+     * Faerir spilunina a naesta stig.
+     *
+     * Baen -> frettir -> varahljod. Frettunum er sleppt ef notandinn hefur
+     * ekki valid taer, eda ef frettatimi dagsins naadist ekki - gamlar
+     * frettir eru verri en engar.
+     */
+    private fun advanceToNextStage() {
+        when (stage) {
+            Stage.PRAYER -> {
+                val news = EpisodeRepository(this).newsPlaybackSource()
+                if (news != null) {
+                    stage = Stage.NEWS
+                    Log.i(TAG, "Bænin búin - spila fréttir")
+                    updateNotification(prefs.newsTitle ?: getString(R.string.news_label))
+                    playNext(Uri.fromFile(news))
+                } else {
+                    stage = Stage.FALLBACK
+                    playFallbackTone()
+                }
+            }
+
+            Stage.NEWS -> {
+                stage = Stage.FALLBACK
+                playFallbackTone()
+            }
+
+            Stage.FALLBACK -> {
+                // Varahljodid er thegar i lykkju - ekkert ad gera.
+            }
+        }
+    }
+
+    /** Skiptir um efni an tess ad byggja spilarann upp a nytt. */
+    private fun playNext(uri: Uri) {
+        player?.apply {
+            setMediaItem(MediaItem.fromUri(uri))
+            repeatMode = Player.REPEAT_MODE_OFF
+            prepare()
+            play()
+        }
+    }
+
+    /** Uppfaerir tilkynninguna svo hun syni hvad er ad spila hverju sinni. */
+    private fun updateNotification(text: String) {
+        try {
+            getSystemService(NotificationManager::class.java)
+                .notify(NOTIFICATION_ID, buildNotification(text))
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að uppfæra tilkynningu", e)
+        }
+    }
+
     /** Ef baenin klikkar eda klarast - spilum venjulegt vekjarahljod i lykkju. */
     private fun playFallbackTone() {
         val fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) ?: return
@@ -334,7 +397,7 @@ class AlarmService : Service() {
         }
     }
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(contentText: String? = null): Notification {
         val fullScreenIntent = PendingIntent.getActivity(
             this,
             0,
@@ -358,7 +421,7 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = prefs.cachedTitle ?: getString(R.string.app_name)
+        val title = contentText ?: prefs.cachedTitle ?: getString(R.string.app_name)
 
         if (!canUseFullScreen()) {
             Log.w(TAG, "Full-screen intent ekki leyft - tilkynningin ein sér verður að duga")

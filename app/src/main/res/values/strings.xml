@@ -31,6 +31,12 @@
     <string name="vibrate_label">Titringur</string>
     <string name="vibrate_desc_fade">Byrjar þegar fullum styrk er náð</string>
     <string name="vibrate_desc">Titrar meðan vekjarinn hringir</string>
+    <string name="news_label">Fréttir</string>
+    <string name="news_desc">Útvarpsfréttir spilast strax á eftir bæninni</string>
+    <string name="news_desc_off">Aðeins bænin spilast</string>
+    <string name="news_ready">Fréttatími dagsins tilbúinn: %1$s</string>
+    <string name="news_missing">Fréttatími dagsins ekki kominn — bænin spilast ein</string>
+
     <string name="snooze_label">Blundur</string>
     <string name="snooze_desc">Hversu lengi vekjarinn þagnar</string>
 

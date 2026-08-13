@@ -82,6 +82,34 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putLong(KEY_MISSED_ACK, value).apply()
 
     /**
+     * Spila frettir strax a eftir baeninni.
+     *
+     * Frettirnar eru naesti dagskrarlidur a eftir Morgunbaeninni, svo tetta
+     * speglar utsendinguna sjalfa.
+     */
+    var newsEnabled: Boolean
+        get() = sp.getBoolean(KEY_NEWS_ENABLED, false)
+        set(value) = sp.edit().putBoolean(KEY_NEWS_ENABLED, value).apply()
+
+    /** Slod a nidurhaladan frettatima, ef hann er til. */
+    var newsFilePath: String?
+        get() = sp.getString(KEY_NEWS_PATH, null)
+        set(value) = sp.edit().putString(KEY_NEWS_PATH, value).apply()
+
+    var newsTitle: String?
+        get() = sp.getString(KEY_NEWS_TITLE, null)
+        set(value) = sp.edit().putString(KEY_NEWS_TITLE, value).apply()
+
+    /** Hvenaer frettatiminn sem vid eigum var fluttur. */
+    var newsFirstrun: String?
+        get() = sp.getString(KEY_NEWS_FIRSTRUN, null)
+        set(value) = sp.edit().putString(KEY_NEWS_FIRSTRUN, value).apply()
+
+    var newsEpisodeId: String?
+        get() = sp.getString(KEY_NEWS_ID, null)
+        set(value) = sp.edit().putString(KEY_NEWS_ID, value).apply()
+
+    /**
      * Annar vekjaratimi um helgar.
      *
      * Morgunbaenin er adeins flutt a virkum dogum, svo um helgar spilar
@@ -102,10 +130,13 @@ class Prefs(context: Context) {
 
     /**
      * Vaxandi hljodstyrkur: byrjar lagt og haekkar rolega upp i fullan styrk.
-     * Mun mildari vakning en ad fa allt beint i andlitid.
+     *
+     * SJALFGEFID AF. Baenin er talad mal, ekki tonn - fyrstu setningarnar
+     * hverfa ef styrkurinn er enn ad haekka tegar tær eru fluttar.
+     * Ta vaknar folk vid baen sem tad heyrdi ekki byrjunina a.
      */
     var fadeInEnabled: Boolean
-        get() = sp.getBoolean(KEY_FADE_IN, true)
+        get() = sp.getBoolean(KEY_FADE_IN, false)
         set(value) = sp.edit().putBoolean(KEY_FADE_IN, value).apply()
 
     /** Hversu lengi hljodstyrkurinn er ad na fullum styrk, i sekundum. */
@@ -114,11 +145,17 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putInt(KEY_FADE_SECONDS, value).apply()
 
     /**
-     * Titringur. Byrjar EKKI fyrr en hljodstyrkurinn hefur nad fullum styrk
-     * - annars eydileggur hann mjuku vakninguna sem fade-in a ad skila.
+     * Titringur.
+     *
+     * SJALFGEFID AF. Sudid i nattbordinu keppir vid rodd prestsins og
+     * gerir hana erfidari ad heyra. Tetta er baenavekjari, ekki
+     * verksmidjuflauta - hljodid eitt a ad duga.
+     *
+     * Se kveikt a honum bidur hann tar til hljodstyrkurinn hefur nad
+     * fullum styrk, se fade-in lika virkt.
      */
     var vibrateEnabled: Boolean
-        get() = sp.getBoolean(KEY_VIBRATE, true)
+        get() = sp.getBoolean(KEY_VIBRATE, false)
         set(value) = sp.edit().putBoolean(KEY_VIBRATE, value).apply()
 
     /** Hefur notandinn afgreitt Samsung-leidbeiningarnar? */
@@ -149,6 +186,11 @@ class Prefs(context: Context) {
         private const val KEY_FADE_IN = "fade_in_enabled"
         private const val KEY_FADE_SECONDS = "fade_in_seconds"
         private const val KEY_VIBRATE = "vibrate_enabled"
+        private const val KEY_NEWS_ENABLED = "news_enabled"
+        private const val KEY_NEWS_PATH = "news_file_path"
+        private const val KEY_NEWS_TITLE = "news_title"
+        private const val KEY_NEWS_FIRSTRUN = "news_firstrun"
+        private const val KEY_NEWS_ID = "news_episode_id"
         private const val KEY_WEEKEND_ENABLED = "weekend_time_enabled"
         private const val KEY_WEEKEND_HOUR = "weekend_hour"
         private const val KEY_WEEKEND_MINUTE = "weekend_minute"
