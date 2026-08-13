@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -38,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.ui.MorgunbaenTheme
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -171,7 +169,6 @@ private fun AlarmScreen(
 private fun HoldToDismissButton(onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     var progress by remember { mutableFloatStateOf(0f) }
-    var job by remember { mutableStateOf<Job?>(null) }
 
     // Mjukur afturhvarfshreyfing tegar sleppt er - annars stekkur
     // framvindan i null og litur ut eins og villa.
@@ -198,8 +195,6 @@ private fun HoldToDismissButton(onDismiss: () -> Unit) {
                                 delay(16)
                             }
                         }
-                        job = holdJob
-
                         // Sleppti notandinn adur en tvi lauk? Ta byrjar hann upp a nytt.
                         tryAwaitRelease()
                         holdJob.cancel()

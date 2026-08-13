@@ -34,7 +34,7 @@ class EpisodeRepository(private val context: Context) {
     private val audioDir: File
         get() = File(context.deviceStorage.filesDir, "baenir").apply { mkdirs() }
 
-    /** Sama og audioDir en fyrir frettatima. */
+    /** Sama fyrir frettirnar - adskilin mappa svo hreinsun ruglist ekki. */
     private val newsDir: File
         get() = File(context.deviceStorage.filesDir, "frettir").apply { mkdirs() }
 
@@ -280,7 +280,13 @@ class EpisodeRepository(private val context: Context) {
      */
     fun newsPlaybackSource(): File? {
         if (!prefs.newsEnabled) return null
-        return if (hasTodaysNews()) File(prefs.newsFilePath!!) else null
+
+        val firstrun = prefs.newsFirstrun ?: return null
+        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return null
+
+        val path = prefs.newsFilePath ?: return null
+        val file = File(path)
+        return if (file.exists() && file.length() > MIN_VALID_BYTES) file else null
     }
 
     /** "2026-08-13T07:00:00" -> "Fréttir kl. 07:00" */

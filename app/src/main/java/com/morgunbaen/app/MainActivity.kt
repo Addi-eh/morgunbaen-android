@@ -419,10 +419,6 @@ private fun MainScreen() {
                         description = when {
                             !newsEnabled -> stringResource(R.string.news_desc_off)
                             newsSyncing -> stringResource(R.string.news_fetching)
-                            newsFirstrun.isTodays() -> stringResource(
-                                R.string.news_ready,
-                                newsFirstrun!!.substringAfter('T').substring(0, 5)
-                            )
                             // Klukkan a veggnum - EKKI vekjaratiminn sem er
                             // stilltur a "hour" ofar i tessari fallgrein.
                             // Frettirnar eru fluttar kl. 07:00; vaknir
@@ -431,6 +427,10 @@ private fun MainScreen() {
                             // hann bida eftir einhverju sem kemur aldrei.
                             currentHour() < RuvClient.FRETTIR_HOUR ->
                                 stringResource(R.string.news_too_early)
+                            newsFirstrun.isTodays() -> stringResource(
+                                R.string.news_ready,
+                                newsFirstrun!!.substringAfter('T').substring(0, 5)
+                            )
                             !newsAttempted -> stringResource(R.string.news_none)
                             else -> stringResource(R.string.news_missing)
                         },
