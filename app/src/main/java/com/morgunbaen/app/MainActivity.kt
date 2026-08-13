@@ -28,6 +28,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.morgunbaen.app.alarm.AlarmScheduler
 import com.morgunbaen.app.data.EpisodeRepository
+import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +81,11 @@ private fun MainScreen() {
     var fadeIn by remember { mutableStateOf(prefs.fadeInEnabled) }
     var fadeSeconds by remember { mutableIntStateOf(prefs.fadeInSeconds) }
     var vibrate by remember { mutableStateOf(prefs.vibrateEnabled) }
+    var snoozeMinutes by remember { mutableIntStateOf(prefs.snoozeMinutes) }
+    var weekendEnabled by remember { mutableStateOf(prefs.weekendTimeEnabled) }
+    var weekendHour by remember { mutableIntStateOf(prefs.weekendHour) }
+    var weekendMinute by remember { mutableIntStateOf(prefs.weekendMinute) }
+    var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -92,6 +98,7 @@ private fun MainScreen() {
                 nextAlarmText = nextAlarmDescription(prefs)
                 cachedTitle = prefs.cachedTitle
                 cachedDate = prefs.cachedFirstrun
+                cachedEpisodeId = prefs.cachedEpisodeId
                 health = checkHealth(prefs)
             }
         }
@@ -175,6 +182,50 @@ private fun MainScreen() {
                         persistAndReschedule()
                     })
 
+                    Spacer(Modifier.height(16.dp))
+
+                    // Morgunbaenin er ekki flutt um helgar - tha spilar appid
+                    // sidustu baen vikunnar. Margir vilja sofa lengur ta an
+                    // tess ad sleppa henni alveg.
+                    SettingRow(
+                        label = stringResource(R.string.weekend_label),
+                        description = if (weekendEnabled) {
+                            stringResource(
+                                R.string.weekend_time,
+                                String.format(
+                                    Locale.getDefault(),
+                                    "%02d:%02d", weekendHour, weekendMinute
+                                )
+                            )
+                        } else {
+                            stringResource(R.string.weekend_desc)
+                        },
+                        checked = weekendEnabled,
+                        onCheckedChange = {
+                            weekendEnabled = it
+                            prefs.weekendTimeEnabled = it
+                            persistAndReschedule()
+                        }
+                    )
+
+                    if (weekendEnabled) {
+                        TextButton(onClick = {
+                            TimePickerDialog(
+                                context,
+                                { _, h, m ->
+                                    weekendHour = h
+                                    weekendMinute = m
+                                    prefs.weekendHour = h
+                                    prefs.weekendMinute = m
+                                    persistAndReschedule()
+                                },
+                                weekendHour, weekendMinute, true
+                            ).show()
+                        }) {
+                            Text(stringResource(R.string.change_time))
+                        }
+                    }
+
                     if (enabled) {
                         Spacer(Modifier.height(12.dp))
                         Text(
@@ -252,6 +303,34 @@ private fun MainScreen() {
                         Spacer(Modifier.height(8.dp))
                         Text(it, style = MaterialTheme.typography.bodySmall)
                     }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { HistoryActivity.start(context) }) {
+                            Text(stringResource(R.string.history_open))
+                        }
+
+                        // Deiling krefst tess ad vid vitum HVADA thattur tetta er.
+                        val shareId = cachedEpisodeId
+                        val shareTitle = cachedTitle
+                        val shareDate = cachedDate
+                        if (shareId != null && shareTitle != null && shareDate != null) {
+                            TextButton(onClick = {
+                                shareEpisode(
+                                    context,
+                                    Episode(
+                                        id = shareId,
+                                        title = shareTitle,
+                                        firstrun = shareDate,
+                                        fileUrl = ""
+                                    )
+                                )
+                            }) {
+                                Text(stringResource(R.string.share))
+                            }
+                        }
+                    }
                 }
             }
 
@@ -311,6 +390,27 @@ private fun MainScreen() {
                         onCheckedChange = {
                             vibrate = it
                             prefs.vibrateEnabled = it
+                        }
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = stringResource(R.string.snooze_label),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.snooze_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    MinutePicker(
+                        options = listOf(5, 9, 10, 15, 20),
+                        selected = snoozeMinutes,
+                        onChange = {
+                            snoozeMinutes = it
+                            prefs.snoozeMinutes = it
                         }
                     )
                 }
@@ -490,6 +590,23 @@ private fun SettingRow(
  * Fastir valkostir frekar en sleði. Enginn tarf ad velja 47 sekundur,
  * og fastir kostir eru miklu audveldari i notkun a litlum skja.
  */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MinutePicker(options: List<Int>, selected: Int, onChange: (Int) -> Unit) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        options.forEach { minutes ->
+            FilterChip(
+                selected = minutes == selected,
+                onClick = { onChange(minutes) },
+                label = { Text("$minutes mín") }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FadeLengthPicker(selected: Int, onChange: (Int) -> Unit) {

@@ -82,6 +82,25 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putLong(KEY_MISSED_ACK, value).apply()
 
     /**
+     * Annar vekjaratimi um helgar.
+     *
+     * Morgunbaenin er adeins flutt a virkum dogum, svo um helgar spilar
+     * appid sidustu baen vikunnar. Margir vilja sofa lengur ta - en samt
+     * ekki sleppa henni alveg.
+     */
+    var weekendTimeEnabled: Boolean
+        get() = sp.getBoolean(KEY_WEEKEND_ENABLED, false)
+        set(value) = sp.edit().putBoolean(KEY_WEEKEND_ENABLED, value).apply()
+
+    var weekendHour: Int
+        get() = sp.getInt(KEY_WEEKEND_HOUR, 9)
+        set(value) = sp.edit().putInt(KEY_WEEKEND_HOUR, value).apply()
+
+    var weekendMinute: Int
+        get() = sp.getInt(KEY_WEEKEND_MINUTE, 0)
+        set(value) = sp.edit().putInt(KEY_WEEKEND_MINUTE, value).apply()
+
+    /**
      * Vaxandi hljodstyrkur: byrjar lagt og haekkar rolega upp i fullan styrk.
      * Mun mildari vakning en ad fa allt beint i andlitid.
      */
@@ -130,6 +149,9 @@ class Prefs(context: Context) {
         private const val KEY_FADE_IN = "fade_in_enabled"
         private const val KEY_FADE_SECONDS = "fade_in_seconds"
         private const val KEY_VIBRATE = "vibrate_enabled"
+        private const val KEY_WEEKEND_ENABLED = "weekend_time_enabled"
+        private const val KEY_WEEKEND_HOUR = "weekend_hour"
+        private const val KEY_WEEKEND_MINUTE = "weekend_minute"
 
         const val PREFS_NAME = "morgunbaen"
 

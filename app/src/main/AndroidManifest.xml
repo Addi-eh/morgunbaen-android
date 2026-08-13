@@ -44,6 +44,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:label="@string/history_title" />
+
         <!-- Skjarinn sem birtist tegar vekjarinn hringir.
              showOnLockScreen + turnScreenOn laetur hann birtast a laestum skja. -->
         <activity

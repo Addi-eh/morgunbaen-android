@@ -6,6 +6,17 @@
     <string name="prayer_status">Bæn dagsins</string>
     <string name="no_prayer_yet">Engin bæn hefur verið sótt enn</string>
     <string name="fetch_now">Sækja núna</string>
+    <string name="share">Deila</string>
+    <string name="share_subject">Morgunbæn</string>
+    <string name="share_text">Morgunbæn — %1$s, %2$s\n\n%3$s</string>
+
+    <string name="history_title">Fyrri bænir</string>
+    <string name="history_open">Fyrri bænir</string>
+    <string name="history_empty">Náði ekki að sækja fyrri bænir frá RÚV.</string>
+
+    <string name="weekend_label">Annar tími um helgar</string>
+    <string name="weekend_desc">Morgunbænin er ekki flutt um helgar, en appið spilar þá síðustu bæn vikunnar</string>
+    <string name="weekend_time">Helgartími: %1$s</string>
 
     <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
     <string name="sync_already_have">Nýjasta bænin var þegar til staðar</string>
@@ -20,10 +31,13 @@
     <string name="vibrate_label">Titringur</string>
     <string name="vibrate_desc_fade">Byrjar þegar fullum styrk er náð</string>
     <string name="vibrate_desc">Titrar meðan vekjarinn hringir</string>
+    <string name="snooze_label">Blundur</string>
+    <string name="snooze_desc">Hversu lengi vekjarinn þagnar</string>
 
     <string name="alarm_notification_title">Morgunbæn</string>
-    <string name="alarm_screen_heading">Góðan daginn</string>
+    <string name="alarm_screen_heading">Góðan og blessaðan daginn!</string>
     <string name="dismiss">Slökkva</string>
+    <string name="hold_to_dismiss">Haltu inni til að slökkva</string>
     <string name="snooze">Blunda</string>
 
     <string name="channel_alarm">Vekjari</string>

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
@@ -38,6 +39,13 @@ class AlarmService : Service() {
     private var player: ExoPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var vibrator: Vibrator? = null
+    private var audioFocusRequest: AudioFocusRequest? = null
+
+    /**
+     * Hljodstyrkurinn eins og notandinn hafdi hann adur en vid snertum hann.
+     * -1 tydir ad vid hofum ekki breytt neinu og megum tvi ekki skila neinu.
+     */
+    private var originalAlarmVolume = -1
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: Prefs
 
@@ -74,6 +82,17 @@ class AlarmService : Service() {
         // en tegar hun tekst bjargar hun deginum.
         launchAlarmScreenDirectly()
 
+        // Tha sem er ad spila - Spotify, hladvarp - er thaggad medan
+        // vekjarinn hringir. An tessa blandast hljodin saman.
+        requestAudioFocus()
+
+        // Oryggisnet: ef enginn slekkur - siminn gleymdist heima, notandinn
+        // er ekki vid - tha ma tjonustan ekki spila endalaust.
+        handler.postDelayed({
+            Log.i(TAG, "Tímamörk náð - stöðva vekjara sjálfkrafa")
+            stopAlarm()
+        }, AUTO_STOP_MINUTES * 60 * 1000L)
+
         val repository = EpisodeRepository(this)
         val source = repository.playbackSource()
 
@@ -109,6 +128,47 @@ class AlarmService : Service() {
         } catch (e: Exception) {
             Log.w(TAG, "Náði ekki að opna vekjaraskjá beint", e)
         }
+    }
+
+    /**
+     * Bidur um AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE.
+     *
+     * "Exclusive" tydir ad annad hljod eigi ad tagna alveg - ekki bara laekka.
+     * Vekjari a ekki ad keppa vid hladvarp sem gleymdist i gangi.
+     */
+    private fun requestAudioFocus() {
+        try {
+            val audioManager = getSystemService(AudioManager::class.java)
+            val attributes = android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+
+            val request = AudioFocusRequest
+                .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                .setAudioAttributes(attributes)
+                // Vid gefum ALDREI eftir - vekjari sem tagnar vid tilkynningu
+                // fra odru appi er onytur.
+                .setWillPauseWhenDucked(false)
+                .setOnAudioFocusChangeListener { }
+                .build()
+
+            audioFocusRequest = request
+            audioManager.requestAudioFocus(request)
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki hljóðfókus", e)
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        try {
+            audioFocusRequest?.let {
+                getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að skila hljóðfókus", e)
+        }
+        audioFocusRequest = null
     }
 
     /** Getur appid birt vekjarann a laestum skja? */
@@ -263,6 +323,10 @@ class AlarmService : Service() {
             // Aldrei laekka tad sem notandinn valdi - bara haekka ef tad er of lagt.
             val minimum = (max * 0.6).toInt()
             if (current < minimum) {
+                // Muna hvad notandinn hafdi valid svo vid getum skilad tvi.
+                // An tessa saeti siminn eftir a haerri styrk en eigandinn valdi
+                // - og hann myndi aldrei atta sig a hvers vegna.
+                originalAlarmVolume = current
                 audioManager.setStreamVolume(AudioManager.STREAM_ALARM, minimum, 0)
             }
         } catch (e: Exception) {
@@ -325,8 +389,22 @@ class AlarmService : Service() {
         stopAlarm()
     }
 
+    /** Skilar hljodstyrknum eins og hann var - en adeins ef vid breyttum honum. */
+    private fun restoreAlarmVolume() {
+        if (originalAlarmVolume < 0) return
+        try {
+            getSystemService(AudioManager::class.java)
+                .setStreamVolume(AudioManager.STREAM_ALARM, originalAlarmVolume, 0)
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að skila hljóðstyrk", e)
+        }
+        originalAlarmVolume = -1
+    }
+
     private fun stopAlarm() {
         handler.removeCallbacksAndMessages(null)
+        restoreAlarmVolume()
+        abandonAudioFocus()
         vibrator?.cancel()
         vibrator = null
         player?.release()
@@ -354,6 +432,8 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        restoreAlarmVolume()
+        abandonAudioFocus()
         vibrator?.cancel()
         player?.release()
         player = null
@@ -371,6 +451,13 @@ class AlarmService : Service() {
         private const val START_VOLUME = 0.05f
         private const val STEPS_PER_SECOND = 4
         private const val STEP_INTERVAL_MS = 250L
+
+        /**
+         * Haemarkslengd spilunar. Vekjarinn stoppar EKKI tegar baenin klarast
+         * - ta gaeti notandinn sofnad aftur - en hann ma heldur ekki spila
+         * endalaust ef enginn er heima.
+         */
+        private const val AUTO_STOP_MINUTES = 15L
 
         const val ACTION_START = "com.morgunbaen.app.START_ALARM"
         const val ACTION_DISMISS = "com.morgunbaen.app.DISMISS_ALARM"

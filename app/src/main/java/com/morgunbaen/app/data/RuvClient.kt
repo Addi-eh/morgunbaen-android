@@ -129,5 +129,10 @@ class RuvClient {
 
         /** "Morgunbæn og orð dagsins" a Ras 1. */
         const val MORGUNBAEN_PROGRAM_ID = 25329
+
+        /** Slod a thattinn i Spilara RUV - notud tegar baenin er deilt. */
+        fun episodeWebUrl(episodeId: String): String =
+            "https://www.ruv.is/utvarp/spila/morgunbaen-og-ord-dagsins/" +
+                "$MORGUNBAEN_PROGRAM_ID/$episodeId"
     }
 }
