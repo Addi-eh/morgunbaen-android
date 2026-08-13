@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.morgunbaen.app.alarm.AlarmScheduler
 import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Prefs
@@ -46,7 +49,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun MainScreen() {
     val context = LocalContext.current
@@ -61,6 +64,28 @@ private fun MainScreen() {
     var syncing by remember { mutableStateOf(false) }
     var cachedTitle by remember { mutableStateOf(prefs.cachedTitle) }
     var cachedDate by remember { mutableStateOf(prefs.cachedFirstrun) }
+
+    // Kerfisstillingar geta breyst medan appid er opid - t.d. tegar notandinn
+    // fer i stillingar og kemur til baka. Tess vegna eru taer i state og
+    // endurmetnar i hvert sinn sem skjarinn kemur i forgrunn.
+    var exactAlarmOk by remember { mutableStateOf(AlarmScheduler.canScheduleExact(context)) }
+    var batteryOk by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(prefs)) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                exactAlarmOk = AlarmScheduler.canScheduleExact(context)
+                batteryOk = isIgnoringBatteryOptimizations(context)
+                nextAlarmText = nextAlarmDescription(prefs)
+                cachedTitle = prefs.cachedTitle
+                cachedDate = prefs.cachedFirstrun
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -79,6 +104,7 @@ private fun MainScreen() {
         prefs.alarmMinute = minute
         prefs.alarmDays = days
         AlarmScheduler.schedule(context)
+        nextAlarmText = nextAlarmDescription(prefs)
     }
 
     Scaffold(
@@ -139,7 +165,7 @@ private fun MainScreen() {
                     if (enabled) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = nextAlarmDescription(prefs),
+                            text = nextAlarmText,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -148,7 +174,7 @@ private fun MainScreen() {
 
             Spacer(Modifier.height(16.dp))
 
-            // ---------- Staða bænarinnar ----------
+            // ---------- Stada baenarinnar ----------
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
@@ -161,7 +187,7 @@ private fun MainScreen() {
                         Text(cachedTitle!!, style = MaterialTheme.typography.bodyLarge)
                         cachedDate?.let {
                             Text(
-                                text = "Flutt " + it.substringBefore('T').substringBefore(' '),
+                                text = "Flutt " + formatIsoDate(it),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -218,8 +244,8 @@ private fun MainScreen() {
 
             Spacer(Modifier.height(16.dp))
 
-            // ---------- Áminningar um kerfisstillingar ----------
-            if (!AlarmScheduler.canScheduleExact(context)) {
+            // ---------- Aminningar um kerfisstillingar ----------
+            if (!exactAlarmOk) {
                 WarningCard(
                     text = stringResource(R.string.warn_exact_alarm),
                     actionLabel = stringResource(R.string.open_settings),
@@ -228,7 +254,7 @@ private fun MainScreen() {
                 Spacer(Modifier.height(12.dp))
             }
 
-            if (!isIgnoringBatteryOptimizations(context)) {
+            if (!batteryOk) {
                 WarningCard(
                     text = stringResource(R.string.warn_battery),
                     actionLabel = stringResource(R.string.open_settings),
@@ -239,20 +265,28 @@ private fun MainScreen() {
     }
 }
 
+/**
+ * Dagavalid. Notar FlowRow svo allir sjo dagarnir komist fyrir
+ * - i venjulegri Row dettur sunnudagurinn ut fyrir skjabrunina.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DayPicker(selected: Set<Int>, onChange: (Set<Int>) -> Unit) {
     // Calendar.SUNDAY = 1 ... Calendar.SATURDAY = 7
     val labels = listOf(
-        Calendar.MONDAY to "M",
-        Calendar.TUESDAY to "Þ",
-        Calendar.WEDNESDAY to "M",
-        Calendar.THURSDAY to "F",
-        Calendar.FRIDAY to "F",
-        Calendar.SATURDAY to "L",
-        Calendar.SUNDAY to "S"
+        Calendar.MONDAY to "Má",
+        Calendar.TUESDAY to "Þr",
+        Calendar.WEDNESDAY to "Mi",
+        Calendar.THURSDAY to "Fi",
+        Calendar.FRIDAY to "Fö",
+        Calendar.SATURDAY to "La",
+        Calendar.SUNDAY to "Su"
     )
 
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         labels.forEach { (day, label) ->
             val isOn = day in selected
             FilterChip(
@@ -275,10 +309,25 @@ private fun WarningCard(text: String, actionLabel: String, onAction: () -> Unit)
         )
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onAction) { Text(actionLabel) }
         }
+    }
+}
+
+/** "2026-08-13T06:55:00" -> "13. ágúst" */
+private fun formatIsoDate(raw: String): String {
+    val datePart = raw.substringBefore('T').substringBefore(' ')
+    return try {
+        val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(datePart)!!
+        SimpleDateFormat("d. MMMM", Locale("is", "IS")).format(parsed)
+    } catch (e: Exception) {
+        datePart
     }
 }
 
