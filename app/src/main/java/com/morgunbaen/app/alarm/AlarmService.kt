@@ -2,6 +2,7 @@ package com.morgunbaen.app.alarm
 
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -63,6 +64,16 @@ class AlarmService : Service() {
         // birtast ofan a laestum skja, eins og venjuleg vekjaraklukka.
         startForeground(NOTIFICATION_ID, buildNotification())
 
+        // Full-screen intent er RETTA leidin til ad birta vekjarann - en fra
+        // Android 14 getur kerfid neitad honum. Tha spilar hljodid an tess ad
+        // nokkur skjar birtist og notandinn hefur enga leid til ad slokkva
+        // nema drepa appid.
+        //
+        // Tess vegna reynum vid lika ad opna skjainn beint. Tetta er
+        // bakgrunnsraesing sem Android getur hafnad, svo hun er varin -
+        // en tegar hun tekst bjargar hun deginum.
+        launchAlarmScreenDirectly()
+
         val repository = EpisodeRepository(this)
         val source = repository.playbackSource()
 
@@ -77,6 +88,33 @@ class AlarmService : Service() {
         }
 
         playAudio(mediaUri)
+    }
+
+    /**
+     * Opnar vekjaraskjainn beint, til vidbotar vid full-screen intent.
+     *
+     * Android takmarkar bakgrunnsraesingu a skjaum, svo tetta getur brugdist -
+     * en tad kostar ekkert ad reyna og tvofoldun a leidum er einmitt tad sem
+     * vekjari tarf.
+     */
+    private fun launchAlarmScreenDirectly() {
+        try {
+            startActivity(
+                Intent(this, AlarmActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                }
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að opna vekjaraskjá beint", e)
+        }
+    }
+
+    /** Getur appid birt vekjarann a laestum skja? */
+    private fun canUseFullScreen(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+        return getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
     }
 
     private fun playAudio(uri: Uri) {
@@ -249,7 +287,18 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val snoozeIntent = PendingIntent.getService(
+            this,
+            2,
+            Intent(this, AlarmService::class.java).apply { action = ACTION_SNOOZE },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val title = prefs.cachedTitle ?: getString(R.string.app_name)
+
+        if (!canUseFullScreen()) {
+            Log.w(TAG, "Full-screen intent ekki leyft - tilkynningin ein sér verður að duga")
+        }
 
         return NotificationCompat.Builder(this, MorgunbaenApp.CHANNEL_ALARM)
             .setContentTitle(getString(R.string.alarm_notification_title))
@@ -261,7 +310,13 @@ class AlarmService : Service() {
             .setAutoCancel(false)
             // Tetta er lykillinn ad tvi ad vekjarinn birtist a laestum skja:
             .setFullScreenIntent(fullScreenIntent, true)
+            // Ef enginn skjar birtist eru tessir tveir takkar eina leidin til
+            // ad slokkva. Teir MEGA tvi ekki vanta.
             .addAction(R.drawable.ic_alarm, getString(R.string.dismiss), dismissIntent)
+            .addAction(R.drawable.ic_alarm, getString(R.string.snooze), snoozeIntent)
+            // Ad ytt se a tilkynninguna sjalfa opnar lika vekjaraskjainn.
+            .setContentIntent(fullScreenIntent)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
 

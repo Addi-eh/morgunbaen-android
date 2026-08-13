@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -71,6 +72,8 @@ private fun MainScreen() {
     // endurmetnar i hvert sinn sem skjarinn kemur i forgrunn.
     var exactAlarmOk by remember { mutableStateOf(AlarmScheduler.canScheduleExact(context)) }
     var batteryOk by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    var notificationsOk by remember { mutableStateOf(areNotificationsEnabled(context)) }
+    var fullScreenOk by remember { mutableStateOf(canUseFullScreenIntent(context)) }
     var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(prefs)) }
     var health by remember { mutableStateOf(checkHealth(prefs)) }
     var oemGuideDone by remember { mutableStateOf(prefs.oemGuideDone) }
@@ -84,6 +87,8 @@ private fun MainScreen() {
             if (event == Lifecycle.Event.ON_RESUME) {
                 exactAlarmOk = AlarmScheduler.canScheduleExact(context)
                 batteryOk = isIgnoringBatteryOptimizations(context)
+                notificationsOk = areNotificationsEnabled(context)
+                fullScreenOk = canUseFullScreenIntent(context)
                 nextAlarmText = nextAlarmDescription(prefs)
                 cachedTitle = prefs.cachedTitle
                 cachedDate = prefs.cachedFirstrun
@@ -341,6 +346,26 @@ private fun MainScreen() {
             }
 
             // ---------- Aminningar um kerfisstillingar ----------
+            // Tessar tvaer eru fremstar tvi an teirra er EKKERT sem notandinn
+            // getur ytt a til ad slokkva a vekjaranum.
+            if (!notificationsOk) {
+                WarningCard(
+                    text = stringResource(R.string.warn_notifications),
+                    actionLabel = stringResource(R.string.open_settings),
+                    onAction = { openNotificationSettings(context) }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            if (!fullScreenOk) {
+                WarningCard(
+                    text = stringResource(R.string.warn_fullscreen),
+                    actionLabel = stringResource(R.string.open_settings),
+                    onAction = { openFullScreenIntentSettings(context) }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             if (!exactAlarmOk) {
                 WarningCard(
                     text = stringResource(R.string.warn_exact_alarm),
@@ -562,6 +587,45 @@ private fun checkHealth(prefs: Prefs): Health {
     }
 
     return Health.OK
+}
+
+private fun areNotificationsEnabled(context: Context): Boolean =
+    NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+/**
+ * Fra Android 14 er full-screen intent ekki lengur sjalfgefid leyfd.
+ * Google veitir hana adeins oppum sem Play Store hefur flokkad sem vekjara-
+ * eda simtalsopp - hlidarhladin APK-skra faer hana EKKI.
+ *
+ * An hennar spilar hljodid en enginn skjar birtist a laesta skjanum.
+ */
+private fun canUseFullScreenIntent(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+    return context.getSystemService(android.app.NotificationManager::class.java)
+        .canUseFullScreenIntent()
+}
+
+private fun openNotificationSettings(context: Context) {
+    context.startActivity(
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+    )
+}
+
+private fun openFullScreenIntentSettings(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+    try {
+        context.startActivity(
+            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+        )
+    } catch (e: Exception) {
+        openNotificationSettings(context)
+    }
 }
 
 private fun isSamsung(): Boolean =

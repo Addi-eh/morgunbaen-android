@@ -32,6 +32,8 @@
     <string name="warn_exact_alarm">Appið hefur ekki leyfi til að skrá nákvæma vekjara. Án þess hringir vekjarinn ekki á réttum tíma.</string>
     <string name="warn_battery">Rafhlöðusparnaður er virkur fyrir þetta app. Það getur komið í veg fyrir að bænin sækist á nóttunni.</string>
     <string name="open_settings">Opna stillingar</string>
+    <string name="warn_fullscreen">Appið má ekki birta vekjarann á læstum skjá. Bænin spilar en enginn skjár kemur upp til að slökkva á henni.</string>
+    <string name="warn_notifications">Tilkynningar eru óvirkar. Án þeirra birtist vekjarinn alls ekki — hvorki skjár né takki til að slökkva.</string>
     <string name="acknowledge">Ég skil</string>
 
     <string name="warn_missed_alarm">Vekjarinn hringdi ekki síðast þegar hann átti að gera það. Síminn hefur líklega stöðvað appið í bakgrunni.</string>
