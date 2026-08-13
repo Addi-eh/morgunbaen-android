@@ -5,6 +5,9 @@ import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -23,9 +26,13 @@ class EpisodeRepository(private val context: Context) {
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    /** Mappa undir gogn appsins tar sem baenirnar eru geymdar. */
+    /**
+     * Mappa undir gogn appsins tar sem baenirnar eru geymdar.
+     * deviceStorage svo skrain se laesileg jafnvel tott siminn hafi endurraest
+     * um nottina og enginn hafi slegid inn PIN.
+     */
     private val audioDir: File
-        get() = File(context.filesDir, "baenir").apply { mkdirs() }
+        get() = File(context.deviceStorage.filesDir, "baenir").apply { mkdirs() }
 
     sealed class SyncResult {
         /** Ny baen naadist og er tilbuin. */
@@ -148,6 +155,19 @@ class EpisodeRepository(private val context: Context) {
         val stream = prefs.cachedStreamUrl
         if (stream != null) return PlaybackSource.Stream(stream)
         return null
+    }
+
+    /**
+     * Eigum vid thatt dagsins i dag?
+     *
+     * Tetta er spurningin sem soknarglugginn byggir a: vid haettum ekki ad
+     * reyna fyrr en thattur dagsins er kominn i hus, ekki bara "einhver thattur".
+     */
+    fun hasTodaysEpisode(): Boolean {
+        val firstrun = prefs.cachedFirstrun ?: return false
+        val episodeDate = firstrun.substringBefore('T').substringBefore(' ')
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        return episodeDate == today
     }
 
     sealed class PlaybackSource {

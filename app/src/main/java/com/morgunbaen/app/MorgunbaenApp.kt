@@ -3,8 +3,11 @@ package com.morgunbaen.app
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.media.AudioAttributes
+import android.os.UserManager
 import com.morgunbaen.app.alarm.AlarmScheduler
+import com.morgunbaen.app.data.Prefs
+import com.morgunbaen.app.data.deviceStorage
+import com.morgunbaen.app.work.CatchUpScheduler
 import com.morgunbaen.app.work.SyncWorker
 
 /**
@@ -15,9 +18,36 @@ class MorgunbaenApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Appid er directBootAware, svo onCreate getur keyrt ADUR en notandinn
+        // hefur opnad simann eftir endurraesingu. Allt her verdur ad tola tad.
+        migrateLegacyPrefs()
         createNotificationChannels()
-        SyncWorker.schedule(this)
         AlarmScheduler.schedule(this)
+
+        // Soknarglugginn notar AlarmManager og virkar tvi i Direct Boot.
+        CatchUpScheduler.schedule(this)
+
+        // WorkManager notar gagnagrunn i credential-geymslu og hrynur ef hann
+        // er raestur i Direct Boot. Bakgrunnssoknin bidur - hun liggur ekkert a.
+        val userManager = getSystemService(UserManager::class.java)
+        if (userManager.isUserUnlocked) {
+            SyncWorker.schedule(this)
+        }
+    }
+
+    /**
+     * Faerir stillingar fra eldri utgafum yfir i device-protected geymslu.
+     * An tessa myndi notandi sem uppfaerir appid missa vekjarann sinn.
+     * Ohaett ad kalla oft - Android gerir ekkert ef tar er ekkert ad faera.
+     */
+    private fun migrateLegacyPrefs() {
+        try {
+            deviceStorage.moveSharedPreferencesFrom(this, Prefs.PREFS_NAME)
+        } catch (e: Exception) {
+            // Ekkert ad faera, eda vid erum i Direct Boot og gamla svaedid
+            // er ekki laesilegt. Hvorugt er banvaent.
+        }
     }
 
     private fun createNotificationChannels() {

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.morgunbaen.app.data.Prefs
 
 /**
  * Tekur við þegar klukkan hringir.
@@ -17,6 +18,11 @@ class AlarmReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_FIRE) return
 
         Log.i(TAG, "Vekjari hringdi")
+
+        // Skra ad vekjarinn hafi raunverulega komist a. Tetta er
+        // sonnunargagnid sem heilsuvoktunin byggir a - an tess vaeri
+        // engin leid ad vita hvort siminn hefdi stodvad appid.
+        Prefs(context).lastAlarmFiredMillis = System.currentTimeMillis()
 
         // Raesa spilun i forgrunnstjonustu.
         // Android leyfir tetta ur bakgrunni tegar tad kemur fra setAlarmClock.

@@ -112,6 +112,34 @@ object AlarmScheduler {
         return null
     }
 
+    /**
+     * Sidasti timi sem vekjarinn ATTI ad hringja, i millisekundum.
+     * Notad til ad greina hvort siminn hafi stodvad appid: ef tessi timi er
+     * lidinn en vekjarinn hringdi aldrei, tha var eitthvad ad.
+     * Skilar null ef enginn dagur er valinn.
+     */
+    fun previousTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? {
+        val days = prefs.alarmDays
+        if (days.isEmpty()) return null
+
+        for (offset in 0 downTo -7) {
+            val candidate = (from.clone() as Calendar).apply {
+                add(Calendar.DAY_OF_YEAR, offset)
+                set(Calendar.HOUR_OF_DAY, prefs.alarmHour)
+                set(Calendar.MINUTE, prefs.alarmMinute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            val dayOfWeek = candidate.get(Calendar.DAY_OF_WEEK)
+            if (dayOfWeek !in days) continue
+            if (candidate.timeInMillis > from.timeInMillis) continue
+
+            return candidate.timeInMillis
+        }
+        return null
+    }
+
     /** Tetta er sent tegar klukkan hringir. */
     private fun firePendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {

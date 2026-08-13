@@ -8,7 +8,9 @@ import android.content.Context
  */
 class Prefs(context: Context) {
 
-    private val sp = context.getSharedPreferences("morgunbaen", Context.MODE_PRIVATE)
+    // deviceStorage svo stillingarnar seu laesilegar fyrir upplasningu simans.
+    private val sp = context.deviceStorage
+        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     /** Er vekjarinn virkur? */
     var alarmEnabled: Boolean
@@ -66,6 +68,45 @@ class Prefs(context: Context) {
         get() = sp.getLong(KEY_LAST_SYNC, 0L)
         set(value) = sp.edit().putLong(KEY_LAST_SYNC, value).apply()
 
+    /** Hvenaer vekjarinn hringdi sidast i alvoru. Notad til ad greina bilanir. */
+    var lastAlarmFiredMillis: Long
+        get() = sp.getLong(KEY_LAST_FIRED, 0L)
+        set(value) = sp.edit().putLong(KEY_LAST_FIRED, value).apply()
+
+    /**
+     * Hvenaer notandinn var sidast latinn vita af vekjara sem klikkadi.
+     * Kemur i veg fyrir ad sama vidvorunin se endurtekin i sifellu.
+     */
+    var missedAlarmAcknowledged: Long
+        get() = sp.getLong(KEY_MISSED_ACK, 0L)
+        set(value) = sp.edit().putLong(KEY_MISSED_ACK, value).apply()
+
+    /**
+     * Vaxandi hljodstyrkur: byrjar lagt og haekkar rolega upp i fullan styrk.
+     * Mun mildari vakning en ad fa allt beint i andlitid.
+     */
+    var fadeInEnabled: Boolean
+        get() = sp.getBoolean(KEY_FADE_IN, true)
+        set(value) = sp.edit().putBoolean(KEY_FADE_IN, value).apply()
+
+    /** Hversu lengi hljodstyrkurinn er ad na fullum styrk, i sekundum. */
+    var fadeInSeconds: Int
+        get() = sp.getInt(KEY_FADE_SECONDS, 30)
+        set(value) = sp.edit().putInt(KEY_FADE_SECONDS, value).apply()
+
+    /**
+     * Titringur. Byrjar EKKI fyrr en hljodstyrkurinn hefur nad fullum styrk
+     * - annars eydileggur hann mjuku vakninguna sem fade-in a ad skila.
+     */
+    var vibrateEnabled: Boolean
+        get() = sp.getBoolean(KEY_VIBRATE, true)
+        set(value) = sp.edit().putBoolean(KEY_VIBRATE, value).apply()
+
+    /** Hefur notandinn afgreitt Samsung-leidbeiningarnar? */
+    var oemGuideDone: Boolean
+        get() = sp.getBoolean(KEY_OEM_GUIDE, false)
+        set(value) = sp.edit().putBoolean(KEY_OEM_GUIDE, value).apply()
+
     /** Hversu lengi blundur varir, i minutum. */
     var snoozeMinutes: Int
         get() = sp.getInt(KEY_SNOOZE, 9)
@@ -83,6 +124,14 @@ class Prefs(context: Context) {
         private const val KEY_EPISODE_ID = "cached_episode_id"
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_SNOOZE = "snooze_minutes"
+        private const val KEY_LAST_FIRED = "last_alarm_fired"
+        private const val KEY_MISSED_ACK = "missed_alarm_ack"
+        private const val KEY_OEM_GUIDE = "oem_guide_done"
+        private const val KEY_FADE_IN = "fade_in_enabled"
+        private const val KEY_FADE_SECONDS = "fade_in_seconds"
+        private const val KEY_VIBRATE = "vibrate_enabled"
+
+        const val PREFS_NAME = "morgunbaen"
 
         // Manudagur (2) til fostudags (6)
         private val DEFAULT_DAYS = setOf("2", "3", "4", "5", "6")

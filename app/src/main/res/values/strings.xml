@@ -12,6 +12,15 @@
     <string name="sync_stream_only">Bænin er tilbúin en verður streymd — nettenging þarf að vera til staðar þegar vekjarinn hringir</string>
     <string name="sync_failed">Tókst ekki: %1$s</string>
 
+    <string name="settings_title">Vakning</string>
+    <string name="fade_in_label">Vaxandi hljóðstyrkur</string>
+    <string name="fade_in_desc">Byrjar lágt og hækkar á %1$d sekúndum</string>
+    <string name="fade_in_off_desc">Fullur styrkur strax</string>
+    <string name="fade_length">Lengd</string>
+    <string name="vibrate_label">Titringur</string>
+    <string name="vibrate_desc_fade">Byrjar þegar fullum styrk er náð</string>
+    <string name="vibrate_desc">Titrar meðan vekjarinn hringir</string>
+
     <string name="alarm_notification_title">Morgunbæn</string>
     <string name="alarm_screen_heading">Góðan daginn</string>
     <string name="dismiss">Slökkva</string>
@@ -23,4 +32,12 @@
     <string name="warn_exact_alarm">Appið hefur ekki leyfi til að skrá nákvæma vekjara. Án þess hringir vekjarinn ekki á réttum tíma.</string>
     <string name="warn_battery">Rafhlöðusparnaður er virkur fyrir þetta app. Það getur komið í veg fyrir að bænin sækist á nóttunni.</string>
     <string name="open_settings">Opna stillingar</string>
+    <string name="acknowledge">Ég skil</string>
+
+    <string name="warn_missed_alarm">Vekjarinn hringdi ekki síðast þegar hann átti að gera það. Síminn hefur líklega stöðvað appið í bakgrunni.</string>
+    <string name="warn_stale_sync">Appið hefur ekki náð að sækja bæn í meira en sólarhring. Síminn er að hindra það í að keyra í bakgrunni.</string>
+
+    <string name="samsung_title">Samsung-símar þurfa auka stillingu</string>
+    <string name="samsung_body">Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga. Þar sem vekjarinn hringir aðeins á virkum dögum getur það gerst yfir helgi — og þá þegir hann á mánudagsmorgni.\n\nFarðu í Umhirða tækis → Rafhlaða → Takmörk á bakgrunnsnotkun og settu Morgunbæn á listann „Öpp sem sofa aldrei".</string>
+    <string name="samsung_done">Búið</string>
 </resources>

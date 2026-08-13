@@ -5,13 +5,17 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
@@ -32,6 +36,8 @@ class AlarmService : Service() {
 
     private var player: ExoPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private var vibrator: Vibrator? = null
+    private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: Prefs
 
     override fun onCreate() {
@@ -111,7 +117,94 @@ class AlarmService : Service() {
                 prepare()
                 play()
             }
+
+        startVolumeRamp()
     }
+
+    // ------------------------------------------------------------------
+    //  Vaxandi hljodstyrkur
+    // ------------------------------------------------------------------
+
+    /**
+     * Haekkar hljodstyrk spilarans rolega ur naestum tognun i fullan styrk.
+     *
+     * Tetta breytir EKKI kerfisstyrknum - adeins styrk tessarar spilunar.
+     * Tannig raskast ekkert hja notandanum tott vekjarinn se stodvadur i
+     * midri haekkun.
+     *
+     * Titringurinn bidur tar til haekkuninni er lokid. Titringur medan
+     * hljodid er enn lagt eydileggur einmitt tad sem fade-in a ad skila.
+     */
+    private fun startVolumeRamp() {
+        if (!prefs.fadeInEnabled) {
+            player?.volume = 1f
+            startVibrationIfEnabled()
+            return
+        }
+
+        val seconds = prefs.fadeInSeconds.coerceIn(5, 300)
+        val steps = seconds * STEPS_PER_SECOND
+        player?.volume = START_VOLUME
+
+        var step = 0
+        val runnable = object : Runnable {
+            override fun run() {
+                step++
+                val progress = step.toFloat() / steps
+                player?.volume = START_VOLUME + (1f - START_VOLUME) * progress
+
+                if (step < steps) {
+                    handler.postDelayed(this, STEP_INTERVAL_MS)
+                } else {
+                    // Fullur styrkur naadur - nu ma titringurinn byrja.
+                    startVibrationIfEnabled()
+                }
+            }
+        }
+        handler.postDelayed(runnable, STEP_INTERVAL_MS)
+    }
+
+    // ------------------------------------------------------------------
+    //  Titringur
+    // ------------------------------------------------------------------
+
+    private fun startVibrationIfEnabled() {
+        if (!prefs.vibrateEnabled) return
+
+        val vib = obtainVibrator() ?: return
+        if (!vib.hasVibrator()) return
+
+        vibrator = vib
+
+        // Bid, titringur, hle - endurtekid fra fyrsta lid.
+        val pattern = longArrayOf(0, 500, 1200)
+        val effect = VibrationEffect.createWaveform(pattern, 0)
+
+        // USAGE_ALARM svo titringurinn komist i gegnum "Ekki trufla".
+        val attributes = android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+
+        try {
+            vib.vibrate(effect, attributes)
+        } catch (e: Exception) {
+            Log.w(TAG, "Titringur mistókst", e)
+        }
+    }
+
+    private fun obtainVibrator(): Vibrator? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getSystemService(VibratorManager::class.java)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Vibrator::class.java)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    // ------------------------------------------------------------------
 
     /** Ef baenin klikkar eda klarast - spilum venjulegt vekjarahljod i lykkju. */
     private fun playFallbackTone() {
@@ -178,6 +271,9 @@ class AlarmService : Service() {
     }
 
     private fun stopAlarm() {
+        handler.removeCallbacksAndMessages(null)
+        vibrator?.cancel()
+        vibrator = null
         player?.release()
         player = null
         releaseWakeLock()
@@ -202,6 +298,8 @@ class AlarmService : Service() {
     }
 
     override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
+        vibrator?.cancel()
         player?.release()
         player = null
         releaseWakeLock()
@@ -213,6 +311,11 @@ class AlarmService : Service() {
     companion object {
         private const val TAG = "AlarmService"
         private const val NOTIFICATION_ID = 42
+
+        /** Upphafsstyrkur fade-in. Nogu hatt til ad heyrast, nogu lagt til ad vekja mjukt. */
+        private const val START_VOLUME = 0.05f
+        private const val STEPS_PER_SECOND = 4
+        private const val STEP_INTERVAL_MS = 250L
 
         const val ACTION_START = "com.morgunbaen.app.START_ALARM"
         const val ACTION_DISMISS = "com.morgunbaen.app.DISMISS_ALARM"

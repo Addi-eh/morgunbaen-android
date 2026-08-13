@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -71,6 +72,11 @@ private fun MainScreen() {
     var exactAlarmOk by remember { mutableStateOf(AlarmScheduler.canScheduleExact(context)) }
     var batteryOk by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(prefs)) }
+    var health by remember { mutableStateOf(checkHealth(prefs)) }
+    var oemGuideDone by remember { mutableStateOf(prefs.oemGuideDone) }
+    var fadeIn by remember { mutableStateOf(prefs.fadeInEnabled) }
+    var fadeSeconds by remember { mutableIntStateOf(prefs.fadeInSeconds) }
+    var vibrate by remember { mutableStateOf(prefs.vibrateEnabled) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -81,6 +87,7 @@ private fun MainScreen() {
                 nextAlarmText = nextAlarmDescription(prefs)
                 cachedTitle = prefs.cachedTitle
                 cachedDate = prefs.cachedFirstrun
+                health = checkHealth(prefs)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -105,6 +112,7 @@ private fun MainScreen() {
         prefs.alarmDays = days
         AlarmScheduler.schedule(context)
         nextAlarmText = nextAlarmDescription(prefs)
+        health = checkHealth(prefs)
     }
 
     Scaffold(
@@ -244,6 +252,94 @@ private fun MainScreen() {
 
             Spacer(Modifier.height(16.dp))
 
+            // ---------- Vakningarstillingar ----------
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    SettingRow(
+                        label = stringResource(R.string.fade_in_label),
+                        description = if (fadeIn) {
+                            stringResource(R.string.fade_in_desc, fadeSeconds)
+                        } else {
+                            stringResource(R.string.fade_in_off_desc)
+                        },
+                        checked = fadeIn,
+                        onCheckedChange = {
+                            fadeIn = it
+                            prefs.fadeInEnabled = it
+                        }
+                    )
+
+                    // Lengdin skiptir adeins mali tegar fade-in er virkt.
+                    if (fadeIn) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.fade_length),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        FadeLengthPicker(
+                            selected = fadeSeconds,
+                            onChange = {
+                                fadeSeconds = it
+                                prefs.fadeInSeconds = it
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    SettingRow(
+                        label = stringResource(R.string.vibrate_label),
+                        description = if (fadeIn) {
+                            stringResource(R.string.vibrate_desc_fade)
+                        } else {
+                            stringResource(R.string.vibrate_desc)
+                        },
+                        checked = vibrate,
+                        onCheckedChange = {
+                            vibrate = it
+                            prefs.vibrateEnabled = it
+                        }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ---------- Heilsuvoktun ----------
+            // Rautt = eitthvad hefur tegar farid urskeidis.
+            // Tetta er mikilvaegara en stillingavidvaranirnar tvi tad er
+            // eina merkid um bilun sem notandinn faer - siminn segir ekkert.
+            when (health) {
+                Health.MISSED_ALARM -> {
+                    WarningCard(
+                        text = stringResource(R.string.warn_missed_alarm),
+                        actionLabel = stringResource(R.string.acknowledge),
+                        onAction = {
+                            prefs.missedAlarmAcknowledged = System.currentTimeMillis()
+                            health = checkHealth(prefs)
+                        }
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+                Health.STALE_SYNC -> {
+                    WarningCard(
+                        text = stringResource(R.string.warn_stale_sync),
+                        actionLabel = stringResource(R.string.open_settings),
+                        onAction = { openBatterySettings(context) }
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+                Health.OK -> Unit
+            }
+
             // ---------- Aminningar um kerfisstillingar ----------
             if (!exactAlarmOk) {
                 WarningCard(
@@ -259,6 +355,26 @@ private fun MainScreen() {
                     text = stringResource(R.string.warn_battery),
                     actionLabel = stringResource(R.string.open_settings),
                     onAction = { openBatterySettings(context) }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // ---------- Samsung ----------
+            // Samsung svaefir opp sem hafa ekki verid opnud i trja daga.
+            // Vekjari sem hringir bara a virkum dogum er ONOTADUR yfir helgi
+            // - og tegja tvi a manudagsmorgni. Ekkert API laetur vita af tessu
+            // og ekkert API slekkur a tvi; notandinn verdur ad gera tad sjalfur.
+            if (isSamsung() && !oemGuideDone) {
+                InfoCard(
+                    title = stringResource(R.string.samsung_title),
+                    text = stringResource(R.string.samsung_body),
+                    primaryLabel = stringResource(R.string.open_settings),
+                    onPrimary = { openDeviceCare(context) },
+                    secondaryLabel = stringResource(R.string.samsung_done),
+                    onSecondary = {
+                        prefs.oemGuideDone = true
+                        oemGuideDone = true
+                    }
                 )
             }
         }
@@ -317,6 +433,162 @@ private fun WarningCard(text: String, actionLabel: String, onAction: () -> Unit)
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onAction) { Text(actionLabel) }
         }
+    }
+}
+
+@Composable
+private fun SettingRow(
+    label: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/**
+ * Fastir valkostir frekar en sleði. Enginn tarf ad velja 47 sekundur,
+ * og fastir kostir eru miklu audveldari i notkun a litlum skja.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FadeLengthPicker(selected: Int, onChange: (Int) -> Unit) {
+    val options = listOf(10, 30, 60, 120)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        options.forEach { seconds ->
+            FilterChip(
+                selected = seconds == selected,
+                onClick = { onChange(seconds) },
+                label = {
+                    Text(
+                        if (seconds < 60) "$seconds sek"
+                        else "${seconds / 60} mín"
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(
+    title: String,
+    text: String,
+    primaryLabel: String,
+    onPrimary: () -> Unit,
+    secondaryLabel: String,
+    onSecondary: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
+            Row {
+                TextButton(onClick = onPrimary) { Text(primaryLabel) }
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = onSecondary) { Text(secondaryLabel) }
+            }
+        }
+    }
+}
+
+/** Nidurstada heilsuvoktunar. */
+private enum class Health { OK, MISSED_ALARM, STALE_SYNC }
+
+/**
+ * Athugar hvort eitthvad hafi thegar farid urskeidis.
+ *
+ * Tvo einkenni benda til tess ad siminn se ad stodva appid:
+ *
+ *  1. Vekjaratimi sem er lidinn hja an tess ad vekjarinn hafi hringt.
+ *  2. Bakgrunnssokn sem hefur ekki naad ad keyra i meira en solarhring.
+ *
+ * Hvorugt greinist sjalfkrafa af Android - appid verdur ad taka eftir tvi sjalft.
+ */
+private fun checkHealth(prefs: Prefs): Health {
+    if (!prefs.alarmEnabled) return Health.OK
+
+    val now = System.currentTimeMillis()
+
+    // Vid segjum ekkert fyrr en vekjarinn hefur hringt ad minnsta kosti einu
+    // sinni - annars fengi hver nyr notandi vidvorun a fyrsta degi.
+    if (prefs.lastAlarmFiredMillis > 0L) {
+        val expected = AlarmScheduler.previousTriggerTime(prefs)
+        if (expected != null &&
+            expected > prefs.lastAlarmFiredMillis + TimeUnit.MINUTES.toMillis(5) &&
+            expected > prefs.missedAlarmAcknowledged
+        ) {
+            return Health.MISSED_ALARM
+        }
+    }
+
+    if (prefs.lastSyncMillis > 0L &&
+        now - prefs.lastSyncMillis > TimeUnit.HOURS.toMillis(36)
+    ) {
+        return Health.STALE_SYNC
+    }
+
+    return Health.OK
+}
+
+private fun isSamsung(): Boolean =
+    Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+
+/**
+ * Reynir ad opna Device Care hja Samsung, tar sem "Svefnopp" listinn byr.
+ * Samsung gefur enga opinbera leid ad tessum skja, svo tetta getur brugdist
+ * - tha opnum vid venjulegu app-stillingarnar i stadinn.
+ */
+private fun openDeviceCare(context: Context) {
+    val deviceCare = Intent().apply {
+        setClassName(
+            "com.samsung.android.lool",
+            "com.samsung.android.sm.ui.battery.BatteryActivity"
+        )
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    try {
+        context.startActivity(deviceCare)
+    } catch (e: Exception) {
+        context.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+        )
     }
 }
 
