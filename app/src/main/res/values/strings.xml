@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Morgunbæn</string>
+
+    <string name="change_time">Breyta tíma</string>
+    <string name="prayer_status">Bæn dagsins</string>
+    <string name="no_prayer_yet">Engin bæn hefur verið sótt enn</string>
+    <string name="fetch_now">Sækja núna</string>
+
+    <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
+    <string name="sync_already_have">Nýjasta bænin var þegar til staðar</string>
+    <string name="sync_stream_only">Bænin er tilbúin en verður streymd — nettenging þarf að vera til staðar þegar vekjarinn hringir</string>
+    <string name="sync_failed">Tókst ekki: %1$s</string>
+
+    <string name="alarm_notification_title">Morgunbæn</string>
+    <string name="alarm_screen_heading">Góðan daginn</string>
+    <string name="dismiss">Slökkva</string>
+    <string name="snooze">Blunda</string>
+
+    <string name="channel_alarm">Vekjari</string>
+    <string name="channel_alarm_desc">Tilkynning sem birtist þegar vekjarinn hringir</string>
+
+    <string name="warn_exact_alarm">Appið hefur ekki leyfi til að skrá nákvæma vekjara. Án þess hringir vekjarinn ekki á réttum tíma.</string>
+    <string name="warn_battery">Rafhlöðusparnaður er virkur fyrir þetta app. Það getur komið í veg fyrir að bænin sækist á nóttunni.</string>
+    <string name="open_settings">Opna stillingar</string>
+</resources>
