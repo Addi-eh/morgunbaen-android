@@ -88,6 +88,11 @@ private fun MainScreen() {
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
     var newsEnabled by remember { mutableStateOf(prefs.newsEnabled) }
     var newsFirstrun by remember { mutableStateOf(prefs.newsFirstrun) }
+    var newsSyncing by remember { mutableStateOf(false) }
+    // null = ekki reynt enn i tessari lotu. Adgreinir "vitum ekki" fra
+    // "reyndum og fundum ekki" - annars segir appid ranglega ad frettatimi
+    // se ekki kominn ut tegar tad hefur einfaldlega ekki leitad.
+    var newsAttempted by remember { mutableStateOf(prefs.newsFirstrun != null) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -273,8 +278,14 @@ private fun MainScreen() {
                             status = null
                             scope.launch {
                                 val result = withContext(Dispatchers.IO) {
-                                    EpisodeRepository(context).sync()
+                                    val repo = EpisodeRepository(context)
+                                    val r = repo.sync()
+                                    // Frettirnar fylgja med - adur sotti
+                                    // tessi takki adeins baenina.
+                                    if (prefs.newsEnabled) repo.syncNews()
+                                    r
                                 }
+                                newsAttempted = prefs.newsEnabled
                                 syncing = false
                                 cachedTitle = prefs.cachedTitle
                                 cachedDate = prefs.cachedFirstrun
@@ -406,16 +417,33 @@ private fun MainScreen() {
                         label = stringResource(R.string.news_label),
                         description = when {
                             !newsEnabled -> stringResource(R.string.news_desc_off)
+                            newsSyncing -> stringResource(R.string.news_fetching)
                             newsFirstrun.isTodays() -> stringResource(
                                 R.string.news_ready,
                                 newsFirstrun!!.substringAfter('T').substring(0, 5)
                             )
+                            !newsAttempted -> stringResource(R.string.news_none)
                             else -> stringResource(R.string.news_missing)
                         },
                         checked = newsEnabled,
                         onCheckedChange = {
                             newsEnabled = it
                             prefs.newsEnabled = it
+
+                            // Saekja strax tegar kveikt er - annars bidur
+                            // notandinn i allt ad sex klst eftir ad sja
+                            // hvort tetta virki yfirleitt.
+                            if (it) {
+                                newsSyncing = true
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        EpisodeRepository(context).syncNews()
+                                    }
+                                    newsSyncing = false
+                                    newsAttempted = true
+                                    newsFirstrun = prefs.newsFirstrun
+                                }
+                            }
                         }
                     )
 

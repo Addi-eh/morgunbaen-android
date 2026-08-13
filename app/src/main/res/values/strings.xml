@@ -35,7 +35,9 @@
     <string name="news_desc">Útvarpsfréttir spilast strax á eftir bæninni</string>
     <string name="news_desc_off">Aðeins bænin spilast</string>
     <string name="news_ready">Fréttatími dagsins tilbúinn: %1$s</string>
-    <string name="news_missing">Fréttatími dagsins ekki kominn — bænin spilast ein</string>
+    <string name="news_fetching">Sæki fréttatíma dagsins…</string>
+    <string name="news_none">Enginn fréttatími sóttur enn</string>
+    <string name="news_missing">Náði ekki í fréttatíma dagsins — bænin spilast ein</string>
 
     <string name="snooze_label">Blundur</string>
     <string name="snooze_desc">Hversu lengi vekjarinn þagnar</string>
