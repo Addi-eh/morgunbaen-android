@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Einlita utgafan sem Android 13+ notar tegar notandinn velur "themed icons".
+  Tar er adeins form i bodi - engir litir - svo krossinn einn verdur ad duga.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49,30h10v14h13v10h-13v24h-10v-24h-13v-10h13z" />
+</vector>
