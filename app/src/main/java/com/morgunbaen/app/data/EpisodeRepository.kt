@@ -219,7 +219,9 @@ class EpisodeRepository(private val context: Context) {
 
             prefs.newsFilePath = target.absolutePath
             prefs.newsEpisodeId = newest.id
-            prefs.newsTitle = newest.title
+            // Thaettirnir heita "Þáttur 224 af 365" hja RUV, sem segir
+            // notandanum ekkert. Vid smidum lysandi titil ur firstrun.
+            prefs.newsTitle = newsLabel(newest.firstrun)
             prefs.newsFirstrun = newest.firstrun
             Log.i(TAG, "Sótti fréttatíma: ${newest.firstrun}")
             true
@@ -250,19 +252,41 @@ class EpisodeRepository(private val context: Context) {
         prefs.newsFirstrun = null
     }
 
+    /** Eigum vid frettatima fra deginum i dag? Ohad tvi hvort notandinn vill hann. */
+    fun hasTodaysNews(): Boolean {
+        val firstrun = prefs.newsFirstrun ?: return false
+        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return false
+        val path = prefs.newsFilePath ?: return false
+        return File(path).let { it.exists() && it.length() > MIN_VALID_BYTES }
+    }
+
+    /**
+     * Er allt efni dagsins komid i hus?
+     *
+     * Soknarglugginn notar tetta til ad vita hvenaer hann ma loka ser.
+     * Frettirnar (38786) eru fluttar a somu minutu og baenin klarast, en
+     * geta samt tafist a eftir - svo glugginn verdur ad halda afram tar til
+     * taer eru lika komnar, annars naest aldrei i taer.
+     */
+    fun isDailyContentComplete(): Boolean {
+        if (!hasTodaysEpisode()) return false
+        if (!prefs.newsEnabled) return true
+        return hasTodaysNews()
+    }
+
     /**
      * Frettatimi dagsins, ef hann er til og notandinn vill hann.
      * Skilar null annars - tha spilar appid einfaldlega ekki frettir.
      */
     fun newsPlaybackSource(): File? {
         if (!prefs.newsEnabled) return null
+        return if (hasTodaysNews()) File(prefs.newsFilePath!!) else null
+    }
 
-        val firstrun = prefs.newsFirstrun ?: return null
-        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return null
-
-        val path = prefs.newsFilePath ?: return null
-        val file = File(path)
-        return if (file.exists() && file.length() > MIN_VALID_BYTES) file else null
+    /** "2026-08-13T07:00:00" -> "Fréttir kl. 07:00" */
+    private fun newsLabel(firstrun: String): String {
+        val time = firstrun.substringAfter('T', "").take(5)
+        return if (time.length == 5) "Fréttir kl. $time" else "Fréttir"
     }
 
     private fun todayString(): String =

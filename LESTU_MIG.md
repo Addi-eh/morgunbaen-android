@@ -101,19 +101,86 @@ hjá þér í viku samfleytt.
 
 ---
 
+## 4a. Hvenær sækir appið bænina?
+
+Morgunbænin er flutt kl. 06:55–07:00 og birtist í Spilara RÚV skömmu síðar.
+
+**Sóknargluggi.** Kl. 07:00 á virkum morgnum opnast gluggi þar sem appið leitar
+á fimm mínútna fresti þangað til þáttur dagsins finnst — í mesta lagi í
+klukkutíma. Um leið og hann er kominn hættir það að leita.
+
+Athugaðu að skilyrðið er **þáttur dagsins í dag**, ekki „einhver þáttur". Það
+dugar ekki að eiga gærdagsins; þá er ekkert unnið og appið heldur áfram.
+
+**Öryggisnet.** Óháð glugganum keyrir reglubundin sókn á sex tíma fresti, alla
+daga vikunnar. Hún grípur það sem glugginn missti af: síminn var slökktur kl. 7,
+netlaust, eða RÚV birti þáttinn seint. Að hún keyri líka um helgar skiptir máli
+á Samsung — sjá lið 5.
+
+**Ein takmörkun.** Vaknir þú fyrir kl. 07:00 færðu bæn gærdagsins, því þáttur
+dagsins er einfaldlega ekki til ennþá þegar vekjarinn hringir. Það er ekki hægt
+að leysa: útvarpið er ekki búið að flytja hann. Þeir sem vakna kl. 06:30 fá því
+alltaf einn dag á eftir.
+
+---
+
+## 4b. Tvær varnir sem eru ósýnilegar í daglegri notkun
+
+**Direct Boot.** Endurræsist síminn um nóttina — vegna uppfærslu, tómrar
+rafhlöðu í hleðslu eða kerfishruns — er geymslan dulkóðuð þar til einhver slær
+inn PIN. Venjulegt app gæti hvorki lesið hvenær á að hringja né hvað á að spila,
+og vekjarinn þegði.
+
+Appið er því merkt `directBootAware`, hlustar á `LOCKED_BOOT_COMPLETED` og geymir
+**bæði stillingarnar og MP3-skrána** í device-protected geymslu. Það síðasta er
+auðvelt að gleyma: það dugar ekki að vita hvenær á að hringja ef hljóðskráin er
+ólæsileg.
+
+Til að prófa: stilltu vekjarann fram í tímann, endurræstu símann og **ekki slá
+inn PIN**. Hann á samt að hringja.
+
+**Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru. Fari
+vekjaratími hjá án þess að hann hafi hringt, segir appið frá því næst þegar það
+er opnað. Það sama gildir ef bakgrunnssóknin hefur ekki náð að keyra í meira en
+sólarhring.
+
+Android lætur ekki vita þegar það stöðvar app. Þetta er eina leiðin til að
+notandinn komist að því — annars heldur hann bara að appið sé ónýtt.
+
+---
+
 ## 5. Ef vekjarinn hringir ekki
 
 Nær undantekningarlaust er ástæðan ein af þessum þremur:
 
 **Rafhlöðusparnaður.** Þú ert á Samsung — og Samsung er með þeim allra verstu í
 þessu. Farðu í Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
-**Ótakmarkað**. Slökktu líka á „Setja ónotuð öpp í dvala" í
-Stillingar → Umhirða tækis → Rafhlaða.
+**Ótakmarkað**.
 
-Appið sjálft varar þig við þessu á forsíðunni, en notendur þínir munu samt
-hunsa það. Gerðu ráð fyrir því.
+**Samsung svæfir líka öpp sem hafa ekki verið opnuð í þrjá daga.** Þetta er
+sértækt vandamál fyrir þetta app: vekjari sem hringir aðeins á virkum dögum er
+ónotaður frá föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Settu
+appið á listann **„Öpp sem sofa aldrei"** í Umhirða tækis → Rafhlaða →
+Takmörk á bakgrunnsnotkun.
 
-**Tilkynningaheimild vantar.** Án hennar birtist vekjarinn ekki á læstum skjá.
+Appið sýnir Samsung-notendum þessar leiðbeiningar sjálfkrafa við fyrstu opnun.
+Þeir munu samt hunsa þær. Þess vegna er heilsuvöktunin til.
+
+**Full-screen intent heimild vantar.** Þetta er algengasta ástæðan fyrir því að
+bænin spilar en enginn skjár birtist. Frá Android 14 er `USE_FULL_SCREEN_INTENT`
+ekki lengur sjálfvirk — Google veitir hana aðeins öppum sem Play Store hefur
+flokkað sem vekjara- eða símtalsöpp, og **hliðarhlaðin APK-skrá fær hana ekki**,
+sama hvað stendur í manifest.
+
+Appið varar við þessu efst á forsíðunni og takkinn opnar réttu stillinguna.
+Þegar appið kemur í Play Store undir réttum flokki fæst heimildin sjálfkrafa og
+notendur þínir sjá þetta aldrei.
+
+Til vara reynir appið líka að opna vekjaraskjáinn beint, og tilkynningin ber
+bæði „Slökkva" og „Blunda" takka — svo það er alltaf einhver leið til að
+stöðva bænina.
+
+**Tilkynningaheimild vantar.** Án hennar birtist ekkert, hvorki skjár né takki.
 Appið biður um hana við fyrstu opnun.
 
 **Heimild fyrir nákvæma vekjara.** Sjaldgæft, því `USE_EXACT_ALARM` í manifest
@@ -144,14 +211,78 @@ vel** — týnir þú honum geturðu aldrei uppfært appið aftur.
 
 ---
 
+## 6. Fréttir á eftir bæninni
+
+Valkvæmt í Vakning-spjaldinu. Fréttirnar eru næsti dagskrárliður á eftir
+Morgunbæninni, svo röðin speglar útsendinguna sjálfa: **bæn → fréttir →
+varahljóð**.
+
+Þær koma úr dagskrárlið 38786 („Fréttir" kl. 07:00), sem er daglegur —
+stakur ~5 mínútna þáttur og `firstrun` ber nákvæman útsendingartíma. Appið
+sækir nýjasta fréttatíma dagsins.
+
+**Varúð ef þetta þarf einhvern tímann að laga:** RÚV heldur úti mörgum
+aðskildum fréttaliðum með svipuðum nöfnum. `39025` heitir líka „Fréttir" en er
+vikulegur sunnudagsfréttatími kl. 11:00, og `25233` („Morgunfréttir") er
+daglegur en kl. 08:00. Rétta auðkennið er **38786**. Staðfestu það alltaf með
+`curl` áður en þú breytir einhverju — sjá lið 1.
+
+**Ein regla er önnur en fyrir bænina: gamlar fréttir eru verri en engar.**
+Bæn gærdagsins er í lagi — hún eldist ekki. Fréttatími gærdagsins er beinlínis
+villandi. Appið hendir því fréttatíma sem er ekki frá deginum í dag *áður* en
+það reynir að sækja nýjan, og ef ekkert næst spilast bænin einfaldlega ein.
+Betra að þegja en að ljúga.
+
+Athugaðu að fréttirnar eru sóttar í bakgrunni eins og bænin. Vaknir þú kl. 9
+færðu þann fréttatíma sem náðist síðast, ekki endilega þann allra nýjasta —
+það er verðið fyrir að virka án nettengingar.
+
+---
+
+## 6a. Fyrri bænir, deiling og helgar
+
+**Fyrri bænir.** Sérstakur skjár sýnir síðustu fjórtán þætti og leyfir að spila
+þá aftur. Þeir eru **streymdir, ekki hlaðnir niður** — bæn dagsins er það eina
+sem þarf að vera til án nettengingar. Fyrri bænir hlustar fólk á meðvitað, og þá
+er síminn hvort eð er í höndunum.
+
+**Deiling** sendir titil, dagsetningu og hlekk í Spilara RÚV. Hljóðskránni
+sjálfri er aldrei deilt — hún er efni RÚV. Hlekkurinn sendir fólk til þeirra,
+sem er bæði rétta leiðin og sú sem heldur áfram að virka eftir að appið er
+löngu gleymt.
+
+**Helgartími.** Dagavalið hefur alltaf leyft að velja laugardag og sunnudag; það
+sem bættist við er möguleikinn á **öðrum tíma** um helgar. Morgunbænin er ekki
+flutt þá, svo appið spilar síðustu bæn vikunnar — margir vilja sofa lengur án
+þess að sleppa henni alveg.
+
+---
+
+## 6b. Hljóð og hljóðstyrkur
+
+Þrennt sem er ósýnilegt en skiptir máli:
+
+**Hljóðfókus.** Appið biður um `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE` þegar
+vekjarinn fer í gang, svo hlaðvarp eða tónlist sem gleymdist í gangi þagnar
+alveg í stað þess að blandast saman við bænina.
+
+**Hljóðstyrknum er skilað.** Sé vekjarastyrkur símans undir 60% hækkar appið
+hann tímabundið — og setur hann aftur eins og hann var þegar slökkt er. Áður
+sat síminn eftir á hærri styrk en eigandinn hafði valið, án þess að nokkur
+áttaði sig á hvers vegna.
+
+**Tímamörk.** Þjónustan stöðvast sjálfkrafa eftir 15 mínútur. Vekjarinn hættir
+ekki þegar bænin klárast — þá gæti fólk sofnað aftur — en hann má heldur ekki
+spila endalaust ef síminn gleymdist heima.
+
+---
+
 ## 7. Það sem vantar enn
 
 Vísvitandi sleppt úr fyrstu útgáfu:
 
 - **Eigið varahljóð.** Núna notar appið sjálfgefið vekjarahljóð símans ef bænin
   næst ekki. Það virkar, en er ekki fallegt.
-- **Vaxandi hljóðstyrkur.** Byrjar lágt, hækkar á 30 sekúndum. Mun mýkri vakning.
-- **Saga.** Að geta hlustað á bænir fyrri daga — þær hverfa ekki hjá RÚV.
 - **Íslenskun kerfistexta.** Appið er á íslensku, en dagsetningarsnið gætu
   þurft fínstillingu.
 

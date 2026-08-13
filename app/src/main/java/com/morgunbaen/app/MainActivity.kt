@@ -30,6 +30,7 @@ import com.morgunbaen.app.alarm.AlarmScheduler
 import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.Prefs
+import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -422,6 +423,14 @@ private fun MainScreen() {
                                 R.string.news_ready,
                                 newsFirstrun!!.substringAfter('T').substring(0, 5)
                             )
+                            // Klukkan a veggnum - EKKI vekjaratiminn sem er
+                            // stilltur a "hour" ofar i tessari fallgrein.
+                            // Frettirnar eru fluttar kl. 07:00; vaknir
+                            // notandinn fyrr eru taer einfaldlega ekki til,
+                            // og tad er heidarlegra ad segja tad en ad lata
+                            // hann bida eftir einhverju sem kemur aldrei.
+                            currentHour() < RuvClient.FRETTIR_HOUR ->
+                                stringResource(R.string.news_too_early)
                             !newsAttempted -> stringResource(R.string.news_none)
                             else -> stringResource(R.string.news_missing)
                         },
@@ -833,6 +842,9 @@ private fun String?.isTodays(): Boolean {
     val date = raw.substringBefore('T').substringBefore(' ')
     return date == SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 }
+
+/** Klukkan a veggnum na - ekki neinn stilltur vekjaratimi. */
+private fun currentHour(): Int = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
 /** "2026-08-13T06:55:00" -> "13. ágúst" */
 private fun formatIsoDate(raw: String): String {

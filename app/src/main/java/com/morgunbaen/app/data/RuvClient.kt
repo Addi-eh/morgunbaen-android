@@ -131,11 +131,22 @@ class RuvClient {
         const val MORGUNBAEN_PROGRAM_ID = 25329
 
         /**
-         * "Fréttir" - allir utvarpsfrettatimar. Hver fluttningur er stakur
-         * ~5 min thattur og firstrun ber nakvaeman utsendingartima
-         * ("2026-08-13T07:00:00"), svo haegt er ad velja rettan med vissu.
+         * "Fréttir" kl. 07:00 - naesti dagskrarlidur a eftir Morgunbaeninni.
+         * Daglegur, 365 thaettir a ari.
+         *
+         * ATH: RUV heldur ut morgum adskildum frettalidum sem heita svipud
+         * nofn og er audvelt ad ruglast a. Tessir tveir eru EKKI tessi:
+         *
+         *   39025  "Fréttir"        VIKULEGUR sunnudagsfrettatimi kl. 11:00
+         *   25233  "Morgunfréttir"  daglegur, en kl. 08:00
+         *
+         * Rett audkenni er 38786. Byrjadu a ad stadfesta tad med curl aður en
+         * tu breytir einhverju her - sja LESTU_MIG.md.
          */
-        const val FRETTIR_PROGRAM_ID = 39025
+        const val FRETTIR_PROGRAM_ID = 38786
+
+        /** Timinn sem tessi frettatimi er fluttur. */
+        const val FRETTIR_HOUR = 7
 
         /** Slod a thattinn i Spilara RUV - notud tegar baenin er deilt. */
         fun episodeWebUrl(episodeId: String): String =
