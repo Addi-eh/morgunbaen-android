@@ -419,14 +419,23 @@ private fun MainScreen() {
                         description = when {
                             !newsEnabled -> stringResource(R.string.news_desc_off)
                             newsSyncing -> stringResource(R.string.news_fetching)
-                            // Klukkan a veggnum - EKKI vekjaratiminn sem er
-                            // stilltur a "hour" ofar i tessari fallgrein.
-                            // Frettirnar eru fluttar kl. 07:00; vaknir
-                            // notandinn fyrr eru taer einfaldlega ekki til,
-                            // og tad er heidarlegra ad segja tad en ad lata
-                            // hann bida eftir einhverju sem kemur aldrei.
-                            currentHour() < RuvClient.FRETTIR_HOUR ->
-                                stringResource(R.string.news_too_early)
+                            // TVO OLIK ASTOND - ekki rugla teim saman.
+                            //
+                            // 1) VEKJARATIMINN er fyrir kl. 07:00. Tha eru
+                            //    frettirnar aldrei til tegar hringt er, sama
+                            //    hvada dag. Varanlegt astand sem notandinn
+                            //    getur adeins leyst med tvi ad faera vekjarann.
+                            //
+                            //    "hour" er stillti vekjaratiminn, ekki klukkan.
+                            hour < RuvClient.FRETTIR_HOUR ->
+                                stringResource(R.string.news_alarm_too_early)
+
+                            // 2) KLUKKAN er undir 07:00 akkurat nu og
+                            //    frettatimi dagsins er tvi ekki kominn ut enn.
+                            //    Skammvinnt astand sem leysist af sjalfu ser.
+                            currentHour() < RuvClient.FRETTIR_HOUR &&
+                                !newsFirstrun.isTodays() ->
+                                stringResource(R.string.news_not_yet)
                             newsFirstrun.isTodays() -> stringResource(
                                 R.string.news_ready,
                                 newsFirstrun!!.substringAfter('T').substring(0, 5)
@@ -843,8 +852,9 @@ private fun String?.isTodays(): Boolean {
     return date == SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 }
 
-/** Klukkan a veggnum na - ekki neinn stilltur vekjaratimi. */
-private fun currentHour(): Int = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+/** Klukkan a veggnum nuna - EKKI stilltur vekjaratimi. */
+private fun currentHour(): Int =
+    Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
 /** "2026-08-13T06:55:00" -> "13. ágúst" */
 private fun formatIsoDate(raw: String): String {

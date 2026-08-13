@@ -71,9 +71,11 @@ class SyncWorker(
             }
         }
 
-        // Innan soknarglugga: vid erum ad bida eftir EFNI DAGSINS - baen, og
-        // frettum lika ef notandinn vill taer. Tad dugar ekki ad eiga
-        // gaerdagsins - tha er ekkert unnid.
+        // Innan soknarglugga: vid erum ad bida eftir THAETTI DAGSINS.
+        // Tad dugar ekki ad eiga gaerdagsins - tha er ekkert unnid.
+        // Vid lokum EKKI glugganum tott baenin se komin - frettirnar geta
+        // birst sidar. Se notandinn ekki med frettir valdar dugar baenin ein
+        // og tetta skilar satt strax.
         if (repository.isDailyContentComplete()) {
             Log.i(TAG, "Efni dagsins komið - sóknarglugga lokað")
             return@withContext Result.success()
@@ -104,8 +106,10 @@ class SyncWorker(
 
         /**
          * Haemarkstilraunir. 20 x 5 min = tveir timar, fra 07:00 til 09:00.
-         * Baenin og frettirnar (kl. 07:00) geta baer tafist hja RUV, svo
-         * glugginn faer rifleg svigrum adur en hann gefst upp.
+         *
+         * Baedi baenin og frettirnar eru fluttar kl. 07:00 en geta tafist
+         * hja RUV, svo glugginn faer rifleg svigrum. Se ekkert komid kl. 09:00
+         * er eitthvad annad ad en tof.
          */
         private const val MAX_ATTEMPTS = 20
 

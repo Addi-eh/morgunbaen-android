@@ -264,9 +264,9 @@ class EpisodeRepository(private val context: Context) {
      * Er allt efni dagsins komid i hus?
      *
      * Soknarglugginn notar tetta til ad vita hvenaer hann ma loka ser.
-     * Frettirnar (38786) eru fluttar a somu minutu og baenin klarast, en
-     * geta samt tafist a eftir - svo glugginn verdur ad halda afram tar til
-     * taer eru lika komnar, annars naest aldrei i taer.
+     * Frettirnar (38786) eru fluttar kl. 07:00, a somu minutu og baeninni
+     * lykur - en taer geta samt birst sidar hja RUV. Glugginn verdur tvi ad
+     * halda afram tar til BADAR eru komnar, ekki bara baenin.
      */
     fun isDailyContentComplete(): Boolean {
         if (!hasTodaysEpisode()) return false

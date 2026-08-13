@@ -33,7 +33,8 @@
     <string name="vibrate_desc">Titrar meðan vekjarinn hringir</string>
     <string name="news_label">Fréttir</string>
     <string name="news_desc">Fréttir kl. 07:00 spilast strax á eftir bæninni</string>
-    <string name="news_too_early">Fréttirnar eru fluttar kl. 07:00 — vaknir þú fyrr spilast bænin ein</string>
+    <string name="news_alarm_too_early">Vekjarinn hringir fyrir kl. 07:00 — fréttirnar eru ekki komnar þá og bænin spilast ein</string>
+    <string name="news_not_yet">Fréttir dagsins koma kl. 07:00</string>
     <string name="news_desc_off">Aðeins bænin spilast</string>
     <string name="news_ready">Fréttatími dagsins tilbúinn: %1$s</string>
     <string name="news_fetching">Sæki fréttatíma dagsins…</string>
