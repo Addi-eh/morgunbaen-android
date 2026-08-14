@@ -3,6 +3,29 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.92
+
+- **Þriðja birtingarmynd helgarforsendunnar fjarlægð** — í
+  `Prefs.weekendTimeEnabled`s eigin skjölun, sem fyrri leiðréttingarlota
+  missti af. Samræmt orðalag lagað í `CatchUpScheduler`, `SyncWorker` og
+  `AndroidManifest.xml`.
+- **`AlarmScheduler.schedule()` afskráir sig núna á tómum dögum**, til
+  samræmis við `CatchUpScheduler` — gömul skráning gat áður lifað áfram á
+  degi sem var afvalinn.
+- **Varið gegn `null` úr `RingtoneManager`**: sjálfgefinn vekjaratónn getur
+  vantað á tækinu. Fellur á tilkynningartón, og á titring ef hvorugt er til,
+  í stað þess að hrynja.
+- **Framtíðarskráðir þættir sniðgengnir** við val á „nýjasta" þætti — RÚV
+  getur skráð dagskrárlið áður en hann er fluttur.
+- **Fréttatíma-„of snemmt"-athugunin er núna helgar-meðvituð**: metur virkan
+  dag og helgardag (með sínum eigin tíma) hvorn í sínu lagi í stað þess að
+  horfa aðeins á virka tímann.
+- **`HistoryActivity`**: spilunartáknið núllstillist núna líka við
+  `ON_STOP`, ekki bara þegar lagið klárast — annars gat það sýnt „Stopp"
+  eftir að skjárinn hafði þagað spilunina.
+- **Aðgengi**: `contentDescription` á deila/spila/stöðva/til-baka-táknum í
+  `HistoryActivity`, sem höfðu `null` áður.
+
 ## v0.91
 
 - **Fjórar villur lagaðar:** úrelt helgarathugasemd í MainActivity fjarlægð

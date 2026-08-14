@@ -6,7 +6,7 @@ fréttirnar kl. 07:00 á eftir.
 Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
 **Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
 
-Staða: **v0.91** (`0b159a7`).
+Staða: **v0.92** (`3834e16`).
 
 ---
 
@@ -52,6 +52,12 @@ curl -s https://spilari.nyr.ruv.is/gql/ \
    í stað T, en snið sem er hvorugt brýtur dagsetningarlestur.
 3. **`file` endar á `.mp3`.** Endi hún á `.m3u8` er þetta streymi: appið spilar
    það en getur ekki geymt það, og þá þarf nettengingu á vökutíma.
+
+**Athugið:** RÚV getur skráð dagskrárlið *áður* en hann er fluttur — svarið að
+ofan getur því innihalda þátt með `firstrun` í framtíðinni. `RuvClient.
+fetchLatestEpisode()` sniðgengur slíka þætti áður en „nýjasti" er valinn með
+`maxByOrNull`; hrár strengjasamanburður án þeirrar síu hefði getað valið
+morgundaginn fram yfir daginn í dag.
 
 ---
 
@@ -130,6 +136,11 @@ strax ef síminn kemur upp ólæstur innan hans.
 fréttir. Þátturinn er einfaldlega ekki til — útvarpið er ekki búið að flytja
 hann. Appið segir frá þessu í stað þess að láta þig bíða.
 
+Þessi athugun (`alarmRingsBeforeNews()` í `MainActivity.kt`) verður að skoða
+**bæði** virka daga og helgardaga sér — ekki bara stillta `alarmHour`. Vekjari
+kl. 08:00 virka daga en 06:30 um helgar (öðrum helgartíma, sjá lið 6) sagði
+áður ranglega „ekki of snemmt", því aðeins virki tíminn var skoðaður.
+
 **Gamlar fréttir eru verri en engar.** Bæn gærdagsins eldist ekki og er geymd.
 Fréttatími gærdagsins er villandi og er hentur *áður* en reynt er að sækja nýjan.
 Náist ekkert spilast bænin ein.
@@ -171,6 +182,10 @@ aldrei komist í gegnum einfaldasta einingapróf, en reikningurinn lá læstur
 inni í hlutum sem þurftu `Context` til að keyra yfirleitt. `TriggerTimesTest.kt`
 hefur núna 12 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
 tilfelli.
+
+`AlarmScheduler.schedule()` kallar núna `cancel(context)` þegar enginn dagur
+er valinn, til samræmis við `CatchUpScheduler` — annars gat gömul skráning
+lifað áfram og hringt á degi sem notandinn hafði þegar afvalið.
 
 **Blundur er sjálfstæður vekjari.** Hann notar eigin `PendingIntent` (kóða 1003),
 er vistaður í `Prefs` með `commit()` svo hann lifi af ferlisdauða, og
@@ -215,6 +230,11 @@ styrk en eigandinn valdi.
 **Vaxandi hljóðstyrkur og titringur eru sjálfgefið AF.** Bænin er talað mál —
 fyrstu setningarnar hverfa ef styrkurinn er enn að hækka, og titringur keppir
 við rödd prestsins. Hvort tveggja er í boði fyrir þá sem vilja.
+
+**Varahljóðið sjálft getur vantað.** `RingtoneManager.getDefaultUri(TYPE_ALARM)`
+skilar `null` ef enginn sjálfgefinn vekjaratónn er stilltur á tækinu — sjaldgæft,
+en gerist. Appið fellur þá á `TYPE_NOTIFICATION`, og titrar (sé titringur á)
+í stað þess að hrynja ef hvorugt er til. Betra að vekja hljóðlaust en alls ekki.
 
 ---
 
@@ -346,3 +366,13 @@ notendatexta samtímis frá fyrstu útgáfu — ekkert `diff` grípur það, þv
 var samstiga um sömu röngu niðurstöðuna. Fannst aðeins þegar einhver bar
 fullyrðinguna saman við frumgögn (dagskrá RÚV) sem lægju utan kóðans
 sjálfs.
+
+**Ein leiðréttingarlota grípur ekki öll tilvik af sömu villu.** Helgarforsendan
+kom upp þriðja sinni í `Prefs.weekendTimeEnabled`s eigin skjölun, löngu eftir
+að hún átti að heita leiðrétt — vegna þess að fyrri yfirferðin lagaði aðeins
+þá staði sem hún vissi af (`alarmDays`-skjölunina, `DEFAULT_DAYS`-athugasemdina),
+ekki hvert einasta sjálfstæða heimili villunnar. Og öfugt: að sending standist
+byggingu og próf óbreytt (eins og v0.92 gerði) er ekki sönnun þess að ekkert
+standi eftir — aðeins að þessi tiltekna sending hafi ekkert nýtt fundið til að
+bæta við. Hvort tveggja kallar á sama viðbragð: `grep` breiðar en þrengri
+lagfæringar, og hverja nýja sendingu sem sjálfstæða tilraun, ekki lokapunkt.
