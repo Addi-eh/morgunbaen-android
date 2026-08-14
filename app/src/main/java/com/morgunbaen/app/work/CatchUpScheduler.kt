@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.UserManager
 import android.util.Log
 import java.util.Calendar
 
@@ -19,6 +20,8 @@ object CatchUpScheduler {
 
     private const val TAG = "CatchUpScheduler"
     private const val REQUEST_CODE = 2001
+    /** Aðskilinn svo endurtekning yfirskrifar ekki næsta virka morgun. */
+    private const val RETRY_REQUEST_CODE = 2002
 
     /** Klukkan sem soknarglugginn opnast - um leid og dagskrarlidnum lykur. */
     const val WINDOW_HOUR = 7
@@ -42,6 +45,51 @@ object CatchUpScheduler {
         )
 
         Log.i(TAG, "Sóknargluggi skráður: ${Calendar.getInstance().apply { timeInMillis = triggerAt }.time}")
+    }
+
+    /**
+     * Reynir aftur eftir stutta stund. Notað þegar síminn er enn læstur
+     * kl. 07:00 - WorkManager má ekki keyra í Direct Boot, en við megum
+     * ekki heldur sleppa deginum og hoppa beint í næsta virka morgun.
+     */
+    fun scheduleRetry(context: Context, delayMinutes: Long = 5) {
+        val now = Calendar.getInstance()
+        val hour = now.get(Calendar.HOUR_OF_DAY)
+        if (hour >= WINDOW_HOUR + 2) {
+            schedule(context)
+            return
+        }
+
+        val triggerAt = System.currentTimeMillis() + delayMinutes * 60_000L
+        context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAt,
+            pendingIntent(context, RETRY_REQUEST_CODE)
+        )
+        Log.i(TAG, "Sóknargluggi endurtekinn eftir $delayMinutes mín")
+    }
+
+    /**
+     * Opnar sóknargluggann núna ef við erum inni í 07:00–09:00 á virkum degi.
+     * Kallað þegar síminn er nýopnaður eftir ræsingu, svo læstur 07:00-gluggi
+     * tapist ekki þó BootReceiver skrái næsta virka morgun.
+     */
+    fun openWindowIfDue(context: Context) {
+        val now = Calendar.getInstance()
+        val day = now.get(Calendar.DAY_OF_WEEK)
+        if (day == Calendar.SATURDAY || day == Calendar.SUNDAY) return
+        val hour = now.get(Calendar.HOUR_OF_DAY)
+        if (hour < WINDOW_HOUR || hour >= WINDOW_HOUR + 2) return
+
+        Log.i(TAG, "Síminn opnaður innan sóknarglugga - ræsi sókn")
+        cancelRetry(context)
+        SyncWorker.scheduleWindowAttempt(context, 0)
+        schedule(context)
+    }
+
+    fun cancelRetry(context: Context) {
+        context.getSystemService(AlarmManager::class.java)
+            .cancel(pendingIntent(context, RETRY_REQUEST_CODE))
     }
 
     /**
@@ -69,13 +117,16 @@ object CatchUpScheduler {
         return from.timeInMillis + 24 * 60 * 60 * 1000L
     }
 
-    private fun pendingIntent(context: Context): PendingIntent {
+    private fun pendingIntent(
+        context: Context,
+        requestCode: Int = REQUEST_CODE
+    ): PendingIntent {
         val intent = Intent(context, CatchUpReceiver::class.java).apply {
             action = CatchUpReceiver.ACTION_OPEN_WINDOW
         }
         return PendingIntent.getBroadcast(
             context,
-            REQUEST_CODE,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -92,8 +143,18 @@ class CatchUpReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "Sóknargluggi opnaður")
 
+        val userManager = context.getSystemService(UserManager::class.java)
+        if (!userManager.isUserUnlocked) {
+            // WorkManager notar credential-geymslu og hrynur hér.
+            // Reynum aftur eftir 5 mín í stað þess að tapa deginum.
+            Log.i(TAG, "Síminn læstur - fresta sóknarglugga")
+            CatchUpScheduler.scheduleRetry(context)
+            return
+        }
+
         // Fyrsta tilraun strax. SyncWorker sér sjálfur um að endurtaka
         // á fimm mínútna fresti þangað til þáttur dagsins finnst.
+        CatchUpScheduler.cancelRetry(context)
         SyncWorker.scheduleWindowAttempt(context, 0)
 
         // Skra glugga naesta virka dags.

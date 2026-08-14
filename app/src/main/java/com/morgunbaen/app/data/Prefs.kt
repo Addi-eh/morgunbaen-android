@@ -168,6 +168,31 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_SNOOZE, 9)
         set(value) = sp.edit().putInt(KEY_SNOOZE, value).apply()
 
+    /**
+     * Hvenaer virkur blundur a ad hringja, i millisekundum.
+     * 0 = enginn blundur i bidi.
+     *
+     * Vistað sér svo blundurinn lifi af endurræsingu og stillingabreytingu
+     * - hann má ekki deila PendingIntent með daglega vekjaranum.
+     */
+    var snoozeUntilMillis: Long
+        get() = sp.getLong(KEY_SNOOZE_UNTIL, 0L)
+        set(value) {
+            // commit svo gildið nái á disk áður en ferlið getur dáið
+            // (endurræsing, drepið app). apply() uppfærir minnið strax —
+            // sami ferill les alltaf nýja gildið — en diskskrifin er ósamstillt.
+            sp.edit().putLong(KEY_SNOOZE_UNTIL, value).commit()
+        }
+
+    /**
+     * Næsti daglegi hringitími sem var skráður síðast.
+     * Heilsuvöktunin ber hann saman við lastAlarmFiredMillis —
+     * ekki previousTriggerTime, sem breytist ef notandinn hreyfir klukkuna.
+     */
+    var lastScheduledTriggerMillis: Long
+        get() = sp.getLong(KEY_LAST_SCHEDULED, 0L)
+        set(value) = sp.edit().putLong(KEY_LAST_SCHEDULED, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -180,7 +205,9 @@ class Prefs(context: Context) {
         private const val KEY_EPISODE_ID = "cached_episode_id"
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_SNOOZE = "snooze_minutes"
+        private const val KEY_SNOOZE_UNTIL = "snooze_until"
         private const val KEY_LAST_FIRED = "last_alarm_fired"
+        private const val KEY_LAST_SCHEDULED = "last_scheduled_trigger"
         private const val KEY_MISSED_ACK = "missed_alarm_ack"
         private const val KEY_OEM_GUIDE = "oem_guide_done"
         private const val KEY_FADE_IN = "fade_in_enabled"

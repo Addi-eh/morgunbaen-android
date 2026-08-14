@@ -501,6 +501,15 @@ private fun MainScreen() {
                         actionLabel = stringResource(R.string.acknowledge),
                         onAction = {
                             prefs.missedAlarmAcknowledged = System.currentTimeMillis()
+
+                            // Thida merkid. schedule() frystir tad medan
+                            // lidinn ohringdur timi stendur - an tessa saeti
+                            // tad fast i FYRSTA klikkinu og vidvorunin
+                            // birtist aldrei aftur, tott vekjarinn thegdi
+                            // hvern einasta morgun eftir tad.
+                            prefs.lastScheduledTriggerMillis =
+                                AlarmScheduler.nextTriggerTime(prefs) ?: 0L
+
                             health = checkHealth(prefs)
                         }
                     )
@@ -747,10 +756,14 @@ private enum class Health { OK, MISSED_ALARM, STALE_SYNC }
  *
  * Tvo einkenni benda til tess ad siminn se ad stodva appid:
  *
- *  1. Vekjaratimi sem er lidinn hja an tess ad vekjarinn hafi hringt.
- *  2. Bakgrunnssokn sem hefur ekki naad ad keyra i meira en solarhring.
+ *  1. Skráður hringitími sem er liðinn án þess að vekjarinn hafi hringt.
+ *  2. Bakgrunnssokn sem hefur ekki naad ad keyra i meira en 36 klst.
  *
  * Hvorugt greinist sjalfkrafa af Android - appid verdur ad taka eftir tvi sjalft.
+ *
+ * Við notum lastScheduledTriggerMillis, ekki previousTriggerTime. Sá síðari
+ * reiknast upp á nýtt út frá núverandi stillingum — breyti notandinn 07:00
+ * í 06:30 eftir velheppnaða hringingu lítur það út eins og klikkaður vekjari.
  */
 private fun checkHealth(prefs: Prefs): Health {
     if (!prefs.alarmEnabled) return Health.OK
@@ -760,9 +773,10 @@ private fun checkHealth(prefs: Prefs): Health {
     // Vid segjum ekkert fyrr en vekjarinn hefur hringt ad minnsta kosti einu
     // sinni - annars fengi hver nyr notandi vidvorun a fyrsta degi.
     if (prefs.lastAlarmFiredMillis > 0L) {
-        val expected = AlarmScheduler.previousTriggerTime(prefs)
-        if (expected != null &&
-            expected > prefs.lastAlarmFiredMillis + TimeUnit.MINUTES.toMillis(5) &&
+        val expected = prefs.lastScheduledTriggerMillis
+        if (expected > 0L &&
+            expected < now - TimeUnit.MINUTES.toMillis(5) &&
+            prefs.lastAlarmFiredMillis + TimeUnit.MINUTES.toMillis(5) < expected &&
             expected > prefs.missedAlarmAcknowledged
         ) {
             return Health.MISSED_ALARM
@@ -868,6 +882,11 @@ private fun formatIsoDate(raw: String): String {
 }
 
 private fun nextAlarmDescription(prefs: Prefs): String {
+    val snoozeAt = prefs.snoozeUntilMillis
+    if (snoozeAt > System.currentTimeMillis()) {
+        val format = SimpleDateFormat("HH:mm", Locale("is", "IS"))
+        return "Blundar til " + format.format(Date(snoozeAt))
+    }
     val next = AlarmScheduler.nextTriggerTime(prefs) ?: return "Enginn dagur valinn"
     val format = SimpleDateFormat("EEEE d. MMMM 'kl.' HH:mm", Locale("is", "IS"))
     return "Næst: " + format.format(Date(next))
@@ -890,10 +909,27 @@ private fun isIgnoringBatteryOptimizations(context: Context): Boolean {
 
 @Suppress("BatteryLife")
 private fun openBatterySettings(context: Context) {
-    context.startActivity(
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.parse("package:${context.packageName}")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    try {
+        context.startActivity(
+            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+        )
+    } catch (e: Exception) {
+        try {
+            context.startActivity(
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+            )
+        } catch (e2: Exception) {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+            )
         }
-    )
+    }
 }

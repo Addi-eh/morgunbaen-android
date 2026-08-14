@@ -22,7 +22,12 @@ class AlarmReceiver : BroadcastReceiver() {
         // Skra ad vekjarinn hafi raunverulega komist a. Tetta er
         // sonnunargagnid sem heilsuvoktunin byggir a - an tess vaeri
         // engin leid ad vita hvort siminn hefdi stodvad appid.
-        Prefs(context).lastAlarmFiredMillis = System.currentTimeMillis()
+        val prefs = Prefs(context)
+        prefs.lastAlarmFiredMillis = System.currentTimeMillis()
+
+        // Þessi hringing gæti verið blundur. Hreinsum hann áður en næsti
+        // daglegi tími er skráður, annars endurheimtir schedule() hann.
+        AlarmScheduler.cancelSnooze(context)
 
         // Raesa spilun i forgrunnstjonustu.
         // Android leyfir tetta ur bakgrunni tegar tad kemur fra setAlarmClock.

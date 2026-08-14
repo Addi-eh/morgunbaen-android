@@ -61,7 +61,7 @@
     <string name="acknowledge">Ég skil</string>
 
     <string name="warn_missed_alarm">Vekjarinn hringdi ekki síðast þegar hann átti að gera það. Síminn hefur líklega stöðvað appið í bakgrunni.</string>
-    <string name="warn_stale_sync">Appið hefur ekki náð að sækja bæn í meira en sólarhring. Síminn er að hindra það í að keyra í bakgrunni.</string>
+    <string name="warn_stale_sync">Appið hefur ekki náð að sækja bæn í meira en 36 klukkustundir. Síminn er að hindra það í að keyra í bakgrunni.</string>
 
     <string name="samsung_title">Samsung-símar þurfa auka stillingu</string>
     <string name="samsung_body">Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga. Þar sem vekjarinn hringir aðeins á virkum dögum getur það gerst yfir helgi — og þá þegir hann á mánudagsmorgni.\n\nFarðu í Umhirða tækis → Rafhlaða → Takmörk á bakgrunnsnotkun og settu Morgunbæn á listann „Öpp sem sofa aldrei".</string>

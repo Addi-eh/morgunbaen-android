@@ -69,10 +69,29 @@ class AlarmService : Service() {
             ACTION_SNOOZE -> snooze()
             else -> stopAlarm()
         }
-        return START_NOT_STICKY
+        // Aðeins ræsingin á að koma aftur ef Android drepur þjónustuna.
+        // Slökkva/blundur mega ekki endurræsa vekjarann.
+        return if (intent?.action == ACTION_START) START_REDELIVER_INTENT
+        else START_NOT_STICKY
     }
 
     private fun startAlarm() {
+        // Óhætt að kalla tvisvar: drepið eintak, eða tvöfaldur ACTION_START.
+        resetPlayback()
+
+        // START_REDELIVER_INTENT getur skilað ACTION_START löngu eftir að
+        // vekjarinn átti að hringja. Án þessa færi bænin í gang kl. 08:40
+        // ef þjónustan var drepin kl. 07:03.
+        val firedAt = prefs.lastAlarmFiredMillis
+        if (firedAt > 0L &&
+            System.currentTimeMillis() - firedAt > STALE_START_LIMIT_MS
+        ) {
+            Log.w(TAG, "ACTION_START of seint - hætti")
+            startForeground(NOTIFICATION_ID, buildNotification())
+            stopAlarm()
+            return
+        }
+
         stage = Stage.PRAYER
 
         // Halda ordgjafanum vakandi medan spilad er.
@@ -117,6 +136,19 @@ class AlarmService : Service() {
         }
 
         playAudio(mediaUri)
+    }
+
+    /**
+     * Stöðvar fyrri spilun án þess að slökkva á þjónustunni.
+     * startAlarm getur komið tvisvar - nýr ACTION_START, eða Android
+     * endurræsti þjónustuna - og má ekki leka ExoPlayer eða tvöfalda tímamörk.
+     */
+    private fun resetPlayback() {
+        handler.removeCallbacksAndMessages(null)
+        vibrator?.cancel()
+        vibrator = null
+        player?.release()
+        player = null
     }
 
     /**
@@ -478,6 +510,7 @@ class AlarmService : Service() {
     }
 
     private fun acquireWakeLock() {
+        wakeLock?.let { if (it.isHeld) it.release() }
         val powerManager = getSystemService(PowerManager::class.java)
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
@@ -521,6 +554,9 @@ class AlarmService : Service() {
          * endalaust ef enginn er heima.
          */
         private const val AUTO_STOP_MINUTES = 15L
+
+        /** Eftir þetta er endursend ACTION_START úrelt, ekki vakning. */
+        private const val STALE_START_LIMIT_MS = 20 * 60 * 1000L
 
         const val ACTION_START = "com.morgunbaen.app.START_ALARM"
         const val ACTION_DISMISS = "com.morgunbaen.app.DISMISS_ALARM"

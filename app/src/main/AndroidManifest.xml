@@ -23,6 +23,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Þarf til að opna kerfisgluggann „hunsa rafhlöðusparnað".
+         Án þessa kastar ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS villu. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:name=".MorgunbaenApp"
         android:allowBackup="true"
@@ -70,10 +74,12 @@
             android:exported="false"
             android:directBootAware="true" />
 
-        <!-- Opnar soknargluggann kl. 07:00 a virkum morgnum -->
+        <!-- Opnar soknargluggann kl. 07:00 a virkum morgnum.
+             directBootAware svo glugginn opnist þó PIN hafi ekki verið slegið inn. -->
         <receiver
             android:name=".work.CatchUpReceiver"
-            android:exported="false" />
+            android:exported="false"
+            android:directBootAware="true" />
 
         <!-- Skrair vekjarann aftur eftir endurraesingu -->
         <receiver

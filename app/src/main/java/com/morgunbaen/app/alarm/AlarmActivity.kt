@@ -1,6 +1,8 @@
 package com.morgunbaen.app.alarm
 
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -22,8 +24,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -54,6 +58,12 @@ class AlarmActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Bakktakkinn ma ekki loka vekjaranum - annars slekkur folk
         // a honum i svefnrofunum an tess ad atta sig a tvi.
@@ -93,6 +103,14 @@ private fun AlarmScreen(
     onDismiss: () -> Unit,
     onSnooze: () -> Unit
 ) {
+    var clock by remember { mutableStateOf(currentTimeString()) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            clock = currentTimeString()
+            delay(1_000)
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -105,7 +123,7 @@ private fun AlarmScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = currentTimeString(),
+                text = clock,
                 style = MaterialTheme.typography.displayLarge
             )
 

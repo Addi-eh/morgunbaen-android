@@ -46,6 +46,7 @@ class BootReceiver : BroadcastReceiver() {
                 val userManager = context.getSystemService(UserManager::class.java)
                 if (userManager.isUserUnlocked) {
                     SyncWorker.schedule(context)
+                    CatchUpScheduler.openWindowIfDue(context)
                 }
             }
         }

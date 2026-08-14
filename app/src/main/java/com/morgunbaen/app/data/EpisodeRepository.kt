@@ -95,7 +95,10 @@ class EpisodeRepository(private val context: Context) {
             }
 
             // Skiptum bara ut tegar nyja skrain er heil.
-            temp.renameTo(target)
+            if (!moveIntoPlace(temp, target)) {
+                temp.delete()
+                return SyncResult.Failed("Gat ekki vistað bænina")
+            }
 
             val oldPath = prefs.cachedFilePath
             prefs.cachedFilePath = target.absolutePath
@@ -122,6 +125,24 @@ class EpisodeRepository(private val context: Context) {
         prefs.cachedTitle = episode.title
         prefs.cachedFirstrun = episode.firstrun
         prefs.lastSyncMillis = System.currentTimeMillis()
+    }
+
+    /**
+     * Færir temp-skrá á loka stað. renameTo getur klikkað yfir skráarkerfi;
+     * þá afritum við. Skilar false ef hvorugt tókst - köllunaraðili má þá
+     * ekki vista slóð á skrá sem er ekki til.
+     */
+    private fun moveIntoPlace(temp: File, target: File): Boolean {
+        if (temp.renameTo(target)) return true
+        return try {
+            temp.copyTo(target, overwrite = true)
+            temp.delete()
+            target.exists() && target.length() >= MIN_VALID_BYTES
+        } catch (e: Exception) {
+            Log.w(TAG, "Gat ekki fært niðurhal á sinn stað", e)
+            target.delete()
+            false
+        }
     }
 
     private fun downloadTo(url: String, destination: File) {
@@ -211,7 +232,10 @@ class EpisodeRepository(private val context: Context) {
                 temp.delete()
                 return false
             }
-            temp.renameTo(target)
+            if (!moveIntoPlace(temp, target)) {
+                temp.delete()
+                return false
+            }
 
             newsDir.listFiles()?.forEach { f ->
                 if (f.absolutePath != target.absolutePath) f.delete()

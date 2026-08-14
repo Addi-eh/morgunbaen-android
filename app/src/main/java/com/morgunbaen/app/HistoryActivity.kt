@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.RuvClient
@@ -105,6 +106,20 @@ private fun HistoryScreen(player: ExoPlayer?, onBack: () -> Unit) {
 
     var state by remember { mutableStateOf<LoadState>(LoadState.Loading) }
     var playingId by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(player) {
+        if (player == null) return@DisposableEffect onDispose { }
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_ENDED) playingId = null
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                playingId = null
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
 
     LaunchedEffect(Unit) {
         state = withContext(Dispatchers.IO) {
