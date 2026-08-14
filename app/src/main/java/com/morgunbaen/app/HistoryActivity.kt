@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -28,11 +31,7 @@ import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Fyrri bænir.
@@ -108,6 +107,19 @@ private fun HistoryScreen(player: ExoPlayer?, onBack: () -> Unit) {
     var state by remember { mutableStateOf<LoadState>(LoadState.Loading) }
     var playingId by remember { mutableStateOf<String?>(null) }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                // Activity.onStop slokknar á spiluninni. Án þessa sæi
+                // notandinn Stopp-takkann þegar hann kæmi til baka.
+                playingId = null
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     DisposableEffect(player) {
         if (player == null) return@DisposableEffect onDispose { }
         val listener = object : Player.Listener {
@@ -147,7 +159,10 @@ private fun HistoryScreen(player: ExoPlayer?, onBack: () -> Unit) {
                 title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 }
             )
@@ -232,13 +247,18 @@ private fun EpisodeRow(
             }
 
             IconButton(onClick = onShare) {
-                Icon(Icons.Default.Share, contentDescription = null)
+                Icon(
+                    Icons.Default.Share,
+                    contentDescription = stringResource(R.string.cd_share)
+                )
             }
 
             IconButton(onClick = onToggle) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                    contentDescription = null
+                    contentDescription = stringResource(
+                        if (isPlaying) R.string.cd_stop else R.string.cd_play
+                    )
                 )
             }
         }

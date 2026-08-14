@@ -116,9 +116,9 @@ class Prefs(context: Context) {
     /**
      * Annar vekjaratimi um helgar.
      *
-     * Morgunbaenin er adeins flutt a virkum dogum, svo um helgar spilar
-     * appid sidustu baen vikunnar. Margir vilja sofa lengur ta - en samt
-     * ekki sleppa henni alveg.
+     * Morgunbaenin er flutt alla daga. Thetta er hrein timastilling:
+     * sofa lengur um helgar og fa samt baen THESS dags, ekki sidustu
+     * baen vikunnar. Gildir adeins ef laugardagur eda sunnudagur er valinn.
      */
     var weekendTimeEnabled: Boolean
         get() = sp.getBoolean(KEY_WEEKEND_ENABLED, false)

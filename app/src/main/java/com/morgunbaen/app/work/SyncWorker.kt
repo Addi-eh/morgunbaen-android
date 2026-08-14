@@ -23,9 +23,10 @@ import java.util.concurrent.TimeUnit
  *
  * Tvaer adferdir vinna saman:
  *
- *   SOKNARGLUGGI   Fra kl. 07:00 a virkum morgnum - strax og dagskrarlidnum
- *                  lykur - er reynt a fimm minutna fresti tangad til thattur
- *                  dagsins finnst. Haett um leid og hann er kominn.
+ *   SOKNARGLUGGI   Fra kl. 07:00 a vekjaradogum notandans - strax og
+ *                  dagskrarlidnum lykur - er reynt a fimm minutna fresti
+ *                  tangad til thattur dagsins finnst. Haett um leid og hann
+ *                  er kominn.
  *
  *   ORYGGISNET     Reglubundin sokn a 6 klst fresti, alla daga. Griipur tad
  *                  sem soknarglugginn missti af: siminn var slokktur,

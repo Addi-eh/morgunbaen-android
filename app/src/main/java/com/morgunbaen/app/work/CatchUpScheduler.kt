@@ -12,11 +12,12 @@ import com.morgunbaen.app.data.Prefs
 import java.util.Calendar
 
 /**
- * Opnar soknargluggann a hverjum virkum morgni.
+ * Opnar soknargluggann a vekjaradogum notandans.
  *
- * "Morgunbæn og orð dagsins" er flutt kl. 06:55-07:00 a Ras 1 og birtist i
- * Spilara RUV skommu sidar. Vid byrjum ad leita kl. 07:00 og haldum afram a
- * fimm minutna fresti tangad til thattur dagsins finnst.
+ * "Morgunbæn og orð dagsins" er flutt kl. 06:55-07:00 a Ras 1 - alla daga,
+ * lika um helgar - og birtist i Spilara RUV skommu sidar. Vid byrjum ad
+ * leita kl. 07:00 a völdum dogum og haldum afram a fimm minutna fresti
+ * tangad til thattur dagsins finnst.
  */
 object CatchUpScheduler {
 
@@ -86,7 +87,7 @@ object CatchUpScheduler {
     }
 
     /**
-     * Opnar sóknargluggann núna ef við erum inni í 07:00–09:00 á virkum degi.
+     * Opnar sóknargluggann núna ef við erum inni í 07:00–09:00 á völdum degi.
      * Kallað þegar síminn er nýopnaður eftir ræsingu, svo læstur 07:00-gluggi
      * tapist ekki þó BootReceiver skrái næsta virka morgun.
      */

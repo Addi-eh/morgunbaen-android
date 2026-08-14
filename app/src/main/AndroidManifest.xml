@@ -74,7 +74,7 @@
             android:exported="false"
             android:directBootAware="true" />
 
-        <!-- Opnar soknargluggann kl. 07:00 a virkum morgnum.
+        <!-- Opnar soknargluggann kl. 07:00 a vekjaradogum notandans.
              directBootAware svo glugginn opnist þó PIN hafi ekki verið slegið inn. -->
         <receiver
             android:name=".work.CatchUpReceiver"

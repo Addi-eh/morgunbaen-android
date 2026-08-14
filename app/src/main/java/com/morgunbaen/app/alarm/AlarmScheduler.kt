@@ -46,7 +46,11 @@ object AlarmScheduler {
         }
 
         val triggerAt = nextTriggerTime(prefs) ?: run {
+            // CatchUpScheduler afskráir gluggann þegar dagar eru tómir;
+            // vekjarinn verður að gera slíkt hið sama. Annars situr eldri
+            // hringing eftir og vekur fólk á degi sem það tók af.
             Log.w(TAG, "Enginn dagur valinn - ekkert skráð")
+            cancel(context)
             return
         }
 

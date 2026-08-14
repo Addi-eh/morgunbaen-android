@@ -6,6 +6,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -59,8 +62,14 @@ class RuvClient {
         return try {
             val episodes = fetchEpisodes(programId)
             // firstrun er ISO 8601 ("2026-08-12T06:55:00") svo einfaldur
-            // strengjasamanburdur radar rett i timarod.
-            episodes.maxByOrNull { it.firstrun }
+            // strengjasamanburdur radar rett i timarod. Framtidarskradir
+            // thaettir (dagskra sem er komin inn en ekki flutt) eru sniðgengnir
+            // - annars gaeti "nyjasti" verid morgundagurinn.
+            val now = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                .format(Date())
+            episodes
+                .filter { it.firstrun.isNotBlank() && it.firstrun <= now }
+                .maxByOrNull { it.firstrun }
         } catch (e: Exception) {
             Log.w(TAG, "Naadi ekki i thaetti fra RUV", e)
             null
@@ -137,7 +146,7 @@ class RuvClient {
         private const val BASE_URL = "https://spilari.nyr.ruv.is/gql/"
 
         /** Kynning appsins i ollum netkollum - hja RUV og vid nidurhal. */
-        const val USER_AGENT = "Morgunbaen-Android/0.9"
+        const val USER_AGENT = "Morgunbaen-Android/0.91"
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         /** "Morgunbæn og orð dagsins" a Ras 1. */

@@ -125,7 +125,7 @@ class AlarmService : Service() {
         val repository = EpisodeRepository(this)
         val source = repository.playbackSource()
 
-        val mediaUri: Uri = when (source) {
+        val mediaUri: Uri? = when (source) {
             is EpisodeRepository.PlaybackSource.LocalFile -> Uri.fromFile(source.file)
             is EpisodeRepository.PlaybackSource.Stream -> Uri.parse(source.url)
             null -> {
@@ -139,10 +139,16 @@ class AlarmService : Service() {
                 // FALLBACK myndi taka frettirnar af notandanum.
                 Log.w(TAG, "Engin bæn til - nota varahljóð símans")
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             }
         }
 
-        playAudio(mediaUri)
+        if (mediaUri != null) {
+            playAudio(mediaUri)
+        } else {
+            Log.e(TAG, "Ekkert hljóð til að spila — skjárinn og titringur verða að duga")
+            startVibrationIfEnabled()
+        }
     }
 
     /**

@@ -71,4 +71,13 @@
     <string name="samsung_title">Samsung-símar þurfa auka stillingu</string>
     <string name="samsung_body">Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga. Hringi vekjarinn aðeins á virkum dögum getur það gerst yfir helgi — og þá þegir hann á mánudagsmorgni.\n\nFarðu í Umhirða tækis → Rafhlaða → Takmörk á bakgrunnsnotkun og settu Morgunbæn á listann „Öpp sem sofa aldrei".</string>
     <string name="samsung_done">Búið</string>
+
+    <string name="next_alarm">Næst: %1$s</string>
+    <string name="snoozing_until">Blundar til %1$s</string>
+    <string name="no_day_selected">Enginn dagur valinn</string>
+    <string name="aired_on">Flutt %1$s</string>
+    <string name="cd_share">Deila</string>
+    <string name="cd_play">Spila</string>
+    <string name="cd_stop">Stöðva</string>
+    <string name="cd_back">Til baka</string>
 </resources>

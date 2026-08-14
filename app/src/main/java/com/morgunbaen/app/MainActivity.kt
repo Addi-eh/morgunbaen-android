@@ -103,7 +103,7 @@ private fun MainScreen() {
     var batteryOk by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     var notificationsOk by remember { mutableStateOf(areNotificationsEnabled(context)) }
     var fullScreenOk by remember { mutableStateOf(canUseFullScreenIntent(context)) }
-    var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(prefs)) }
+    var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(context, prefs)) }
     var health by remember { mutableStateOf(checkHealth(prefs)) }
     var oemGuideDone by remember { mutableStateOf(prefs.oemGuideDone) }
     var fadeIn by remember { mutableStateOf(prefs.fadeInEnabled) }
@@ -159,7 +159,7 @@ private fun MainScreen() {
                     batteryOk = isIgnoringBatteryOptimizations(context)
                     notificationsOk = areNotificationsEnabled(context)
                     fullScreenOk = canUseFullScreenIntent(context)
-                    nextAlarmText = nextAlarmDescription(prefs)
+                    nextAlarmText = nextAlarmDescription(context, prefs)
                     cachedTitle = prefs.cachedTitle
                     cachedDate = prefs.cachedFirstrun
                     cachedEpisodeId = prefs.cachedEpisodeId
@@ -206,7 +206,7 @@ private fun MainScreen() {
         // Glugginn les vekjaradaga og frettastillingu - breytist annad hvort
         // tarf hann nyjan tima. Ohaett ad kalla oft.
         CatchUpScheduler.schedule(context)
-        nextAlarmText = nextAlarmDescription(prefs)
+        nextAlarmText = nextAlarmDescription(context, prefs)
         health = checkHealth(prefs)
     }
 
@@ -282,7 +282,9 @@ private fun MainScreen() {
 
             PrayerCard(
                 title = cachedTitle,
-                dateText = cachedDate?.let { "Flutt " + Dates.formatShort(it) },
+                dateText = cachedDate?.let {
+                    context.getString(R.string.aired_on, Dates.formatShort(it))
+                },
                 status = status,
                 syncing = syncing,
                 playingToday = playingToday,
@@ -371,7 +373,10 @@ private fun MainScreen() {
                     newsSyncing = newsSyncing,
                     newsAttempted = newsAttempted,
                     newsFirstrun = newsFirstrun,
-                    alarmHour = hour
+                    alarmHour = hour,
+                    weekendEnabled = weekendEnabled,
+                    weekendHour = weekendHour,
+                    days = days
                 ),
                 snoozeMinutes = snoozeMinutes,
                 onFadeInChange = {
@@ -518,17 +523,21 @@ private fun newsDescription(
     newsSyncing: Boolean,
     newsAttempted: Boolean,
     newsFirstrun: String?,
-    alarmHour: Int
+    alarmHour: Int,
+    weekendEnabled: Boolean,
+    weekendHour: Int,
+    days: Set<Int>
 ): String = when {
     !newsEnabled -> stringResource(R.string.news_desc_off)
     newsSyncing -> stringResource(R.string.news_fetching)
 
     // TVO OLIK ASTOND - ekki rugla teim saman.
     //
-    // 1) VEKJARATIMINN (alarmHour) er fyrir kl. 07:00. Tha eru frettirnar
-    //    aldrei til tegar hringt er, sama hvada dag. Varanlegt astand sem
-    //    notandinn getur adeins leyst med tvi ad faera vekjarann.
-    alarmHour < RuvClient.FRETTIR_HOUR ->
+    // 1) EINHVER vekjaratimi (virkur dagur EDA helgi) er fyrir kl. 07:00.
+    //    Tha eru frettirnar aldrei til tegar sa dagur hringir.
+    //    Aður var aðeins alarmHour skoðað — helgartími 06:30 með
+    //    virkum degi kl. 08:00 sagði þá ranglega að fréttir næðust.
+    alarmRingsBeforeNews(days, alarmHour, weekendEnabled, weekendHour) ->
         stringResource(R.string.news_alarm_too_early)
 
     // 2) KLUKKAN er undir 07:00 akkurat nu og frettatimi dagsins er tvi
@@ -542,6 +551,30 @@ private fun newsDescription(
     )
     !newsAttempted -> stringResource(R.string.news_none)
     else -> stringResource(R.string.news_missing)
+}
+
+/**
+ * Hringir vekjarinn einhvern valinn dag fyrir fréttirnar kl. 07:00?
+ * Helgartími er skoðaður sér — hann má ekki fela sig á bak við virkan dag.
+ */
+private fun alarmRingsBeforeNews(
+    days: Set<Int>,
+    alarmHour: Int,
+    weekendEnabled: Boolean,
+    weekendHour: Int
+): Boolean {
+    val hasWeekday = days.any {
+        it != Calendar.SATURDAY && it != Calendar.SUNDAY
+    }
+    val hasWeekend = days.any {
+        it == Calendar.SATURDAY || it == Calendar.SUNDAY
+    }
+    if (hasWeekday && alarmHour < RuvClient.FRETTIR_HOUR) return true
+    if (hasWeekend) {
+        val hour = if (weekendEnabled) weekendHour else alarmHour
+        if (hour < RuvClient.FRETTIR_HOUR) return true
+    }
+    return false
 }
 
 /** Einkenni sem heilsuvoktunin fann. Tomt mengi = allt i lagi. */
@@ -666,15 +699,16 @@ private const val TEST_ALARM_SECONDS = 30
 private fun currentHour(): Int =
     Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-private fun nextAlarmDescription(prefs: Prefs): String {
+private fun nextAlarmDescription(context: Context, prefs: Prefs): String {
     val snoozeAt = prefs.snoozeUntilMillis
     if (snoozeAt > System.currentTimeMillis()) {
         val format = SimpleDateFormat("HH:mm", Locale("is", "IS"))
-        return "Blundar til " + format.format(Date(snoozeAt))
+        return context.getString(R.string.snoozing_until, format.format(Date(snoozeAt)))
     }
-    val next = AlarmScheduler.nextTriggerTime(prefs) ?: return "Enginn dagur valinn"
+    val next = AlarmScheduler.nextTriggerTime(prefs)
+        ?: return context.getString(R.string.no_day_selected)
     val format = SimpleDateFormat("EEEE d. MMMM 'kl.' HH:mm", Locale("is", "IS"))
-    return "Næst: " + format.format(Date(next))
+    return context.getString(R.string.next_alarm, format.format(Date(next)))
 }
 
 private fun openExactAlarmSettings(context: Context) {
