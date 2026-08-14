@@ -69,8 +69,9 @@ data/EpisodeRepository.kt  Sækir bænina og geymir hana á tækinu
 data/Prefs.kt              Allar stillingar
 
 work/SyncWorker.kt         Bakgrunnsverk — sækir bænina á ~6 klst fresti
+work/CatchUpScheduler.kt   Sóknarglugginn kl. 07:00, virkar líka í Direct Boot
 
-alarm/AlarmScheduler.kt    Reiknar og skráir næsta vekjara   ← hjartað
+alarm/AlarmScheduler.kt    Reiknar og skráir næsta vekjara (og blund)   ← hjartað
 alarm/AlarmReceiver.kt     Tekur við þegar klukkan hringir
 alarm/AlarmService.kt      Spilar bænina í forgrunnsþjónustu
 alarm/AlarmActivity.kt     Skjárinn sem birtist á læstum skjá
@@ -124,7 +125,7 @@ alltaf einn dag á eftir.
 
 ---
 
-## 4b. Tvær varnir sem eru ósýnilegar í daglegri notkun
+## 4b. Varnir sem eru ósýnilegar í daglegri notkun
 
 **Direct Boot.** Endurræsist síminn um nóttina — vegna uppfærslu, tómrar
 rafhlöðu í hleðslu eða kerfishruns — er geymslan dulkóðuð þar til einhver slær
@@ -139,10 +140,39 @@ auðvelt að gleyma: það dugar ekki að vita hvenær á að hringja ef hljóð
 Til að prófa: stilltu vekjarann fram í tímann, endurræstu símann og **ekki slá
 inn PIN**. Hann á samt að hringja.
 
+**Sóknarglugginn og læstur sími.** `CatchUpReceiver` sjálfur er líka
+`directBootAware` og notar `AlarmManager`, svo hann virkar í Direct Boot — en
+`SyncWorker` sem hann ræsir notar `WorkManager`, sem þarf credential-geymslu og
+getur ekki keyrt fyrr en einhver hefur slegið inn PIN. Opnist glugginn kl. 07:00
+meðan síminn er enn læstur (t.d. eftir endurræsingu um nóttina) frestar
+`CatchUpScheduler` sér sjálfur og reynir aftur á fimm mínútna fresti í stað
+þess að tapa deginum. Sé síminn ólæstur þegar hann er opnaður **innan**
+gluggans (07:00–09:00 á virkum degi) opnar `BootReceiver` gluggann strax líka
+— annars biði hann til næsta virka morguns.
+
+**Blundur er aðskilinn frá daglega vekjaranum.** Báðir notuðu upphaflega sama
+`PendingIntent`, svo að blunda skrifaði óvart yfir daglegu skráninguna í
+`AlarmManager`. Blundur hefur núna sinn eigin auðkennikóða og vistar tímann í
+`Prefs.snoozeUntilMillis` með `commit()` (ekki `apply()`) svo hann lifi af
+ferlisdauða — annars gæti Android drepið appið á milli þess að blundtíminn er
+ákveðinn og hann kemst á disk. Endurskráður sjálfkrafa eftir endurræsingu eða
+stillingabreytingu, og hreinsaður um leið og vekjarinn hringir í alvöru.
+
 **Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru. Fari
-vekjaratími hjá án þess að hann hafi hringt, segir appið frá því næst þegar það
-er opnað. Það sama gildir ef bakgrunnssóknin hefur ekki náð að keyra í meira en
-sólarhring.
+skráður hringitími hjá án þess að hann hafi hringt, segir appið frá því næst
+þegar það er opnað. Það sama gildir ef bakgrunnssóknin hefur ekki náð að keyra
+í meira en 36 klukkustundir.
+
+Samanburðurinn notar `Prefs.lastScheduledTriggerMillis` — tímann sem var
+**skráður** þegar vekjarinn var settur upp — en ekki endurreiknaðan
+„fyrri hringitíma" út frá núverandi stillingum. Breyti notandinn tímanum úr
+07:00 í 06:30 eftir velheppnaða hringingu myndi endurreiknaði tíminn líta út
+eins og klikkaður vekjari sem aldrei hringdi. Merkið frýs líka viljandi þegar
+liðinn tími er enn óhringdur — annars myndi næsta `schedule()`-kall (t.d. við
+hverja ræsingu appsins) færa það sjálfkrafa yfir á morgundaginn áður en
+viðvörunin næði nokkurn tímann að birtast. Það þýðir að samþykki notandans
+(„Ég skil") verður líka að **afþíða** merkið — annars birtist viðvörunin
+einu sinni og þagnar svo að eilífu, óháð því hvort vekjarinn þegir áfram.
 
 Android lætur ekki vita þegar það stöðvar app. Þetta er eina leiðin til að
 notandinn komist að því — annars heldur hann bara að appið sé ónýtt.
@@ -155,7 +185,12 @@ Nær undantekningarlaust er ástæðan ein af þessum þremur:
 
 **Rafhlöðusparnaður.** Þú ert á Samsung — og Samsung er með þeim allra verstu í
 þessu. Farðu í Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
-**Ótakmarkað**.
+**Ótakmarkað**. Takkinn í appinu sem opnar þessa stillingu þarf
+`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`-leyfi í manifest til að virka yfirhöfuð
+— vanti það kastar `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` villu í stað
+þess að opna neitt. Fyrir OEM sem styðja ekki þá aðgerð er tveggja þrepa
+varaleið: fyrst `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`, svo almennu
+forritsstillingarnar.
 
 **Samsung svæfir líka öpp sem hafa ekki verið opnuð í þrjá daga.** Þetta er
 sértækt vandamál fyrir þetta app: vekjari sem hringir aðeins á virkum dögum er
@@ -185,29 +220,6 @@ Appið biður um hana við fyrstu opnun.
 
 **Heimild fyrir nákvæma vekjara.** Sjaldgæft, því `USE_EXACT_ALARM` í manifest
 gefur hana sjálfkrafa — en appið athugar það samt.
-
----
-
-## 6. Áður en þú setur þetta í Play Store
-
-**Sendu RÚV póst fyrst.** Þetta er mikilvægast. Að taka upp fyrir sjálfan sig er
-eitt; að dreifa appi sem sækir efni þeirra fyrir hundruð manns er annað.
-Spurðu líka hvort viðmótið sé stöðugt — það er óskjalfest og getur breyst
-án fyrirvara, og þá hættir appið að virka hjá öllum í einu.
-
-**`USE_EXACT_ALARM` þarf réttlætingu.** Google leyfir hana fyrir öpp þar sem
-vekjari er meginhlutverkið — sem á við hér. Þú þarft samt að fylla út form í
-Play Console og útskýra það. Verði því hafnað er varaleiðin `SCHEDULE_EXACT_ALARM`
-þar sem notandinn veitir heimildina handvirkt.
-
-**targetSdk.** Stendur í 35. Play Store gerir kröfu um nýjustu útgáfur fyrir ný
-öpp — athugaðu hvað er í gildi og hækkaðu töluna í `app/build.gradle.kts`
-ef þarf.
-
-**Táknmynd og undirritunarlykill.** Hvorugt er í verkefninu. Android Studio býr
-til táknmynd (`File → New → Image Asset`) og undirritunarlykil
-(`Build → Generate Signed Bundle`). **Taktu afrit af lyklinum og geymdu hann
-vel** — týnir þú honum geturðu aldrei uppfært appið aftur.
 
 ---
 
@@ -277,7 +289,54 @@ spila endalaust ef síminn gleymdist heima.
 
 ---
 
-## 7. Það sem vantar enn
+## 6c. Varnir gegn tvöfaldri ræsingu og hálfkláruðu niðurhali
+
+**`AlarmService` getur fengið `ACTION_START` tvisvar** — Android endurræsir
+drepnar þjónustur með síðasta `Intent`, eða `AlarmReceiver` gæti sent hann
+tvisvar af öðrum ástæðum. Þjónustan endurstillir því spilunarástand
+(`resetPlayback()`) í upphafi hverrar ræsingar í stað þess að gera ráð fyrir
+hreinu borði, og notar `START_REDELIVER_INTENT` **aðeins** fyrir `ACTION_START`
+— slökkva og blundur mega ekki endurræsa vekjarann sjálfkrafa ef þjónustan
+deyr eftir að notandinn hefur þegar slökkt á honum.
+
+Endursend ræsing getur líka borist löngu eftir að vekjarinn átti að hringja
+(þjónustan drepin kl. 07:03, endursend kl. 08:40). Sé meira en 20 mínútur liðnar
+frá skráðum hringitíma hættir appið strax í stað þess að byrja að spila bænina
+óvænt um miðjan morgun. `acquireWakeLock()` sleppir líka haldnum lás áður en
+nýr er tekinn, svo tvöföld ræsing skilji ekki eftir læstan lás sem aldrei losnar.
+
+**Niðurhal sem klárast ekki alveg.** `File.renameTo()` getur klikkað hljóðalaust
+þegar bráðabirgðaskráin og lokastaðsetningin eru á sitt hvoru skráarkerfinu.
+Bæði bænin og fréttatíminn falla þá aftur á afritun (`copyTo`) og staðfesta
+stærð skráarinnar eftir á — heppnist hvorugt er skránni hent frekar en að vista
+slóð á skrá sem er ekki til.
+
+---
+
+## 7. Áður en þú setur þetta í Play Store
+
+**Sendu RÚV póst fyrst.** Þetta er mikilvægast. Að taka upp fyrir sjálfan sig er
+eitt; að dreifa appi sem sækir efni þeirra fyrir hundruð manns er annað.
+Spurðu líka hvort viðmótið sé stöðugt — það er óskjalfest og getur breyst
+án fyrirvara, og þá hættir appið að virka hjá öllum í einu.
+
+**`USE_EXACT_ALARM` þarf réttlætingu.** Google leyfir hana fyrir öpp þar sem
+vekjari er meginhlutverkið — sem á við hér. Þú þarft samt að fylla út form í
+Play Console og útskýra það. Verði því hafnað er varaleiðin `SCHEDULE_EXACT_ALARM`
+þar sem notandinn veitir heimildina handvirkt.
+
+**targetSdk.** Stendur í 35. Play Store gerir kröfu um nýjustu útgáfur fyrir ný
+öpp — athugaðu hvað er í gildi og hækkaðu töluna í `app/build.gradle.kts`
+ef þarf.
+
+**Táknmynd og undirritunarlykill.** Hvorugt er í verkefninu. Android Studio býr
+til táknmynd (`File → New → Image Asset`) og undirritunarlykil
+(`Build → Generate Signed Bundle`). **Taktu afrit af lyklinum og geymdu hann
+vel** — týnir þú honum geturðu aldrei uppfært appið aftur.
+
+---
+
+## 8. Það sem vantar enn
 
 Vísvitandi sleppt úr fyrstu útgáfu:
 
