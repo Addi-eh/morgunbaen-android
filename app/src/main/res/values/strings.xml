@@ -21,6 +21,7 @@
     <string name="weekend_label">Annar tími um helgar</string>
     <string name="weekend_desc">Hrein tímastilling — bæn dagsins næst alla daga</string>
     <string name="weekend_time">Helgartími: %1$s</string>
+    <string name="weekend_days_warning">Hvorki laugardagur né sunnudagur er valinn — helgartíminn hefur engin áhrif</string>
 
     <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
     <string name="sync_already_have">Nýjasta bænin var þegar til staðar</string>

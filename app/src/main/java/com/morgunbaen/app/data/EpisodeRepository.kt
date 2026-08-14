@@ -206,11 +206,11 @@ class EpisodeRepository(private val context: Context) {
         // Fyrst: henda tvi sem er ordid gamalt, hvad sem gerist naest.
         discardStaleNews()
 
-        val today = todayString()
+        val today = Dates.todayIso()
 
         val newest = try {
             client.fetchEpisodes(RuvClient.FRETTIR_PROGRAM_ID)
-                .filter { it.firstrun.substringBefore('T').substringBefore(' ') == today }
+                .filter { Dates.datePart(it.firstrun) == today }
                 // Ekki thaettir sem eru ekki komnir - firstrun getur verid
                 // framtidarskrad i dagskra.
                 .filter { it.firstrun <= nowString() }
@@ -274,8 +274,8 @@ class EpisodeRepository(private val context: Context) {
      */
     private fun discardStaleNews() {
         val stored = prefs.newsFirstrun ?: return
-        val storedDate = stored.substringBefore('T').substringBefore(' ')
-        if (storedDate == todayString()) return
+        if (Dates.isToday(stored)) return
+        val storedDate = Dates.datePart(stored)
 
         Log.i(TAG, "Hendi úreltum fréttatíma frá $storedDate")
         prefs.newsFilePath?.let { File(it).delete() }
@@ -287,8 +287,7 @@ class EpisodeRepository(private val context: Context) {
 
     /** Eigum vid frettatima fra deginum i dag? Ohad tvi hvort notandinn vill hann. */
     fun hasTodaysNews(): Boolean {
-        val firstrun = prefs.newsFirstrun ?: return false
-        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return false
+        if (!Dates.isToday(prefs.newsFirstrun)) return false
         val path = prefs.newsFilePath ?: return false
         return File(path).let { it.exists() && it.length() > MIN_VALID_BYTES }
     }
@@ -314,8 +313,7 @@ class EpisodeRepository(private val context: Context) {
     fun newsPlaybackSource(): File? {
         if (!prefs.newsEnabled) return null
 
-        val firstrun = prefs.newsFirstrun ?: return null
-        if (firstrun.substringBefore('T').substringBefore(' ') != todayString()) return null
+        if (!Dates.isToday(prefs.newsFirstrun)) return null
 
         val path = prefs.newsFilePath ?: return null
         val file = File(path)
@@ -324,12 +322,9 @@ class EpisodeRepository(private val context: Context) {
 
     /** "2026-08-13T07:00:00" -> "Fréttir kl. 07:00" */
     private fun newsLabel(firstrun: String): String {
-        val time = firstrun.substringAfter('T', "").take(5)
-        return if (time.length == 5) "Fréttir kl. $time" else "Fréttir"
+        val time = Dates.timePart(firstrun)
+        return if (time.isNotEmpty()) "Fréttir kl. $time" else "Fréttir"
     }
-
-    private fun todayString(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
     private fun nowString(): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date())
@@ -340,12 +335,7 @@ class EpisodeRepository(private val context: Context) {
      * Tetta er spurningin sem soknarglugginn byggir a: vid haettum ekki ad
      * reyna fyrr en thattur dagsins er kominn i hus, ekki bara "einhver thattur".
      */
-    fun hasTodaysEpisode(): Boolean {
-        val firstrun = prefs.cachedFirstrun ?: return false
-        val episodeDate = firstrun.substringBefore('T').substringBefore(' ')
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        return episodeDate == today
-    }
+    fun hasTodaysEpisode(): Boolean = Dates.isToday(prefs.cachedFirstrun)
 
     sealed class PlaybackSource {
         data class LocalFile(val file: File) : PlaybackSource()

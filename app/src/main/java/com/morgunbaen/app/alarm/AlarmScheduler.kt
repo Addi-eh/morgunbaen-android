@@ -147,79 +147,34 @@ object AlarmScheduler {
 
     /**
      * Naesti timi sem vekjarinn a ad hringja, i millisekundum.
-     * Skilar null ef enginn dagur er valinn.
+     * Reikningurinn sjalfur byr i TriggerTimes - hreinni einingu sem
+     * einingaprof na utan sima. Skilar null ef enginn dagur er valinn.
      */
-    fun nextTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? {
-        val days = prefs.alarmDays
-        if (days.isEmpty()) return null
-
-        // Leitum ad naesta gilda degi - i dag eda innan viku.
-        for (offset in 0..7) {
-            val candidate = (from.clone() as Calendar).apply {
-                add(Calendar.DAY_OF_YEAR, offset)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            val dayOfWeek = candidate.get(Calendar.DAY_OF_WEEK)
-            if (dayOfWeek !in days) continue
-
-            applyTimeForDay(candidate, prefs, dayOfWeek)
-
-            // Timinn i dag getur verid lidinn hja.
-            if (candidate.timeInMillis <= from.timeInMillis) continue
-
-            return candidate.timeInMillis
-        }
-        return null
-    }
+    fun nextTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? =
+        TriggerTimes.next(
+            days = prefs.alarmDays,
+            hour = prefs.alarmHour,
+            minute = prefs.alarmMinute,
+            weekendEnabled = prefs.weekendTimeEnabled,
+            weekendHour = prefs.weekendHour,
+            weekendMinute = prefs.weekendMinute,
+            from = from
+        )
 
     /**
-     * Sidasti timi sem vekjarinn ATTI ad hringja, i millisekundum.
-     * Notad til ad greina hvort siminn hafi stodvad appid: ef tessi timi er
-     * lidinn en vekjarinn hringdi aldrei, tha var eitthvad ad.
-     * Skilar null ef enginn dagur er valinn.
+     * Sidasti timi sem vekjarinn ATTI ad hringja. Heilsuvoktunin notar
+     * tetta til ad greina hvort siminn hafi stodvad appid.
      */
-    fun previousTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? {
-        val days = prefs.alarmDays
-        if (days.isEmpty()) return null
-
-        for (offset in 0 downTo -7) {
-            val candidate = (from.clone() as Calendar).apply {
-                add(Calendar.DAY_OF_YEAR, offset)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            val dayOfWeek = candidate.get(Calendar.DAY_OF_WEEK)
-            if (dayOfWeek !in days) continue
-
-            applyTimeForDay(candidate, prefs, dayOfWeek)
-
-            if (candidate.timeInMillis > from.timeInMillis) continue
-
-            return candidate.timeInMillis
-        }
-        return null
-    }
-
-    /**
-     * Setur rettan tima a daginn - venjulegan eda helgartima.
-     * Se helgartimi ovirkur gildir sami timi alla daga.
-     */
-    private fun applyTimeForDay(calendar: Calendar, prefs: Prefs, dayOfWeek: Int) {
-        val isWeekend = dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY
-        val useWeekend = isWeekend && prefs.weekendTimeEnabled
-
-        calendar.set(
-            Calendar.HOUR_OF_DAY,
-            if (useWeekend) prefs.weekendHour else prefs.alarmHour
+    fun previousTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? =
+        TriggerTimes.previous(
+            days = prefs.alarmDays,
+            hour = prefs.alarmHour,
+            minute = prefs.alarmMinute,
+            weekendEnabled = prefs.weekendTimeEnabled,
+            weekendHour = prefs.weekendHour,
+            weekendMinute = prefs.weekendMinute,
+            from = from
         )
-        calendar.set(
-            Calendar.MINUTE,
-            if (useWeekend) prefs.weekendMinute else prefs.alarmMinute
-        )
-    }
 
     /**
      * Endurskráir blund ef hann er enn í framtíðinni.

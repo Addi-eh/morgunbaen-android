@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.morgunbaen.app.data.Dates
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.MorgunbaenTheme
@@ -224,7 +225,7 @@ private fun EpisodeRow(
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = formatDate(episode.firstrun),
+                    text = Dates.formatWithWeekday(episode.firstrun),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -247,17 +248,6 @@ private fun EpisodeRow(
 /** Sidustu tvaer vikur. Lengra aftur er tetta ordid safn frekar en saga. */
 private const val MAX_EPISODES = 14
 
-/** "2026-08-13T06:55:00" -> "fimmtudagur 13. ágúst" */
-private fun formatDate(firstrun: String): String {
-    val datePart = firstrun.substringBefore('T').substringBefore(' ')
-    return try {
-        val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(datePart)!!
-        SimpleDateFormat("EEEE d. MMMM", Locale("is", "IS")).format(parsed)
-    } catch (e: Exception) {
-        datePart
-    }
-}
-
 /**
  * Deilir baen med hlekk a Spilara RUV.
  *
@@ -266,7 +256,7 @@ private fun formatDate(firstrun: String): String {
  * eftir ad appid er löngu gleymt.
  */
 fun shareEpisode(context: Context, episode: Episode) {
-    val date = formatDate(episode.firstrun)
+    val date = Dates.formatWithWeekday(episode.firstrun)
     val url = RuvClient.episodeWebUrl(episode.id)
 
     val text = context.getString(R.string.share_text, episode.title, date, url)

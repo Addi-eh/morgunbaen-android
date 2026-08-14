@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.UserManager
 import android.util.Log
+import com.morgunbaen.app.alarm.TriggerTimes
 import com.morgunbaen.app.data.Prefs
 import java.util.Calendar
 
@@ -34,7 +35,21 @@ object CatchUpScheduler {
      */
     fun schedule(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val triggerAt = nextWindowTime(Prefs(context))
+
+        // null = engir dagar valdir. Tha er ENGINN gluggi skradur - og eldri
+        // skraning afskrad. Eldri utgafa fell aftur a "nuna + 24 klst" sem
+        // setti gluggann a rek um allan solarhringinn.
+        val triggerAt = TriggerTimes.nextWindow(
+            days = Prefs(context).alarmDays,
+            windowHour = WINDOW_HOUR,
+            windowMinute = WINDOW_MINUTE
+        )
+        if (triggerAt == null) {
+            alarmManager.cancel(pendingIntent(context))
+            cancelRetry(context)
+            Log.i(TAG, "Engir vekjaradagar - sóknarglugga sleppt")
+            return
+        }
 
         // setAndAllowWhileIdle en EKKI setExact: tetta er bakgrunnsverk, ekki
         // vekjari. Tad er ohakvaemt um nokkrar minutur en kemst i gegnum Doze
@@ -77,7 +92,7 @@ object CatchUpScheduler {
      */
     fun openWindowIfDue(context: Context) {
         val now = Calendar.getInstance()
-        if (!isWindowDay(Prefs(context), now.get(Calendar.DAY_OF_WEEK))) return
+        if (now.get(Calendar.DAY_OF_WEEK) !in Prefs(context).alarmDays) return
         val hour = now.get(Calendar.HOUR_OF_DAY)
         if (hour < WINDOW_HOUR || hour >= WINDOW_HOUR + 2) return
 
@@ -90,41 +105,6 @@ object CatchUpScheduler {
     fun cancelRetry(context: Context) {
         context.getSystemService(AlarmManager::class.java)
             .cancel(pendingIntent(context, RETRY_REQUEST_CODE))
-    }
-
-    /**
-     * A hvada dogum glugginn opnast: hverjum degi sem vekjarinn er stilltur
-     * a, engin undantekning.
-     *
-     * Morgunbaenin er DAGLEG - dagskra RUV synir hana kl. 06:55 alla sjo
-     * daga, lika laugardag og sunnudag, og frettirnar kl. 07:00 sama.
-     * Eldri utgafa sleppti helgum, byggt a rangri forsendu; notandi med
-     * sunnudagsvekjara fekk tvi aldrei glugga og vaknadi vid gaerdagsbaen.
-     */
-    private fun isWindowDay(prefs: Prefs, dayOfWeek: Int): Boolean =
-        dayOfWeek in prefs.alarmDays
-
-    /** Naesti morgunn kl. 07:00 sem glugginn a ad opnast. */
-    private fun nextWindowTime(
-        prefs: Prefs,
-        from: Calendar = Calendar.getInstance()
-    ): Long {
-        for (offset in 0..7) {
-            val candidate = (from.clone() as Calendar).apply {
-                add(Calendar.DAY_OF_YEAR, offset)
-                set(Calendar.HOUR_OF_DAY, WINDOW_HOUR)
-                set(Calendar.MINUTE, WINDOW_MINUTE)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            if (!isWindowDay(prefs, candidate.get(Calendar.DAY_OF_WEEK))) continue
-            if (candidate.timeInMillis <= from.timeInMillis) continue
-
-            return candidate.timeInMillis
-        }
-        // Aetti aldrei ad gerast, en betra en ad hrynja.
-        return from.timeInMillis + 24 * 60 * 60 * 1000L
     }
 
     private fun pendingIntent(

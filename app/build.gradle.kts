@@ -68,4 +68,7 @@ dependencies {
 
     // Kotlin coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // Einingaprof - keyra a tolvunni, engan sima tarf
+    testImplementation("junit:junit:4.13.2")
 }

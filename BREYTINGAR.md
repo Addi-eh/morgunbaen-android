@@ -3,6 +3,22 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.91
+
+- **Fjórar villur lagaðar:** úrelt helgarathugasemd í MainActivity fjarlægð
+  (stangaðist á við strenginn við hliðina); „Spila bænina" stöðvast nú þegar
+  farið er úr appinu (ON_PAUSE — áður hélt hún áfram án nokkurs sýnilegs
+  stöðvunartakka); tómir vekjaradagar afskrá sóknargluggann í stað þess að
+  setja hann á rek um klukkuna; prófunartextinn hverfur þegar komið er til
+  baka eftir hringinguna.
+- **Helgartímarofi án helgardaga varar nú við** því að hann hafi engin áhrif.
+- **MainActivity klofin:** útlitið býr í ui/AlarmCard, ui/PrayerCard,
+  ui/WakeSettingsCard og ui/Components; MainActivity er samhæfingarlag með
+  state og hlidarverkum.
+- **Fyrstu einingaprófin:** TriggerTimesTest nær yfir hjarta appsins —
+  þar á meðal nákvæmlega tilfellið sem olli reki gluggans (tómir dagar).
+  JUnit bætt í build.gradle.kts; keyrist með `./gradlew test`.
+
 ## v0.9
 
 - **Sóknargluggi fylgir vekjaradögum notandans**, ekki lengur harðkóðaðir

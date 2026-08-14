@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
+import com.morgunbaen.app.data.Dates
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import kotlinx.coroutines.delay
@@ -148,7 +149,7 @@ private fun AlarmScreen(
             if (firstrun != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = formatFirstrun(firstrun),
+                    text = Dates.formatShort(firstrun),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -240,17 +241,6 @@ private fun HoldToDismissButton(onDismiss: () -> Unit) {
 
 /** Hversu lengi tarf ad halda inni til ad slokkva. */
 private const val HOLD_MILLIS = 1500L
-
-/** "2026-08-13T06:55:00" -> "13. ágúst" */
-private fun formatFirstrun(firstrun: String): String {
-    val datePart = firstrun.substringBefore('T').substringBefore(' ')
-    return try {
-        val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(datePart)!!
-        SimpleDateFormat("d. MMMM", Locale("is", "IS")).format(parsed)
-    } catch (e: Exception) {
-        datePart
-    }
-}
 
 private fun currentTimeString(): String =
     SimpleDateFormat("HH:mm", Locale("is", "IS")).format(Date())
