@@ -24,6 +24,15 @@ class EpisodeRepository(private val context: Context) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
+        // Sama kynning og i RuvClient - nidurhalid fer a akamaized.net
+        // sem er enn liklegri til ad sia eftir User-Agent en RUV sjalft.
+        .addInterceptor { chain ->
+            chain.proceed(
+                chain.request().newBuilder()
+                    .header("User-Agent", RuvClient.USER_AGENT)
+                    .build()
+            )
+        }
         .build()
 
     /**

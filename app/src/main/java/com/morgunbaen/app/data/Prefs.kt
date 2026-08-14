@@ -30,7 +30,11 @@ class Prefs(context: Context) {
     /**
      * A hvada dogum vekjarinn hringir.
      * Notar Calendar.SUNDAY = 1 ... Calendar.SATURDAY = 7.
-     * Sjalfgefid: virkir dagar, tvi Morgunbaenin er bara flutt tha.
+     *
+     * Sjalfgefid virkir dagar - EKKI vegna dagskrarinnar. Morgunbaenin er
+     * flutt kl. 06:55 ALLA daga, lika um helgar. Tetta er einfaldlega tad
+     * sem flestir vilja: sofa lengur um helgar. Notandinn getur valid
+     * hvada daga sem er og faer alltaf baen tess dags.
      */
     var alarmDays: Set<Int>
         get() = sp.getStringSet(KEY_DAYS, DEFAULT_DAYS)!!.map { it.toInt() }.toSet()
@@ -224,7 +228,7 @@ class Prefs(context: Context) {
 
         const val PREFS_NAME = "morgunbaen"
 
-        // Manudagur (2) til fostudags (6)
+        // Manudagur (2) til fostudags (6) - venja, ekki takmorkun
         private val DEFAULT_DAYS = setOf("2", "3", "4", "5", "6")
     }
 }

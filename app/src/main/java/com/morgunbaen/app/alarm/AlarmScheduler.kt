@@ -24,6 +24,9 @@ object AlarmScheduler {
     /** Aðskilinn frá daglega vekjaranum svo blundur yfirskrifar hann ekki. */
     private const val SNOOZE_REQUEST_CODE = 1003
 
+    /** Prófunarhringing - enn einn aðskilinn kóði af sömu ástæðu. */
+    private const val TEST_REQUEST_CODE = 1004
+
     /**
      * Skrair naesta vekjara samkvaemt stillingum.
      * Ohaett ad kalla eins oft og tarf - eldri skraning er einfaldlega yfirskrifud.
@@ -92,10 +95,37 @@ object AlarmScheduler {
         if (!canScheduleExact(context)) return
 
         val triggerAt = System.currentTimeMillis() + minutes * 60_000L
-        Prefs(context).snoozeUntilMillis = triggerAt
+        val prefs = Prefs(context)
+        prefs.snoozeUntilMillis = triggerAt
+
+        // Blundur er lika lofud hringing. An tessa vissi heilsuvoktunin
+        // ekkert um hann - siminn gat drepid appid a niu minutunum og
+        // notandinn svaf yfir sig an nokkurrar vidvorunar.
+        prefs.lastScheduledTriggerMillis = triggerAt
         val info = AlarmManager.AlarmClockInfo(triggerAt, showIntent(context))
         alarmManager.setAlarmClock(info, snoozePendingIntent(context))
         Log.i(TAG, "Blundur skráður eftir $minutes mín")
+    }
+
+    /**
+     * Prófunarhringing eftir orfáar sekúndur.
+     *
+     * Keyrir ALLA leiðina - AlarmManager -> AlarmReceiver -> AlarmService ->
+     * AlarmActivity - ekki bara spilun. Tilgangurinn er að notandinn geti
+     * staðfest á 30 sekúndum að Samsung-stillingar, heimildir og hljóð
+     * virki, án þess að hreyfa morguntímann eða bíða til morguns.
+     *
+     * Aukaverkun sem er í lagi: AlarmReceiver skráir lastAlarmFiredMillis
+     * og næsta daglega vekjara eins og við alvöru hringingu. Hvort tveggja
+     * er einmitt það sem próf á að æfa.
+     */
+    fun scheduleTest(context: Context, seconds: Int = 30) {
+        if (!canScheduleExact(context)) return
+        val triggerAt = System.currentTimeMillis() + seconds * 1000L
+        val info = AlarmManager.AlarmClockInfo(triggerAt, showIntent(context))
+        context.getSystemService(AlarmManager::class.java)
+            .setAlarmClock(info, testPendingIntent(context))
+        Log.i(TAG, "Prófunarhringing eftir $seconds sek")
     }
 
     /** Afskráir blund og hreinsar vistaðan tíma. */
@@ -209,6 +239,9 @@ object AlarmScheduler {
         }
         val info = AlarmManager.AlarmClockInfo(snoozeAt, showIntent(context))
         alarmManager.setAlarmClock(info, snoozePendingIntent(context))
+        // Blundurinn er fyrsta lofada hringingin - merkid a ad benda a hann,
+        // ekki morgundaginn sem schedule() var ad skra.
+        prefs.lastScheduledTriggerMillis = snoozeAt
         Log.i(TAG, "Blundur endurskráður: ${Calendar.getInstance().apply { timeInMillis = snoozeAt }.time}")
     }
 
@@ -233,6 +266,19 @@ object AlarmScheduler {
         return PendingIntent.getBroadcast(
             context,
             SNOOZE_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /** Sami ACTION_FIRE - prófið á að fara nákvæmlega sömu leið. */
+    private fun testPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_FIRE
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            TEST_REQUEST_CODE,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

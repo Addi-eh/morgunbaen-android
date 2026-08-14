@@ -130,6 +130,13 @@ class AlarmService : Service() {
             is EpisodeRepository.PlaybackSource.Stream -> Uri.parse(source.url)
             null -> {
                 // Engin baen til stadar - notandinn ma samt EKKI sofa yfir sig.
+                //
+                // VISVITANDI: stage helst PRAYER og repeatMode er OFF, svo
+                // tonninn spilast einu sinni og advanceToNextStage tekur vid.
+                // Seu frettir til heyrist tvi: tonn -> frettir -> tonn i lykkju.
+                // Tad er rett rod - frettirnar eiga ad fa ad spilast tott
+                // baenin hafi ekki nadst. "Lagfaering" sem stekkur beint i
+                // FALLBACK myndi taka frettirnar af notandanum.
                 Log.w(TAG, "Engin bæn til - nota varahljóð símans")
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             }

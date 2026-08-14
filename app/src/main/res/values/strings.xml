@@ -6,6 +6,10 @@
     <string name="prayer_status">Bæn dagsins</string>
     <string name="no_prayer_yet">Engin bæn hefur verið sótt enn</string>
     <string name="fetch_now">Sækja núna</string>
+    <string name="play_today">Spila bænina</string>
+    <string name="stop_playback">Stöðva</string>
+    <string name="test_alarm">Prófa vekjarann</string>
+    <string name="test_alarm_armed">Hringir eftir %1$d sekúndur — læstu símanum og slökktu á skjánum</string>
     <string name="share">Deila</string>
     <string name="share_subject">Morgunbæn</string>
     <string name="share_text">Morgunbæn — %1$s, %2$s\n\n%3$s</string>
@@ -15,7 +19,7 @@
     <string name="history_empty">Náði ekki að sækja fyrri bænir frá RÚV.</string>
 
     <string name="weekend_label">Annar tími um helgar</string>
-    <string name="weekend_desc">Morgunbænin er ekki flutt um helgar, en appið spilar þá síðustu bæn vikunnar</string>
+    <string name="weekend_desc">Hrein tímastilling — bæn dagsins næst alla daga</string>
     <string name="weekend_time">Helgartími: %1$s</string>
 
     <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
@@ -64,6 +68,6 @@
     <string name="warn_stale_sync">Appið hefur ekki náð að sækja bæn í meira en 36 klukkustundir. Síminn er að hindra það í að keyra í bakgrunni.</string>
 
     <string name="samsung_title">Samsung-símar þurfa auka stillingu</string>
-    <string name="samsung_body">Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga. Þar sem vekjarinn hringir aðeins á virkum dögum getur það gerst yfir helgi — og þá þegir hann á mánudagsmorgni.\n\nFarðu í Umhirða tækis → Rafhlaða → Takmörk á bakgrunnsnotkun og settu Morgunbæn á listann „Öpp sem sofa aldrei".</string>
+    <string name="samsung_body">Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga. Hringi vekjarinn aðeins á virkum dögum getur það gerst yfir helgi — og þá þegir hann á mánudagsmorgni.\n\nFarðu í Umhirða tækis → Rafhlaða → Takmörk á bakgrunnsnotkun og settu Morgunbæn á listann „Öpp sem sofa aldrei".</string>
     <string name="samsung_done">Búið</string>
 </resources>

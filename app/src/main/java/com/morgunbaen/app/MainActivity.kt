@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -32,6 +34,7 @@ import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.MorgunbaenTheme
+import com.morgunbaen.app.work.CatchUpScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -94,6 +97,34 @@ private fun MainScreen() {
     // "reyndum og fundum ekki" - annars segir appid ranglega ad frettatimi
     // se ekki kominn ut tegar tad hefur einfaldlega ekki leitad.
     var newsAttempted by remember { mutableStateOf(prefs.newsFirstrun != null) }
+    var testArmed by remember { mutableStateOf(false) }
+    var playingToday by remember { mutableStateOf(false) }
+
+    // Lettur spilari fyrir "Spila baenina" - hegdar ser eins og venjulegur
+    // midill (USAGE_MEDIA + sjalfvirkur hljodfokus), OLIKT vekjaranum.
+    val previewPlayer = remember {
+        ExoPlayer.Builder(context)
+            .setAudioAttributes(
+                androidx.media3.common.AudioAttributes.Builder()
+                    .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_SPEECH)
+                    .build(),
+                true
+            )
+            .build()
+            .apply {
+                addListener(object : androidx.media3.common.Player.Listener {
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == androidx.media3.common.Player.STATE_ENDED) {
+                            playingToday = false
+                        }
+                    }
+                })
+            }
+    }
+    DisposableEffect(Unit) {
+        onDispose { previewPlayer.release() }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -132,6 +163,9 @@ private fun MainScreen() {
         prefs.alarmMinute = minute
         prefs.alarmDays = days
         AlarmScheduler.schedule(context)
+        // Glugginn les vekjaradaga og frettastillingu - breytist annad hvort
+        // tarf hann nyjan tima. Ohaett ad kalla oft.
+        CatchUpScheduler.schedule(context)
         nextAlarmText = nextAlarmDescription(prefs)
         health = checkHealth(prefs)
     }
@@ -242,6 +276,28 @@ private fun MainScreen() {
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Keyrir OLLU leidina - ekki bara spilun. Eina leidin til
+                    // ad stadfesta Samsung-stillingar an tess ad bida til
+                    // morguns.
+                    TextButton(onClick = {
+                        AlarmScheduler.scheduleTest(context, TEST_ALARM_SECONDS)
+                        testArmed = true
+                    }) {
+                        Text(stringResource(R.string.test_alarm))
+                    }
+
+                    if (testArmed) {
+                        Text(
+                            text = stringResource(
+                                R.string.test_alarm_armed, TEST_ALARM_SECONDS
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -324,6 +380,45 @@ private fun MainScreen() {
                     Spacer(Modifier.height(4.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Baenin er thegar a taekinu - takkinn er naestum
+                        // okeypis. Raunverulega astaedan er samt onnur: hann
+                        // gefur folki tilefni til ad OPNA appid, og Samsung
+                        // svaefir einmitt opp sem enginn opnar.
+                        TextButton(
+                            onClick = {
+                                if (playingToday) {
+                                    previewPlayer.pause()
+                                    playingToday = false
+                                } else {
+                                    val src = EpisodeRepository(context)
+                                        .playbackSource()
+                                    val uri = when (src) {
+                                        is EpisodeRepository.PlaybackSource.LocalFile ->
+                                            android.net.Uri.fromFile(src.file)
+                                        is EpisodeRepository.PlaybackSource.Stream ->
+                                            android.net.Uri.parse(src.url)
+                                        null -> null
+                                    }
+                                    if (uri != null) {
+                                        previewPlayer.setMediaItem(
+                                            MediaItem.fromUri(uri)
+                                        )
+                                        previewPlayer.prepare()
+                                        previewPlayer.play()
+                                        playingToday = true
+                                    }
+                                }
+                            },
+                            enabled = cachedTitle != null
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (playingToday) R.string.stop_playback
+                                    else R.string.play_today
+                                )
+                            )
+                        }
+
                         TextButton(onClick = { HistoryActivity.start(context) }) {
                             Text(stringResource(R.string.history_open))
                         }
@@ -447,6 +542,7 @@ private fun MainScreen() {
                         onCheckedChange = {
                             newsEnabled = it
                             prefs.newsEnabled = it
+                            CatchUpScheduler.schedule(context)
 
                             // Saekja strax tegar kveikt er - annars bidur
                             // notandinn i allt ad sex klst eftir ad sja
@@ -494,36 +590,33 @@ private fun MainScreen() {
             // Rautt = eitthvad hefur tegar farid urskeidis.
             // Tetta er mikilvaegara en stillingavidvaranirnar tvi tad er
             // eina merkid um bilun sem notandinn faer - siminn segir ekkert.
-            when (health) {
-                Health.MISSED_ALARM -> {
-                    WarningCard(
-                        text = stringResource(R.string.warn_missed_alarm),
-                        actionLabel = stringResource(R.string.acknowledge),
-                        onAction = {
-                            prefs.missedAlarmAcknowledged = System.currentTimeMillis()
+            if (Health.MISSED_ALARM in health) {
+                WarningCard(
+                    text = stringResource(R.string.warn_missed_alarm),
+                    actionLabel = stringResource(R.string.acknowledge),
+                    onAction = {
+                        prefs.missedAlarmAcknowledged = System.currentTimeMillis()
 
-                            // Thida merkid. schedule() frystir tad medan
-                            // lidinn ohringdur timi stendur - an tessa saeti
-                            // tad fast i FYRSTA klikkinu og vidvorunin
-                            // birtist aldrei aftur, tott vekjarinn thegdi
-                            // hvern einasta morgun eftir tad.
-                            prefs.lastScheduledTriggerMillis =
-                                AlarmScheduler.nextTriggerTime(prefs) ?: 0L
+                        // Thida merkid. schedule() frystir tad medan
+                        // lidinn ohringdur timi stendur - an tessa saeti
+                        // tad fast i FYRSTA klikkinu og vidvorunin
+                        // birtist aldrei aftur, tott vekjarinn thegdi
+                        // hvern einasta morgun eftir tad.
+                        prefs.lastScheduledTriggerMillis =
+                            AlarmScheduler.nextTriggerTime(prefs) ?: 0L
 
-                            health = checkHealth(prefs)
-                        }
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-                Health.STALE_SYNC -> {
-                    WarningCard(
-                        text = stringResource(R.string.warn_stale_sync),
-                        actionLabel = stringResource(R.string.open_settings),
-                        onAction = { openBatterySettings(context) }
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-                Health.OK -> Unit
+                        health = checkHealth(prefs)
+                    }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            if (Health.STALE_SYNC in health) {
+                WarningCard(
+                    text = stringResource(R.string.warn_stale_sync),
+                    actionLabel = stringResource(R.string.open_settings),
+                    onAction = { openBatterySettings(context) }
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
             // ---------- Aminningar um kerfisstillingar ----------
@@ -748,8 +841,8 @@ private fun InfoCard(
     }
 }
 
-/** Nidurstada heilsuvoktunar. */
-private enum class Health { OK, MISSED_ALARM, STALE_SYNC }
+/** Einkenni sem heilsuvoktunin fann. Tomt mengi = allt i lagi. */
+private enum class Health { MISSED_ALARM, STALE_SYNC }
 
 /**
  * Athugar hvort eitthvad hafi thegar farid urskeidis.
@@ -765,9 +858,13 @@ private enum class Health { OK, MISSED_ALARM, STALE_SYNC }
  * reiknast upp á nýtt út frá núverandi stillingum — breyti notandinn 07:00
  * í 06:30 eftir velheppnaða hringingu lítur það út eins og klikkaður vekjari.
  */
-private fun checkHealth(prefs: Prefs): Health {
-    if (!prefs.alarmEnabled) return Health.OK
+private fun checkHealth(prefs: Prefs): Set<Health> {
+    if (!prefs.alarmEnabled) return emptySet()
 
+    // Mengi, ekki stakt gildi: klikkadur vekjari og stodnud sokn koma
+    // oftast SAMAN - soknin sem la nidri er orsok klikksins - og notandinn
+    // a ad sja badar hlidar strax, ekki adra eftir ad hann kvittar.
+    val result = mutableSetOf<Health>()
     val now = System.currentTimeMillis()
 
     // Vid segjum ekkert fyrr en vekjarinn hefur hringt ad minnsta kosti einu
@@ -779,17 +876,17 @@ private fun checkHealth(prefs: Prefs): Health {
             prefs.lastAlarmFiredMillis + TimeUnit.MINUTES.toMillis(5) < expected &&
             expected > prefs.missedAlarmAcknowledged
         ) {
-            return Health.MISSED_ALARM
+            result += Health.MISSED_ALARM
         }
     }
 
     if (prefs.lastSyncMillis > 0L &&
         now - prefs.lastSyncMillis > TimeUnit.HOURS.toMillis(36)
     ) {
-        return Health.STALE_SYNC
+        result += Health.STALE_SYNC
     }
 
-    return Health.OK
+    return result
 }
 
 private fun areNotificationsEnabled(context: Context): Boolean =
@@ -865,6 +962,9 @@ private fun String?.isTodays(): Boolean {
     val date = raw.substringBefore('T').substringBefore(' ')
     return date == SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 }
+
+/** Hversu langt profunarhringingin er fram i timann. */
+private const val TEST_ALARM_SECONDS = 30
 
 /** Klukkan a veggnum nuna - EKKI stilltur vekjaratimi. */
 private fun currentHour(): Int =

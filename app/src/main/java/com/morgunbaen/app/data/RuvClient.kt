@@ -39,6 +39,16 @@ class RuvClient {
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        // Sjalfgefinn "okhttp/4.x" hausinn er tad fyrsta sem efnisveitur
+        // utiloka tegar taer taka til hja ser. Kynnum okkur med nafni -
+        // tad er baedi kurteisi og lifsvon.
+        .addInterceptor { chain ->
+            chain.proceed(
+                chain.request().newBuilder()
+                    .header("User-Agent", USER_AGENT)
+                    .build()
+            )
+        }
         .build()
 
     /**
@@ -125,6 +135,9 @@ class RuvClient {
     companion object {
         private const val TAG = "RuvClient"
         private const val BASE_URL = "https://spilari.nyr.ruv.is/gql/"
+
+        /** Kynning appsins i ollum netkollum - hja RUV og vid nidurhal. */
+        const val USER_AGENT = "Morgunbaen-Android/0.9"
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         /** "Morgunbæn og orð dagsins" a Ras 1. */
