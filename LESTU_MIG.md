@@ -6,7 +6,7 @@ fréttirnar kl. 07:00 á eftir.
 Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
 **Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
 
-Staða: **v0.8** (`7a43fce`).
+Staða: **v0.9** (`9147488`).
 
 ---
 
@@ -19,7 +19,7 @@ Appið talar við óskjalfest GraphQL-viðmót á `https://spilari.nyr.ruv.is/gq
 
 | Auðkenni | Hvað | Tími |
 |---|---|---|
-| **25329** | Morgunbæn og orð dagsins | 06:55, virka daga |
+| **25329** | Morgunbæn og orð dagsins | 06:55, daglega |
 | **38786** | Fréttir | 07:00, daglega |
 
 **Gildran:** RÚV heldur úti mörgum fréttaliðum með nánast sama nafni. Tveir sem
@@ -92,10 +92,18 @@ Lestu `AlarmScheduler.kt` fyrst. Allt annað má klikka; klikki hún vaknar engi
 
 ## 4. Hvenær efnið er sótt
 
-**Sóknargluggi.** Kl. 07:00 á virkum morgnum opnast gluggi sem leitar á fimm
-mínútna fresti í allt að tvo tíma. Hann lokast þegar **allt efni dagsins** er
-komið — bæn, og fréttir líka ef notandinn hefur valið þær. Skilyrðið er
-*dagurinn í dag*; gærdagurinn dugar ekki.
+Morgunbænin er **dagleg** — dagskrá RÚV sýnir hana kl. 06:55 alla sjö daga
+vikunnar, líka laugardaga og sunnudaga, og fréttirnar kl. 07:00 sömuleiðis.
+Sóknargluggi og sjálfgefnir vekjaradagar byggja á þessu (sjá gildruna í lið 1
+og töfluna þar).
+
+**Sóknargluggi.** Kl. 07:00 opnast gluggi þá daga sem vekjarinn er stilltur á
+— ekki bara virka daga — og leitar á fimm mínútna fresti í allt að tvo tíma.
+Hann lokast þegar **allt efni dagsins** er komið — bæn, og fréttir líka ef
+notandinn hefur valið þær. Skilyrðið er *dagurinn í dag*; gærdagurinn dugar
+ekki. (Eldri útgáfa hafði helgar harðkóðaðar úti, byggt á rangri forsendu um
+að bænin væri bara flutt virka daga — notandi með sunnudagsvekjara fékk þá
+aldrei glugga þann morgun og vaknaði við bæn gærdagsins án viðvörunar.)
 
 **Öryggisnet.** Óháð glugganum keyrir sókn á sex tíma fresti, alla daga. Að hún
 keyri líka um helgar skiptir máli á Samsung (sjá lið 8).
