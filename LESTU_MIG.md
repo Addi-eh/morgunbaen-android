@@ -6,7 +6,7 @@ fréttirnar kl. 07:00 á eftir.
 Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
 **Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
 
-Staða: **v0.9** (`9147488`).
+Staða: **v0.91** (`0b159a7`).
 
 ---
 
@@ -72,21 +72,33 @@ data/RuvClient.kt          GraphQL-viðmót RÚV, dagskrárauðkennin
 data/EpisodeRepository.kt  Sækir bæn og fréttir, geymir á tækinu
 data/Prefs.kt              Allar stillingar (device-protected geymsla)
 data/DeviceStorage.kt      Aðgangur að geymslu sem virkar fyrir PIN
+data/Dates.kt              Allur lestur á RÚV-tímastimplum, á einum stað
 
 work/SyncWorker.kt         Sóknargluggi + 6 klst öryggisnet
 work/CatchUpScheduler.kt   Opnar gluggann kl. 07:00, ræður við læstan síma
 
-alarm/AlarmScheduler.kt    Reiknar og skráir vekjara og blund   ← hjartað
+alarm/TriggerTimes.kt      Hreinn tímareikningur - næst/síðast/gluggi   ← hjartað
+alarm/AlarmScheduler.kt    Þunn umbúð um TriggerTimes; skráir vekjara og blund
 alarm/AlarmReceiver.kt     Tekur við þegar klukkan hringir
 alarm/AlarmService.kt      Spilar bæn → fréttir → varahljóð
 alarm/AlarmActivity.kt     Skjárinn á læstum skjá, langt ýt til að slökkva
 alarm/BootReceiver.kt      Endurskráir allt eftir ræsingu
 
-MainActivity.kt            Aðalskjár: tími, dagar, stillingar, viðvaranir
+MainActivity.kt            Samhæfingarlag: state og hliðarverk fyrir spjöldin
+ui/AlarmCard.kt             Vekjaratími, dagar, helgartími, prófunarhnappur
+ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
+ui/WakeSettingsCard.kt      Fade-in, titringur, fréttir, blundur
+ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
+
+test/alarm/TriggerTimesTest.kt   12 próf á tímareikningnum, keyra með `./gradlew test`
 ```
 
-Lestu `AlarmScheduler.kt` fyrst. Allt annað má klikka; klikki hún vaknar enginn.
+Lestu `TriggerTimes.kt` fyrst — hreinn tímareikningur, engin Android-tenging,
+og hjartað í bæði vekjaranum og sóknarglugganum. `AlarmScheduler.kt` og
+`CatchUpScheduler.kt` eru þunnar umbúðir utan um það. Allt annað má klikka;
+klikki tímareikningurinn vaknar enginn — eða hann vaknar á vitlausum tíma,
+sem er verra því ekkert segir frá því.
 
 ---
 
@@ -146,6 +158,19 @@ PIN**. Hann á samt að hringja.
 **`setAlarmClock`** er sterkasta tímasetningin sem Android býður og kemst í
 gegnum Doze. `AlarmReceiver` skráir næsta dag um leið og hann hringir — algengasta
 villan í heimasmíðuðum vekjurum er að gleyma því.
+
+**Tímareikningurinn sjálfur býr í `TriggerTimes.kt`** — hreint fall af
+gildum (dagar, klukka, helgartími), engin `Context` eða `SharedPreferences`.
+`AlarmScheduler.nextTriggerTime()`/`previousTriggerTime()` og
+`CatchUpScheduler.schedule()` eru þunnar umbúðir sem lesa `Prefs` og kalla
+hann. Ástæðan fyrir aðskilnaðinum: `nextWindow()` skal skila `null` þegar
+engir dagar eru valdir, ekki varatíma — eldri útgáfa af sóknarglugganum féll
+aftur á „núna + 24 klst" í því tilfelli, sem skráði gluggann á tíma sem
+færðist með klukkunni dag frá degi í stað þess að hverfa. Sú villa hefði
+aldrei komist í gegnum einfaldasta einingapróf, en reikningurinn lá læstur
+inni í hlutum sem þurftu `Context` til að keyra yfirleitt. `TriggerTimesTest.kt`
+hefur núna 12 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
+tilfelli.
 
 **Blundur er sjálfstæður vekjari.** Hann notar eigin `PendingIntent` (kóða 1003),
 er vistaður í `Prefs` með `commit()` svo hann lifi af ferlisdauða, og
@@ -212,17 +237,32 @@ Samsung-notendum þessar leiðbeiningar sjálfkrafa; þeir munu samt hunsa þær
 
 ## 9. Prófanir
 
+**Fyrst, á tölvunni — engan síma þarf:** `./gradlew test` keyrir
+`TriggerTimesTest.kt`, 12 próf á tímareikningnum. Grípur ekki neitt sem
+snertir Android sjálft, en grípur allt sem snertir *hvenær* vekjarinn og
+sóknarglugginn eiga að fara í gang — ódýrasta og hraðasta staðfestingin sem
+til er á verkefninu.
+
+Því næst, á símanum:
+
 1. **Sækja.** „Sækja núna" → nafn prestsins birtist. Kveiktu á fréttum → tími
    fréttatímans birtist.
-2. **Vekjari.** Tvær mínútur fram í tímann, **læstu símanum og slökktu á
+2. **Prófunarhnappur.** Ýttu á „Prófa vekjarann", læstu símanum og slökktu á
+   skjánum — full hringing eftir 30 sek með skjá, bæn og slökkvitakka.
+   Athugaðu að „Næst:" sýni enn réttan morgun á eftir, og að
+   prófunartextinn sjálfur sé horfinn þegar þú kemur til baka í appið.
+3. **Vekjari.** Tvær mínútur fram í tímann, **læstu símanum og slökktu á
    skjánum**.
-3. **Hljóðfókus.** Kveiktu á tónlist og láttu vekjarann hringja ofan í hana.
+4. **Hljóðfókus.** Kveiktu á tónlist og láttu vekjarann hringja ofan í hana.
    Þessi bilar aðeins þegar eitthvað annað er í gangi — sem er sjaldan þegar
    maður prófar.
-4. **Direct Boot.** Endurræstu, ekki slá inn PIN.
-5. **Blundur.** Blundaðu, slökktu svo á blundinum, og athugaðu að
+5. **Direct Boot.** Endurræstu, ekki slá inn PIN.
+6. **Blundur.** Blundaðu, slökktu svo á blundinum, og athugaðu að
    „Næst:" sýni enn morgundaginn.
-6. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
+7. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
+   appinu (heim-takkinn) — hljóðið á að þagna. Kom það ekki, er
+   `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
+8. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
 
 Sú síðasta er sú eina sem sannar eitthvað. Vekjari sem virkar kl. 13:10 meðan þú
 horfir á símann sannar ekkert; vekjari sem hringir eftir sjö tíma svefn með
@@ -260,15 +300,15 @@ Annað sem vantar:
 ## 11. Það sem vantar enn
 
 - **Eigið varahljóð.** Sjálfgefið vekjarahljóð símans er kalt vakningarúrræði.
-- **Prófunarhnappur** — „hringja eftir 10 sek" svo ekki þurfi að hreyfa
-  morguntímann til að prófa.
-- **Einingapróf á `nextTriggerTime`/`previousTriggerTime`.** Þetta er hjartað og
-  auðvelt að prófa án síma: virkir dagar, helgartími, miðnætti, allir dagar
-  afvaldir. Engin próf eru í verkefninu.
 - **Fleiri framleiðendur en Samsung.** Xiaomi, Huawei, Oppo og OnePlus drepa
   bakgrunn jafn mikið.
-- **`MainActivity.kt` er komin yfir 900 línur** í einum Composable.
-- **Einn dagsetningarhjálpari** í stað `substringBefore`-rökfræði á fimm stöðum.
+- **Einingapróf víðar.** `TriggerTimesTest.kt` nær yfir tímareikninginn; ekkert
+  annað í verkefninu er prófað enn — t.d. `Dates.kt`-þáttun eða
+  `EpisodeRepository`-röklegan gang (án nettengingar, með mock-uðum `RuvClient`).
+- **Kvöldstöðutékk.** Lítil hljóðlát tilkynning kl. 21 sem staðfestir að bæn
+  morgundagsins hafi náðst, eða varar við ef eitthvað vantar heimild.
+  Vekjaraklukkur bila á nóttunni; þetta er eina tækifærið til að segja frá
+  fyrir skaðann.
 
 ---
 
@@ -279,7 +319,7 @@ byggður á eldra grunnsniði og vekur upp lagfæringar sem voru löngu gerðar.
 Þrjár villur fóru þannig hring: `mutableStateOf`-innflutningur, `newsDir`, og
 `hour` gegn `currentHour()`.
 
-Þrennt sem verður að halda:
+Fernt sem verður að halda:
 
 **Git-repóið er eina uppspretta sannleikans.** Samhliða vinnutré — hvort sem það
 heitir `Grok/`, `morgunbaen-verkefni vX.Y/` eða annað — verða að hverfa um leið
@@ -289,6 +329,20 @@ og innihald þeirra er staðfest komið inn.
 ekki sönnun. Sending sem fullyrti „ein breyting" bar í reynd breytingar á tólf
 skrám, þar á meðal hrunvillu sem hafði leynst frá fyrstu útgáfu.
 
-**Byggðu áður en þú commit-ar.** En mundu að Gradle grípur aðeins
-þýðingarvillur. `hour` gegn `currentHour()` þýddist fullkomlega í öll þrjú
-skiptin sem hún kom aftur.
+**Byggðu áður en þú commit-ar — og keyrðu prófin, ekki bara `assembleDebug`.**
+En mundu að hvorki Gradle né `git apply --check` grípa allt. `hour` gegn
+`currentHour()` þýddist fullkomlega í öll þrjú skiptin sem hún kom aftur —
+það var rökvilla, ekki þýðingarvilla. Og `git apply --check`, sem ber saman
+blob-kennitölur en ekki bara texta og er því nákvæmari staðfesting en nokkur
+skrá-fyrir-skrá samanburður, staðfestir samt aðeins að bútarnir passi við
+skrána — ekki að útkomandi Kotlin þýðist. Patch sem stóðst þá athugun bar samt
+`private private fun` (tvítekið lykilorð, leif eftir handvirka endurheimt).
+Aðeins bygging fann hana.
+
+**Sumar villur eru hvorki í kóðanum né í fylgiskjalinu um hann — heldur í
+forsendu sem báðir aðilar deila.** Sú staðreynd að Morgunbænin er flutt alla
+daga vikunnar, ekki bara virka daga, var ranghermd í kóða, athugasemdum og
+notendatexta samtímis frá fyrstu útgáfu — ekkert `diff` grípur það, því allt
+var samstiga um sömu röngu niðurstöðuna. Fannst aðeins þegar einhver bar
+fullyrðinguna saman við frumgögn (dagskrá RÚV) sem lægju utan kóðans
+sjálfs.
