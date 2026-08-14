@@ -1,22 +1,40 @@
 # Morgunbæn — Android-app
 
-Vekjaraklukka sem spilar nýjustu „Morgunbæn og orð dagsins" af Rás 1.
+Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
+fréttirnar kl. 07:00 á eftir.
 
 Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
-Appið tekur ekkert upp — það sækir þáttinn beint frá RÚV.
+**Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
+
+Staða: **v0.8** (`7a43fce`).
 
 ---
 
-## 1. Staða RÚV-viðmótsins — staðfest
+## 1. RÚV-viðmótið — og gildrurnar í því
 
-Þetta er prófað og virkar. RÚV skilar venjulegri MP3-skrá, t.d.
-`https://ruv-radio.akamaized.net/opid/5495160D0.mp3` — sem þýðir að appið
-hleður bæninni niður og geymir hana á tækinu.
+Appið talar við óskjalfest GraphQL-viðmót á `https://spilari.nyr.ruv.is/gql/`.
+Það virkar, en getur breyst án fyrirvara. Bilanaleit byrjar alltaf hér.
 
-**Engin nettenging þarf að vera til staðar þegar vekjarinn hringir.**
+### Dagskrárliðirnir tveir
 
-Ef appið hættir einhvern tímann að finna bænina, keyrðu þessa skipun í Termux
-til að sjá hvort RÚV hafi breytt einhverju:
+| Auðkenni | Hvað | Tími |
+|---|---|---|
+| **25329** | Morgunbæn og orð dagsins | 06:55, virka daga |
+| **38786** | Fréttir | 07:00, daglega |
+
+**Gildran:** RÚV heldur úti mörgum fréttaliðum með nánast sama nafni. Tveir sem
+líta rétt út en eru það ekki:
+
+- `39025` „Fréttir" — **vikulegur** sunnudagsfréttatími kl. 11:00
+- `25233` „Morgunfréttir" — daglegur, en kl. **08:00**
+
+Appið notaði `39025` um tíma. Það fann aldrei neitt frá deginum í dag og sagði
+réttilega frá því — villan var í auðkenninu, ekki rökvísinni. Staðfestu alltaf
+með `curl` áður en þú breytir auðkenni.
+
+### Staðfestingarskipun
+
+Skiptu `25329` út fyrir `38786` til að prófa fréttirnar.
 
 ```bash
 curl -s https://spilari.nyr.ruv.is/gql/ \
@@ -24,325 +42,245 @@ curl -s https://spilari.nyr.ruv.is/gql/ \
   -H 'Referer: https://www.ruv.is/utvarp' \
   -H 'Origin: https://www.ruv.is' \
   -d '{"operationName":"getEpisode","variables":{"programID":25329},"query":"query getEpisode($programID: Int!) { Program(id: $programID) { title episodes { title id firstrun file } } }"}' \
-  | jq '.data.Program.episodes | sort_by(.firstrun) | last'
+  | jq '.data.Program.episodes | sort_by(.firstrun) | reverse | .[0:3]'
 ```
 
-Þú ættir að fá eitthvað á borð við:
+Þrennt á að stemma:
 
-```json
-{
-  "title": "sr. Benedikt Sigurðsson",
-  "id": "bme3rd",
-  "firstrun": "2026-08-12 06:55:00",
-  "file": "https://..."
-}
-```
-
-Skili hún engu, eða skili `file` slóð sem endar á `.m3u8` í stað `.mp3`,
-þá hefur RÚV breytt viðmótinu og appið þarf uppfærslu. Kóðinn ræður við hvort
-tveggja, en `.m3u8` þýðir streymi frekar en niðurhal — og þá þarf nettengingu
-á vökutíma.
+1. **Nýjasti þáttur er frá í dag eða gær.** Sé hann vikugamall er auðkennið rangt.
+2. **`firstrun` er ISO með T**: `2026-08-13T06:55:00`. Kóðinn ræður líka við bil
+   í stað T, en snið sem er hvorugt brýtur dagsetningarlestur.
+3. **`file` endar á `.mp3`.** Endi hún á `.m3u8` er þetta streymi: appið spilar
+   það en getur ekki geymt það, og þá þarf nettengingu á vökutíma.
 
 ---
 
 ## 2. Að opna verkefnið
 
-1. Sæktu **Android Studio** á tölvuna (ókeypis, frá Google).
-2. `File → Open` og veldu þessa möppu.
-3. Android Studio segir „Gradle sync" neðst. Fyrsta keyrslan tekur 5–15 mínútur
-   því hann sækir öll söfnin. Það er eðlilegt. Bíddu.
-4. Ef hann kvartar yfir Android SDK: `Tools → SDK Manager` og settu upp
-   **Android 15 (API 35)**.
-
-Til að setja appið í símann: tengdu hann með USB, kveiktu á
-**Þróunarstillingum** (ýttu sjö sinnum á „Build number" í Stillingar → Um símann)
-og **USB-villuleit**. Síminn birtist þá efst í Android Studio og þú ýtir á græna
-▶-takkann.
+1. `File → Open` í Android Studio, veldu **möppuna sem inniheldur
+   `settings.gradle.kts`** — ekki yfirmöppuna.
+2. Biðji hann um Gradle JVM, veldu **21**. Nýrri Java ræður Gradle ekki við.
+3. Fyrsta samstilling tekur 5–15 mínútur. Rauðar undirstrikanir á meðan eru
+   eðlilegar.
 
 ---
 
-## 3. Hvernig kóðinn hangir saman
+## 3. Kóðinn
 
 ```
-data/RuvClient.kt          Talar við GraphQL-viðmót RÚV
-data/EpisodeRepository.kt  Sækir bænina og geymir hana á tækinu
-data/Prefs.kt              Allar stillingar
+data/RuvClient.kt          GraphQL-viðmót RÚV, dagskrárauðkennin
+data/EpisodeRepository.kt  Sækir bæn og fréttir, geymir á tækinu
+data/Prefs.kt              Allar stillingar (device-protected geymsla)
+data/DeviceStorage.kt      Aðgangur að geymslu sem virkar fyrir PIN
 
-work/SyncWorker.kt         Bakgrunnsverk — sækir bænina á ~6 klst fresti
-work/CatchUpScheduler.kt   Sóknarglugginn kl. 07:00, virkar líka í Direct Boot
+work/SyncWorker.kt         Sóknargluggi + 6 klst öryggisnet
+work/CatchUpScheduler.kt   Opnar gluggann kl. 07:00, ræður við læstan síma
 
-alarm/AlarmScheduler.kt    Reiknar og skráir næsta vekjara (og blund)   ← hjartað
+alarm/AlarmScheduler.kt    Reiknar og skráir vekjara og blund   ← hjartað
 alarm/AlarmReceiver.kt     Tekur við þegar klukkan hringir
-alarm/AlarmService.kt      Spilar bænina í forgrunnsþjónustu
-alarm/AlarmActivity.kt     Skjárinn sem birtist á læstum skjá
-alarm/BootReceiver.kt      Skráir vekjarann aftur eftir endurræsingu
+alarm/AlarmService.kt      Spilar bæn → fréttir → varahljóð
+alarm/AlarmActivity.kt     Skjárinn á læstum skjá, langt ýt til að slökkva
+alarm/BootReceiver.kt      Endurskráir allt eftir ræsingu
 
-MainActivity.kt            Aðalskjárinn — tími, dagar, staða
+MainActivity.kt            Aðalskjár: tími, dagar, stillingar, viðvaranir
+HistoryActivity.kt         Fyrri bænir, spilun og deiling
 ```
 
-Ef þú lest bara eina skrá, lestu `AlarmScheduler.kt`. Allt annað má klikka;
-ef hún klikkar vaknar enginn.
+Lestu `AlarmScheduler.kt` fyrst. Allt annað má klikka; klikki hún vaknar enginn.
 
 ---
 
-## 4. Hvernig á að prófa vekjarann
+## 4. Hvenær efnið er sótt
 
-Ekki bíða til morguns. Þrjár prófanir, í þessari röð:
+**Sóknargluggi.** Kl. 07:00 á virkum morgnum opnast gluggi sem leitar á fimm
+mínútna fresti í allt að tvo tíma. Hann lokast þegar **allt efni dagsins** er
+komið — bæn, og fréttir líka ef notandinn hefur valið þær. Skilyrðið er
+*dagurinn í dag*; gærdagurinn dugar ekki.
 
-**Prófun 1 — sækja bænina.** Opnaðu appið, ýttu á „Sækja núna". Þú átt að sjá
-nafn prestsins birtast innan nokkurra sekúndna.
+**Öryggisnet.** Óháð glugganum keyrir sókn á sex tíma fresti, alla daga. Að hún
+keyri líka um helgar skiptir máli á Samsung (sjá lið 8).
 
-**Prófun 2 — vekjarinn sjálfur.** Stilltu hann á tvær mínútur fram í tímann,
-**læstu símanum og slökktu á skjánum.** Bænin á að byrja að spila og skjárinn
-að kvikna. Ef ekkert gerist, sjá lið 5.
+**Læstur sími.** `CatchUpReceiver` er `directBootAware` og keyrir kl. 07:00 þótt
+enginn hafi slegið inn PIN. WorkManager getur það ekki — hann þarf
+credential-geymslu — svo viðtakandinn greinir læstan síma og reynir aftur á
+fimm mínútna fresti í stað þess að tapa deginum. `BootReceiver` opnar gluggann
+strax ef síminn kemur upp ólæstur innan hans.
 
-**Prófun 3 — raunverulegar aðstæður.** Þetta er sú eina sem skiptir máli:
-láttu appið vekja þig á morgun. Ekki gefa það út fyrr en það hefur virkað
-hjá þér í viku samfleytt.
+**Ein takmörkun.** Vaknir þú fyrir kl. 07:00 færðu bæn gærdagsins og engar
+fréttir. Þátturinn er einfaldlega ekki til — útvarpið er ekki búið að flytja
+hann. Appið segir frá þessu í stað þess að láta þig bíða.
 
----
-
-## 4a. Hvenær sækir appið bænina?
-
-Morgunbænin er flutt kl. 06:55–07:00 og birtist í Spilara RÚV skömmu síðar.
-
-**Sóknargluggi.** Kl. 07:00 á virkum morgnum opnast gluggi þar sem appið leitar
-á fimm mínútna fresti þangað til þáttur dagsins finnst — í mesta lagi í
-klukkutíma. Um leið og hann er kominn hættir það að leita.
-
-Athugaðu að skilyrðið er **þáttur dagsins í dag**, ekki „einhver þáttur". Það
-dugar ekki að eiga gærdagsins; þá er ekkert unnið og appið heldur áfram.
-
-**Öryggisnet.** Óháð glugganum keyrir reglubundin sókn á sex tíma fresti, alla
-daga vikunnar. Hún grípur það sem glugginn missti af: síminn var slökktur kl. 7,
-netlaust, eða RÚV birti þáttinn seint. Að hún keyri líka um helgar skiptir máli
-á Samsung — sjá lið 5.
-
-**Ein takmörkun.** Vaknir þú fyrir kl. 07:00 færðu bæn gærdagsins, því þáttur
-dagsins er einfaldlega ekki til ennþá þegar vekjarinn hringir. Það er ekki hægt
-að leysa: útvarpið er ekki búið að flytja hann. Þeir sem vakna kl. 06:30 fá því
-alltaf einn dag á eftir.
+**Gamlar fréttir eru verri en engar.** Bæn gærdagsins eldist ekki og er geymd.
+Fréttatími gærdagsins er villandi og er hentur *áður* en reynt er að sækja nýjan.
+Náist ekkert spilast bænin ein.
 
 ---
 
-## 4b. Varnir sem eru ósýnilegar í daglegri notkun
+## 5. Direct Boot
 
-**Direct Boot.** Endurræsist síminn um nóttina — vegna uppfærslu, tómrar
-rafhlöðu í hleðslu eða kerfishruns — er geymslan dulkóðuð þar til einhver slær
-inn PIN. Venjulegt app gæti hvorki lesið hvenær á að hringja né hvað á að spila,
-og vekjarinn þegði.
+Endurræsist síminn kl. 03:00 er geymslan dulkóðuð þar til einhver slær inn PIN.
+Venjulegt app gæti hvorki lesið hvenær á að hringja né hvað á að spila.
 
-Appið er því merkt `directBootAware`, hlustar á `LOCKED_BOOT_COMPLETED` og geymir
-**bæði stillingarnar og MP3-skrána** í device-protected geymslu. Það síðasta er
-auðvelt að gleyma: það dugar ekki að vita hvenær á að hringja ef hljóðskráin er
-ólæsileg.
+Þess vegna eru **bæði stillingarnar og hljóðskrárnar** í device-protected
+geymslu, appið er `directBootAware`, og `BootReceiver` hlustar á
+`LOCKED_BOOT_COMPLETED` sem berst strax við ræsingu.
 
-Til að prófa: stilltu vekjarann fram í tímann, endurræstu símann og **ekki slá
-inn PIN**. Hann á samt að hringja.
+Það síðasta er auðvelt að gleyma: það dugar ekki að vita hvenær á að hringja ef
+MP3-skráin er ólæsileg.
 
-**Sóknarglugginn og læstur sími.** `CatchUpReceiver` sjálfur er líka
-`directBootAware` og notar `AlarmManager`, svo hann virkar í Direct Boot — en
-`SyncWorker` sem hann ræsir notar `WorkManager`, sem þarf credential-geymslu og
-getur ekki keyrt fyrr en einhver hefur slegið inn PIN. Opnist glugginn kl. 07:00
-meðan síminn er enn læstur (t.d. eftir endurræsingu um nóttina) frestar
-`CatchUpScheduler` sér sjálfur og reynir aftur á fimm mínútna fresti í stað
-þess að tapa deginum. Sé síminn ólæstur þegar hann er opnaður **innan**
-gluggans (07:00–09:00 á virkum degi) opnar `BootReceiver` gluggann strax líka
-— annars biði hann til næsta virka morguns.
-
-**Blundur er aðskilinn frá daglega vekjaranum.** Báðir notuðu upphaflega sama
-`PendingIntent`, svo að blunda skrifaði óvart yfir daglegu skráninguna í
-`AlarmManager`. Blundur hefur núna sinn eigin auðkennikóða og vistar tímann í
-`Prefs.snoozeUntilMillis` með `commit()` (ekki `apply()`) svo hann lifi af
-ferlisdauða — annars gæti Android drepið appið á milli þess að blundtíminn er
-ákveðinn og hann kemst á disk. Endurskráður sjálfkrafa eftir endurræsingu eða
-stillingabreytingu, og hreinsaður um leið og vekjarinn hringir í alvöru.
-
-**Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru. Fari
-skráður hringitími hjá án þess að hann hafi hringt, segir appið frá því næst
-þegar það er opnað. Það sama gildir ef bakgrunnssóknin hefur ekki náð að keyra
-í meira en 36 klukkustundir.
-
-Samanburðurinn notar `Prefs.lastScheduledTriggerMillis` — tímann sem var
-**skráður** þegar vekjarinn var settur upp — en ekki endurreiknaðan
-„fyrri hringitíma" út frá núverandi stillingum. Breyti notandinn tímanum úr
-07:00 í 06:30 eftir velheppnaða hringingu myndi endurreiknaði tíminn líta út
-eins og klikkaður vekjari sem aldrei hringdi. Merkið frýs líka viljandi þegar
-liðinn tími er enn óhringdur — annars myndi næsta `schedule()`-kall (t.d. við
-hverja ræsingu appsins) færa það sjálfkrafa yfir á morgundaginn áður en
-viðvörunin næði nokkurn tímann að birtast. Það þýðir að samþykki notandans
-(„Ég skil") verður líka að **afþíða** merkið — annars birtist viðvörunin
-einu sinni og þagnar svo að eilífu, óháð því hvort vekjarinn þegir áfram.
-
-Android lætur ekki vita þegar það stöðvar app. Þetta er eina leiðin til að
-notandinn komist að því — annars heldur hann bara að appið sé ónýtt.
+**Prófun:** stilltu vekjara fram í tímann, endurræstu símann og **ekki slá inn
+PIN**. Hann á samt að hringja.
 
 ---
 
-## 5. Ef vekjarinn hringir ekki
+## 6. Vekjarinn
 
-Nær undantekningarlaust er ástæðan ein af þessum þremur:
+**`setAlarmClock`** er sterkasta tímasetningin sem Android býður og kemst í
+gegnum Doze. `AlarmReceiver` skráir næsta dag um leið og hann hringir — algengasta
+villan í heimasmíðuðum vekjurum er að gleyma því.
 
-**Rafhlöðusparnaður.** Þú ert á Samsung — og Samsung er með þeim allra verstu í
-þessu. Farðu í Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
-**Ótakmarkað**. Takkinn í appinu sem opnar þessa stillingu þarf
-`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`-leyfi í manifest til að virka yfirhöfuð
-— vanti það kastar `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` villu í stað
-þess að opna neitt. Fyrir OEM sem styðja ekki þá aðgerð er tveggja þrepa
-varaleið: fyrst `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`, svo almennu
-forritsstillingarnar.
+**Blundur er sjálfstæður vekjari.** Hann notar eigin `PendingIntent` (kóða 1003),
+er vistaður í `Prefs` með `commit()` svo hann lifi af ferlisdauða, og
+endurskráður í `schedule()`. Áður deildi hann `PendingIntent` með daglega
+vekjaranum og **eyddi morgundeginum** um leið og ýtt var á Blunda.
 
-**Samsung svæfir líka öpp sem hafa ekki verið opnuð í þrjá daga.** Þetta er
-sértækt vandamál fyrir þetta app: vekjari sem hringir aðeins á virkum dögum er
-ónotaður frá föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Settu
-appið á listann **„Öpp sem sofa aldrei"** í Umhirða tækis → Rafhlaða →
-Takmörk á bakgrunnsnotkun.
+**Langt ýt til að slökkva** — 1,5 sekúndur, með sýnilegri framvindu. Blundur er
+venjulegt ýt: það á ekki að vera erfitt að sofna aftur, heldur að slökkva alveg.
 
-Appið sýnir Samsung-notendum þessar leiðbeiningar sjálfkrafa við fyrstu opnun.
-Þeir munu samt hunsa þær. Þess vegna er heilsuvöktunin til.
+**Full-screen intent.** Frá Android 14 er heimildin ekki sjálfvirk og
+hliðarhlaðin APK fær hana ekki. Appið varar við og býður þrjár varaleiðir:
+bein ræsing skjásins, tilkynning með Slökkva/Blunda, og ýt á tilkynninguna.
+Í Play Store undir vekjaraflokki fæst heimildin sjálfkrafa.
 
-**Full-screen intent heimild vantar.** Þetta er algengasta ástæðan fyrir því að
-bænin spilar en enginn skjár birtist. Frá Android 14 er `USE_FULL_SCREEN_INTENT`
-ekki lengur sjálfvirk — Google veitir hana aðeins öppum sem Play Store hefur
-flokkað sem vekjara- eða símtalsöpp, og **hliðarhlaðin APK-skrá fær hana ekki**,
-sama hvað stendur í manifest.
+**Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru og
+ber saman við `lastScheduledTriggerMillis` — tímann sem var *raunverulega*
+skráður, ekki endurreiknaðan út frá núverandi stillingum. Sá munur skiptir máli:
+færi notandinn 07:00 í 06:30 eftir velheppnaða hringingu leit það áður út eins
+og klikkaður vekjari.
 
-Appið varar við þessu efst á forsíðunni og takkinn opnar réttu stillinguna.
-Þegar appið kemur í Play Store undir réttum flokki fæst heimildin sjálfkrafa og
-notendur þínir sjá þetta aldrei.
-
-Til vara reynir appið líka að opna vekjaraskjáinn beint, og tilkynningin ber
-bæði „Slökkva" og „Blunda" takka — svo það er alltaf einhver leið til að
-stöðva bænina.
-
-**Tilkynningaheimild vantar.** Án hennar birtist ekkert, hvorki skjár né takki.
-Appið biður um hana við fyrstu opnun.
-
-**Heimild fyrir nákvæma vekjara.** Sjaldgæft, því `USE_EXACT_ALARM` í manifest
-gefur hana sjálfkrafa — en appið athugar það samt.
+Merkið er fryst meðan liðinn óhringdur tími stendur, svo `Application.onCreate`
+færi það ekki á morgundaginn áður en viðvörunin næði að birtast — og þítt aftur
+þegar notandinn kvittar, svo vöktunin þagni ekki að eilífu eftir fyrsta klikk.
 
 ---
 
-## 6. Fréttir á eftir bæninni
+## 7. Hljóð
 
-Valkvæmt í Vakning-spjaldinu. Fréttirnar eru næsti dagskrárliður á eftir
-Morgunbæninni, svo röðin speglar útsendinguna sjálfa: **bæn → fréttir →
-varahljóð**.
+**Röðin er bæn → fréttir → varahljóð.** Vekjarinn stöðvast *aldrei* þegar efni
+klárast — þá gæti fólk sofnað aftur — heldur færist á næsta stig. Varahljóðið
+spilar í lykkju þar til slökkt er, en þjónustan hættir sjálfkrafa eftir
+**15 mínútur** ef enginn er heima.
 
-Þær koma úr dagskrárlið 38786 („Fréttir" kl. 07:00), sem er daglegur —
-stakur ~5 mínútna þáttur og `firstrun` ber nákvæman útsendingartíma. Appið
-sækir nýjasta fréttatíma dagsins.
+**Hljóðfókus** er `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE` með
+`setWillPauseWhenDucked(false)`. Hlaðvarp sem gleymdist í gangi þagnar alveg, og
+vekjarinn gefur sjálfur aldrei eftir.
 
-**Varúð ef þetta þarf einhvern tímann að laga:** RÚV heldur úti mörgum
-aðskildum fréttaliðum með svipuðum nöfnum. `39025` heitir líka „Fréttir" en er
-vikulegur sunnudagsfréttatími kl. 11:00, og `25233` („Morgunfréttir") er
-daglegur en kl. 08:00. Rétta auðkennið er **38786**. Staðfestu það alltaf með
-`curl` áður en þú breytir einhverju — sjá lið 1.
+**Hljóðstyrknum er skilað.** Sé vekjarastyrkur undir 60% hækkar appið hann
+tímabundið og setur hann aftur eins og hann var. Áður sat síminn eftir á hærri
+styrk en eigandinn valdi.
 
-**Ein regla er önnur en fyrir bænina: gamlar fréttir eru verri en engar.**
-Bæn gærdagsins er í lagi — hún eldist ekki. Fréttatími gærdagsins er beinlínis
-villandi. Appið hendir því fréttatíma sem er ekki frá deginum í dag *áður* en
-það reynir að sækja nýjan, og ef ekkert næst spilast bænin einfaldlega ein.
-Betra að þegja en að ljúga.
-
-Athugaðu að fréttirnar eru sóttar í bakgrunni eins og bænin. Vaknir þú kl. 9
-færðu þann fréttatíma sem náðist síðast, ekki endilega þann allra nýjasta —
-það er verðið fyrir að virka án nettengingar.
+**Vaxandi hljóðstyrkur og titringur eru sjálfgefið AF.** Bænin er talað mál —
+fyrstu setningarnar hverfa ef styrkurinn er enn að hækka, og titringur keppir
+við rödd prestsins. Hvort tveggja er í boði fyrir þá sem vilja.
 
 ---
 
-## 6a. Fyrri bænir, deiling og helgar
+## 8. Ef vekjarinn hringir ekki
 
-**Fyrri bænir.** Sérstakur skjár sýnir síðustu fjórtán þætti og leyfir að spila
-þá aftur. Þeir eru **streymdir, ekki hlaðnir niður** — bæn dagsins er það eina
-sem þarf að vera til án nettengingar. Fyrri bænir hlustar fólk á meðvitað, og þá
-er síminn hvort eð er í höndunum.
+**Rafhlöðusparnaður.** Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
+**Ótakmarkað**.
 
-**Deiling** sendir titil, dagsetningu og hlekk í Spilara RÚV. Hljóðskránni
-sjálfri er aldrei deilt — hún er efni RÚV. Hlekkurinn sendir fólk til þeirra,
-sem er bæði rétta leiðin og sú sem heldur áfram að virka eftir að appið er
-löngu gleymt.
+**Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga.** Þetta er sértækt
+vandamál fyrir þetta app: vekjari sem hringir aðeins á virkum dögum er ónotaður
+frá föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Settu appið á
+listann **„Öpp sem sofa aldrei"** í Umhirða tækis → Rafhlaða. Appið sýnir
+Samsung-notendum þessar leiðbeiningar sjálfkrafa; þeir munu samt hunsa þær, og
+þess vegna er heilsuvöktunin til.
 
-**Helgartími.** Dagavalið hefur alltaf leyft að velja laugardag og sunnudag; það
-sem bættist við er möguleikinn á **öðrum tíma** um helgar. Morgunbænin er ekki
-flutt þá, svo appið spilar síðustu bæn vikunnar — margir vilja sofa lengur án
-þess að sleppa henni alveg.
+**Full-screen intent eða tilkynningaheimild vantar.** Appið varar við báðum efst
+á forsíðunni með takka beint í réttu stillinguna.
 
 ---
 
-## 6b. Hljóð og hljóðstyrkur
+## 9. Prófanir
 
-Þrennt sem er ósýnilegt en skiptir máli:
+1. **Sækja.** „Sækja núna" → nafn prestsins birtist. Kveiktu á fréttum → tími
+   fréttatímans birtist.
+2. **Vekjari.** Tvær mínútur fram í tímann, **læstu símanum og slökktu á
+   skjánum**.
+3. **Hljóðfókus.** Kveiktu á tónlist og láttu vekjarann hringja ofan í hana.
+   Þessi bilar aðeins þegar eitthvað annað er í gangi — sem er sjaldan þegar
+   maður prófar.
+4. **Direct Boot.** Endurræstu, ekki slá inn PIN.
+5. **Blundur.** Blundaðu, slökktu svo á blundinum, og athugaðu að
+   „Næst:" sýni enn morgundaginn.
+6. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
 
-**Hljóðfókus.** Appið biður um `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE` þegar
-vekjarinn fer í gang, svo hlaðvarp eða tónlist sem gleymdist í gangi þagnar
-alveg í stað þess að blandast saman við bænina.
-
-**Hljóðstyrknum er skilað.** Sé vekjarastyrkur símans undir 60% hækkar appið
-hann tímabundið — og setur hann aftur eins og hann var þegar slökkt er. Áður
-sat síminn eftir á hærri styrk en eigandinn hafði valið, án þess að nokkur
-áttaði sig á hvers vegna.
-
-**Tímamörk.** Þjónustan stöðvast sjálfkrafa eftir 15 mínútur. Vekjarinn hættir
-ekki þegar bænin klárast — þá gæti fólk sofnað aftur — en hann má heldur ekki
-spila endalaust ef síminn gleymdist heima.
-
----
-
-## 6c. Varnir gegn tvöfaldri ræsingu og hálfkláruðu niðurhali
-
-**`AlarmService` getur fengið `ACTION_START` tvisvar** — Android endurræsir
-drepnar þjónustur með síðasta `Intent`, eða `AlarmReceiver` gæti sent hann
-tvisvar af öðrum ástæðum. Þjónustan endurstillir því spilunarástand
-(`resetPlayback()`) í upphafi hverrar ræsingar í stað þess að gera ráð fyrir
-hreinu borði, og notar `START_REDELIVER_INTENT` **aðeins** fyrir `ACTION_START`
-— slökkva og blundur mega ekki endurræsa vekjarann sjálfkrafa ef þjónustan
-deyr eftir að notandinn hefur þegar slökkt á honum.
-
-Endursend ræsing getur líka borist löngu eftir að vekjarinn átti að hringja
-(þjónustan drepin kl. 07:03, endursend kl. 08:40). Sé meira en 20 mínútur liðnar
-frá skráðum hringitíma hættir appið strax í stað þess að byrja að spila bænina
-óvænt um miðjan morgun. `acquireWakeLock()` sleppir líka haldnum lás áður en
-nýr er tekinn, svo tvöföld ræsing skilji ekki eftir læstan lás sem aldrei losnar.
-
-**Niðurhal sem klárast ekki alveg.** `File.renameTo()` getur klikkað hljóðalaust
-þegar bráðabirgðaskráin og lokastaðsetningin eru á sitt hvoru skráarkerfinu.
-Bæði bænin og fréttatíminn falla þá aftur á afritun (`copyTo`) og staðfesta
-stærð skráarinnar eftir á — heppnist hvorugt er skránni hent frekar en að vista
-slóð á skrá sem er ekki til.
+Sú síðasta er sú eina sem sannar eitthvað. Vekjari sem virkar kl. 13:10 meðan þú
+horfir á símann sannar ekkert; vekjari sem hringir eftir sjö tíma svefn með
+dimmum skjá og Doze í fullum gangi sannar allt. **Hver ný útgáfa endurstillir
+teljarann.**
 
 ---
 
-## 7. Áður en þú setur þetta í Play Store
+## 10. Áður en þetta fer í Play Store
 
-**Sendu RÚV póst fyrst.** Þetta er mikilvægast. Að taka upp fyrir sjálfan sig er
-eitt; að dreifa appi sem sækir efni þeirra fyrir hundruð manns er annað.
-Spurðu líka hvort viðmótið sé stöðugt — það er óskjalfest og getur breyst
-án fyrirvara, og þá hættir appið að virka hjá öllum í einu.
+**Sendu RÚV póst.** Mikilvægast. Viðmótið er óskjalfest og ein breyting slekkur
+á appinu hjá öllum samtímis. Grænt ljós og tengiliður eru meira virði en
+nokkur kóði.
 
-**`USE_EXACT_ALARM` þarf réttlætingu.** Google leyfir hana fyrir öpp þar sem
-vekjari er meginhlutverkið — sem á við hér. Þú þarft samt að fylla út form í
-Play Console og útskýra það. Verði því hafnað er varaleiðin `SCHEDULE_EXACT_ALARM`
-þar sem notandinn veitir heimildina handvirkt.
+**targetSdk 36.** Stendur í 35. Frá 31. ágúst 2026 krefst Google Play að ný öpp
+miði á Android 16. Fyrir óútgefið app skapar fresturinn engan flýti — þú þarft
+36 hvenær sem þú gefur út — en þetta er **ekki einnar línu breyting**: Android 16
+fjarlægir undanþáguna frá edge-to-edge teikningu, sem er raunveruleg
+viðmótsvinna.
 
-**targetSdk.** Stendur í 35. Play Store gerir kröfu um nýjustu útgáfur fyrir ný
-öpp — athugaðu hvað er í gildi og hækkaðu töluna í `app/build.gradle.kts`
-ef þarf.
+Annað sem vantar:
 
-**Táknmynd og undirritunarlykill.** Hvorugt er í verkefninu. Android Studio býr
-til táknmynd (`File → New → Image Asset`) og undirritunarlykil
-(`Build → Generate Signed Bundle`). **Taktu afrit af lyklinum og geymdu hann
-vel** — týnir þú honum geturðu aldrei uppfært appið aftur.
+- **Undirritunarlykill.** Ekki til. Búðu hann til, taktu afrit, geymdu utan
+  tölvunnar. Týnist hann geturðu aldrei uppfært appið.
+- **`USE_EXACT_ALARM`** þarf réttlætingu í Play Console. Vekjari er gild ástæða.
+- **`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`** er takmörkuð heimild. Vekjaraöpp
+  eru á lista Google yfir gildar undantekningar.
+- **Forgrunnsþjónusta `mediaPlayback`** — Play biður um lýsingu og stundum myndband.
+- **Persónuverndarstefna** — krafist þótt appið safni engu.
+- **`isMinifyEnabled`** er `false` og `proguard-rules.pro` tóm.
+- **`versionCode`/`versionName`** standa í 1 / 1.0.
 
 ---
 
-## 8. Það sem vantar enn
+## 11. Það sem vantar enn
 
-Vísvitandi sleppt úr fyrstu útgáfu:
+- **Eigið varahljóð.** Sjálfgefið vekjarahljóð símans er kalt vakningarúrræði.
+- **Prófunarhnappur** — „hringja eftir 10 sek" svo ekki þurfi að hreyfa
+  morguntímann til að prófa.
+- **Einingapróf á `nextTriggerTime`/`previousTriggerTime`.** Þetta er hjartað og
+  auðvelt að prófa án síma: virkir dagar, helgartími, miðnætti, allir dagar
+  afvaldir. Engin próf eru í verkefninu.
+- **Fleiri framleiðendur en Samsung.** Xiaomi, Huawei, Oppo og OnePlus drepa
+  bakgrunn jafn mikið.
+- **`MainActivity.kt` er komin yfir 900 línur** í einum Composable.
+- **Einn dagsetningarhjálpari** í stað `substringBefore`-rökfræði á fimm stöðum.
 
-- **Eigið varahljóð.** Núna notar appið sjálfgefið vekjarahljóð símans ef bænin
-  næst ekki. Það virkar, en er ekki fallegt.
-- **Íslenskun kerfistexta.** Appið er á íslensku, en dagsetningarsnið gætu
-  þurft fínstillingu.
+---
 
-Byrjaðu ekki á þessu. Byrjaðu á að láta vekjarann virka hjá þér í viku.
+## 12. Vinnulag — lærdómur sem kostaði
+
+Verkefnið hefur ítrekað lent í sömu villunni: **kóði sem kemur utan frá er
+byggður á eldra grunnsniði og vekur upp lagfæringar sem voru löngu gerðar.**
+Þrjár villur fóru þannig hring: `mutableStateOf`-innflutningur, `newsDir`, og
+`hour` gegn `currentHour()`.
+
+Þrennt sem verður að halda:
+
+**Git-repóið er eina uppspretta sannleikans.** Samhliða vinnutré — hvort sem það
+heitir `Grok/`, `morgunbaen-verkefni vX.Y/` eða annað — verða að hverfa um leið
+og innihald þeirra er staðfest komið inn.
+
+**Berðu saman skrá fyrir skrá, alltaf.** Fylgiskjal sem segir hvað breyttist er
+ekki sönnun. Sending sem fullyrti „ein breyting" bar í reynd breytingar á tólf
+skrám, þar á meðal hrunvillu sem hafði leynst frá fyrstu útgáfu.
+
+**Byggðu áður en þú commit-ar.** En mundu að Gradle grípur aðeins
+þýðingarvillur. `hour` gegn `currentHour()` þýddist fullkomlega í öll þrjú
+skiptin sem hún kom aftur.
