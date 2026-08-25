@@ -1,0 +1,36 @@
+name: Próf
+
+# Einingaprofin eru odyr og keyra a nokkrum sekundum. Their na yfir
+# timareikning vekjarans - taer villur sem klikka hljodlaust og uppgotvast
+# annars ekki fyrr en einhver sefur yfir sig.
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Keyra prof
+        run: ./gradlew test --no-daemon
+
+      - name: Byggja APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Geyma APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: morgunbaen-debug
+          path: app/build/outputs/apk/debug/*.apk

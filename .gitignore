@@ -4,3 +4,15 @@ local.properties
 .idea/
 build/
 .DS_Store
+
+# Undirritunarlyklar - MEGA ALDREI fara i almennt repo.
+# Tynist lykillinn er ekki haegt ad uppfaera appid i Play Store framar,
+# og komist hann i rangar hendur getur einhver annar gefid ut "uppfaerslu".
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Utgefnar skrar
+*.apk
+*.aab
