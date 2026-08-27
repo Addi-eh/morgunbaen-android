@@ -19,7 +19,7 @@
     <string name="history_empty">Náði ekki að sækja fyrri bænir frá RÚV.</string>
 
     <string name="weekend_label">Annar tími um helgar</string>
-    <string name="weekend_desc">Hrein tímastilling — bæn dagsins næst alla daga</string>
+    <string name="weekend_desc">Sami tími alla daga — kveiktu til að sofa lengur um helgar</string>
     <string name="weekend_time">Helgartími: %1$s</string>
     <string name="weekend_days_warning">Hvorki laugardagur né sunnudagur er valinn — helgartíminn hefur engin áhrif</string>
 
@@ -73,6 +73,11 @@
     <string name="samsung_done">Búið</string>
 
     <string name="next_alarm">Næst: %1$s</string>
+    <string name="countdown_minutes">%1$d mín</string>
+    <string name="countdown_hours_minutes">%1$d klst %2$d mín</string>
+    <string name="countdown_day_hours">%1$d dagur %2$d klst</string>
+    <string name="countdown_days_hours">%1$d dagar %2$d klst</string>
+    <string name="cd_countdown">Tími þangað til vekjarinn hringir</string>
     <string name="snoozing_until">Blundar til %1$s</string>
     <string name="no_day_selected">Enginn dagur valinn</string>
     <string name="aired_on">Flutt %1$s</string>

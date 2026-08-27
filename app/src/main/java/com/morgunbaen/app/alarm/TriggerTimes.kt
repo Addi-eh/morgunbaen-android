@@ -123,6 +123,33 @@ object TriggerTimes {
         return null
     }
 
+    /**
+     * Hversu langt er þangað til klukkan er `toMillis`, sundurliðað í daga,
+     * klukkustundir og mínútur. Skilar null sé tíminn liðinn hjá.
+     *
+     * Mínúturnar eru NÁMUNDAÐAR UPP: standi 6 mín og 20 sek eftir segir
+     * teljarinn „7 mín". Annars sæti hann á „0 mín" heila mínútu áður en
+     * vekjarinn hringir — og teljari sem segir núll en hringir ekki er
+     * verri en enginn teljari.
+     */
+    fun countdown(fromMillis: Long, toMillis: Long): Countdown? {
+        val diff = toMillis - fromMillis
+        if (diff <= 0L) return null
+
+        val totalMinutes = ((diff + MINUTE_MILLIS - 1) / MINUTE_MILLIS).toInt()
+        return Countdown(
+            days = totalMinutes / MINUTES_PER_DAY,
+            hours = (totalMinutes % MINUTES_PER_DAY) / 60,
+            minutes = totalMinutes % 60
+        )
+    }
+
+    /** Sundurliðaður biðtími — dagar, klukkustundir og mínútur. */
+    data class Countdown(val days: Int, val hours: Int, val minutes: Int)
+
+    private const val MINUTE_MILLIS = 60_000L
+    private const val MINUTES_PER_DAY = 24 * 60
+
     private fun applyTime(
         calendar: Calendar,
         dayOfWeek: Int,

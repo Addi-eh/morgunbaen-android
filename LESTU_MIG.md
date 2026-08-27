@@ -83,7 +83,7 @@ data/Dates.kt              Allur lestur á RÚV-tímastimplum, á einum stað
 work/SyncWorker.kt         Sóknargluggi + 6 klst öryggisnet
 work/CatchUpScheduler.kt   Opnar gluggann kl. 07:00, ræður við læstan síma
 
-alarm/TriggerTimes.kt      Hreinn tímareikningur - næst/síðast/gluggi   ← hjartað
+alarm/TriggerTimes.kt      Hreinn tímareikningur - næst/síðast/gluggi/teljari ← hjartað
 alarm/AlarmScheduler.kt    Þunn umbúð um TriggerTimes; skráir vekjara og blund
 alarm/AlarmReceiver.kt     Tekur við þegar klukkan hringir
 alarm/AlarmService.kt      Spilar bæn → fréttir → varahljóð
@@ -97,7 +97,7 @@ ui/WakeSettingsCard.kt      Fade-in, titringur, fréttir, blundur
 ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
 
-test/alarm/TriggerTimesTest.kt   12 próf á tímareikningnum, keyra með `./gradlew test`
+test/alarm/TriggerTimesTest.kt   17 próf á tímareikningnum, keyra með `./gradlew test`
 ```
 
 Lestu `TriggerTimes.kt` fyrst — hreinn tímareikningur, engin Android-tenging,
@@ -180,8 +180,13 @@ aftur á „núna + 24 klst" í því tilfelli, sem skráði gluggann á tíma s
 færðist með klukkunni dag frá degi í stað þess að hverfa. Sú villa hefði
 aldrei komist í gegnum einfaldasta einingapróf, en reikningurinn lá læstur
 inni í hlutum sem þurftu `Context` til að keyra yfirleitt. `TriggerTimesTest.kt`
-hefur núna 12 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
+hefur núna 17 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
 tilfelli.
+
+`countdown()` býr líka þarna: biðtíminn fram að næstu hringingu, sundurliðaður
+í daga, klukkustundir og mínútur. Mínúturnar eru námundaðar **upp** — annars
+stæði teljarinn á „0 mín" heila mínútu áður en vekjarinn hringir, og teljari
+sem segir núll en hringir ekki er verri en enginn teljari.
 
 `AlarmScheduler.schedule()` kallar núna `cancel(context)` þegar enginn dagur
 er valinn, til samræmis við `CatchUpScheduler` — annars gat gömul skráning

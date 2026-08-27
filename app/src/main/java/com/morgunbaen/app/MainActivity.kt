@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.alarm.AlarmScheduler
+import com.morgunbaen.app.alarm.TriggerTimes
 import com.morgunbaen.app.data.Dates
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.EpisodeRepository
@@ -55,6 +56,7 @@ import com.morgunbaen.app.ui.WakeSettingsCard
 import com.morgunbaen.app.ui.WarningCard
 import com.morgunbaen.app.work.CatchUpScheduler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -104,6 +106,7 @@ private fun MainScreen() {
     var notificationsOk by remember { mutableStateOf(areNotificationsEnabled(context)) }
     var fullScreenOk by remember { mutableStateOf(canUseFullScreenIntent(context)) }
     var nextAlarmText by remember { mutableStateOf(nextAlarmDescription(context, prefs)) }
+    var countdownText by remember { mutableStateOf(countdownDescription(context, prefs)) }
     var health by remember { mutableStateOf(checkHealth(prefs)) }
     var oemGuideDone by remember { mutableStateOf(prefs.oemGuideDone) }
     var fadeIn by remember { mutableStateOf(prefs.fadeInEnabled) }
@@ -160,6 +163,7 @@ private fun MainScreen() {
                     notificationsOk = areNotificationsEnabled(context)
                     fullScreenOk = canUseFullScreenIntent(context)
                     nextAlarmText = nextAlarmDescription(context, prefs)
+                    countdownText = countdownDescription(context, prefs)
                     cachedTitle = prefs.cachedTitle
                     cachedDate = prefs.cachedFirstrun
                     cachedEpisodeId = prefs.cachedEpisodeId
@@ -197,6 +201,21 @@ private fun MainScreen() {
         }
     }
 
+    // Teljarinn verdur ad tikka af sjalfum ser - annars stendur hann i stad
+    // medan skjarinn er opinn og lygur meira eftir tvi sem lengur lidur.
+    // Vaknar a minutumotum svo talan breytist a somu stundu og klukkan i
+    // simanum gerir tad, ekki einhvers stadar inni i minutunni.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(MINUTE_MILLIS - System.currentTimeMillis() % MINUTE_MILLIS + TICK_SLACK_MILLIS)
+            countdownText = countdownDescription(context, prefs)
+            // Hringi vekjarinn a medan skjarinn er opinn faerist naesti
+            // timi a naesta dag - teljarinn og textinn undir honum verda
+            // ad snuast vid a sama augnabliki.
+            nextAlarmText = nextAlarmDescription(context, prefs)
+        }
+    }
+
     fun persistAndReschedule() {
         prefs.alarmEnabled = enabled
         prefs.alarmHour = hour
@@ -207,6 +226,7 @@ private fun MainScreen() {
         // tarf hann nyjan tima. Ohaett ad kalla oft.
         CatchUpScheduler.schedule(context)
         nextAlarmText = nextAlarmDescription(context, prefs)
+        countdownText = countdownDescription(context, prefs)
         health = checkHealth(prefs)
     }
 
@@ -233,6 +253,7 @@ private fun MainScreen() {
                 weekendDaysMissing = weekendEnabled &&
                     days.none { it == Calendar.SATURDAY || it == Calendar.SUNDAY },
                 nextAlarmText = nextAlarmText,
+                countdownText = countdownText,
                 testArmed = testArmed,
                 testSeconds = TEST_ALARM_SECONDS,
                 onEnabledChange = {
@@ -699,16 +720,59 @@ private const val TEST_ALARM_SECONDS = 30
 private fun currentHour(): Int =
     Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-private fun nextAlarmDescription(context: Context, prefs: Prefs): String {
+/** Ein minuta i millisekundum - lengd tiksins hja teljaranum. */
+private const val MINUTE_MILLIS = 60_000L
+
+/** Litil bid framyfir minutumotin svo tikkid lendi orugglega hinum megin. */
+private const val TICK_SLACK_MILLIS = 250L
+
+/**
+ * Timapunkturinn sem vekjarinn stefnir a: blundslok se blundad, annars
+ * naesta hringing.
+ *
+ * Baedi nextAlarmDescription og countdownDescription lesa hedan svo
+ * teljarinn og textinn undir honum tali um SAMA timapunkt. Vaeru teir
+ * reiknadir hvor i sinu lagi gaeti teljarinn talid nidur ad hringingu
+ * morgundagsins medan textinn segdi "Blundar til 07:09".
+ */
+private fun alarmTargetMillis(prefs: Prefs): Long? {
     val snoozeAt = prefs.snoozeUntilMillis
-    if (snoozeAt > System.currentTimeMillis()) {
-        val format = SimpleDateFormat("HH:mm", Locale("is", "IS"))
-        return context.getString(R.string.snoozing_until, format.format(Date(snoozeAt)))
+    if (snoozeAt > System.currentTimeMillis()) return snoozeAt
+    return AlarmScheduler.nextTriggerTime(prefs)
+}
+
+/**
+ * Bidtiminn i ordum: "7 min", "2 klst 7 min" eda "3 dagar 2 klst".
+ * Skilar null tegar enginn dagur er valinn - tha er ekkert ad telja nidur.
+ *
+ * Dagarnir eru med tvi vekjaradagar geta verid strjalir: se adeins
+ * mandagur valinn er naesta hringing allt ad viku i burtu, og "154 klst"
+ * segir engum neitt.
+ */
+private fun countdownDescription(context: Context, prefs: Prefs): String? {
+    val target = alarmTargetMillis(prefs) ?: return null
+    val left = TriggerTimes.countdown(System.currentTimeMillis(), target) ?: return null
+    return when {
+        left.days == 1 -> context.getString(R.string.countdown_day_hours, left.days, left.hours)
+        left.days > 1 -> context.getString(R.string.countdown_days_hours, left.days, left.hours)
+        left.hours > 0 ->
+            context.getString(R.string.countdown_hours_minutes, left.hours, left.minutes)
+        else -> context.getString(R.string.countdown_minutes, left.minutes)
     }
-    val next = AlarmScheduler.nextTriggerTime(prefs)
+}
+
+private fun nextAlarmDescription(context: Context, prefs: Prefs): String {
+    val target = alarmTargetMillis(prefs)
         ?: return context.getString(R.string.no_day_selected)
+
+    // Blundur er eina tilfellid tar sem markid er ekki skradur vekjaratimi -
+    // tha nefnum vid bara klukkuna, ekki vikudaginn.
+    if (target == prefs.snoozeUntilMillis) {
+        val format = SimpleDateFormat("HH:mm", Locale("is", "IS"))
+        return context.getString(R.string.snoozing_until, format.format(Date(target)))
+    }
     val format = SimpleDateFormat("EEEE d. MMMM 'kl.' HH:mm", Locale("is", "IS"))
-    return context.getString(R.string.next_alarm, format.format(Date(next)))
+    return context.getString(R.string.next_alarm, format.format(Date(target)))
 }
 
 private fun openExactAlarmSettings(context: Context) {

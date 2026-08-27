@@ -3,6 +3,20 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.93
+
+- **Teljari að næstu hringingu** birtist undir vekjaraklukkunni — „2 klst
+  7 mín" — svo klukkan á skjánum svari líka spurningunni sem raunverulega er
+  spurt á kvöldin: hve lengi má ég enn sofa? Reikningurinn er hreint fall í
+  `TriggerTimes.countdown()` með eigin prófum; mínúturnar eru námundaðar upp
+  svo teljarinn standi ekki á núlli heila mínútu áður en hringt er. Hann
+  tikkar á mínútumótum meðan skjárinn er opinn og telur niður að blundslokum
+  þegar blundað er, til samræmis við textann undir honum.
+- **Skýrari texti á helgarrofanum þegar slökkt er á honum**: „Sami tími alla
+  daga — kveiktu til að sofa lengur um helgar" í stað „Hrein tímastilling —
+  bæn dagsins næst alla daga", sem sagði frá forsendu hönnunarinnar en ekki
+  frá því hvað rofinn gerir.
+
 ## v0.92
 
 - **Þriðja birtingarmynd helgarforsendunnar fjarlægð** — í
