@@ -195,4 +195,65 @@ class TriggerTimesTest {
             )
         )
     }
+
+    // ------------------------------------------------------------------
+    //  countdown
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `teljarinn sundurlidar klukkustundir og minutur`() {
+        val left = TriggerTimes.countdown(
+            fromMillis = at(12, 4, 53).timeInMillis,
+            toMillis = at(12, 7, 0).timeInMillis
+        )!!
+
+        assertEquals(0, left.days)
+        assertEquals(2, left.hours)
+        assertEquals(7, left.minutes)
+    }
+
+    @Test
+    fun `teljarinn namundar minuturnar upp`() {
+        // 6 min og 20 sek eftir -> "7 min", ekki "6 min". Annars stendur
+        // teljarinn a 0 heila minutu adur en vekjarinn hringir.
+        val from = at(12, 6, 53).apply { set(Calendar.SECOND, 40) }
+        val left = TriggerTimes.countdown(
+            fromMillis = from.timeInMillis,
+            toMillis = at(12, 7, 0).timeInMillis
+        )!!
+
+        assertEquals(0, left.hours)
+        assertEquals(7, left.minutes)
+    }
+
+    @Test
+    fun `teljarinn telur daga tegar naesta hringing er langt undan`() {
+        // Fostudagur kl. 12:00, adeins manudagur valinn -> manudagur kl. 07:00
+        val next = TriggerTimes.next(
+            days = setOf(Calendar.MONDAY), hour = 7, minute = 0,
+            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
+            from = at(14, 12)
+        )!!
+        val left = TriggerTimes.countdown(at(14, 12).timeInMillis, next)!!
+
+        assertEquals(2, left.days)
+        assertEquals(19, left.hours)
+        assertEquals(0, left.minutes)
+    }
+
+    @Test
+    fun `lidinn timi skilar null`() {
+        assertNull(
+            TriggerTimes.countdown(
+                fromMillis = at(12, 7).timeInMillis,
+                toMillis = at(12, 6).timeInMillis
+            )
+        )
+    }
+
+    @Test
+    fun `nakvaemlega nuna skilar null - ekki nulltalning`() {
+        val now = at(12, 7).timeInMillis
+        assertNull(TriggerTimes.countdown(now, now))
+    }
 }

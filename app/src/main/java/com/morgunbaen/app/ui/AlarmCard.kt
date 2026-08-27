@@ -7,8 +7,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,6 +45,7 @@ internal fun AlarmCard(
     weekendMinute: Int,
     weekendDaysMissing: Boolean,
     nextAlarmText: String,
+    countdownText: String?,
     testArmed: Boolean,
     testSeconds: Int,
     onEnabledChange: (Boolean) -> Unit,
@@ -59,6 +67,14 @@ internal fun AlarmCard(
                     style = MaterialTheme.typography.displayMedium
                 )
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
+            }
+
+            // Teljarinn svarar teirri spurningu sem klukkan sjalf svarar
+            // ekki: hve lengi ma eg enn sofa? Adeins tegar vekjarinn er a -
+            // slokktur vekjari hefur engan bidtima.
+            if (enabled && countdownText != null) {
+                Spacer(Modifier.height(10.dp))
+                CountdownPill(text = countdownText)
             }
 
             Spacer(Modifier.height(12.dp))
@@ -130,6 +146,37 @@ internal fun AlarmCard(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+    }
+}
+
+/**
+ * Bidtiminn i litlum belg: klukkutakn og "2 klst 7 min".
+ *
+ * Textinn er nu tegar samsettur - belgurinn veit ekkert um klukkur.
+ * Taknid faer lysinguna svo skjalesarar segi hvad talan tydir.
+ */
+@Composable
+private fun CountdownPill(text: String) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Alarm,
+                contentDescription = stringResource(R.string.cd_countdown),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }
