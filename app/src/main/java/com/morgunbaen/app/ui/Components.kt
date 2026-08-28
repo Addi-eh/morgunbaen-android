@@ -20,9 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.util.Calendar
 
 /**
@@ -189,22 +187,4 @@ internal fun InfoCard(
             }
         }
     }
-}
-
-/**
- * Titillinn i toppbordanum - sami a badum skjum.
- *
- * 26sp i stad sjalfgefinna 22sp: Cormorant hefur laga x-haed og virkar
- * minna en sans-letur i somu punktastaerd.
- */
-@Composable
-internal fun AppBarTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleLarge.copy(
-            fontFamily = TitleFont,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 26.sp
-        )
-    )
 }
