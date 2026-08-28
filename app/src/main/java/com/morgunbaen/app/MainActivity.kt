@@ -49,6 +49,7 @@ import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.AlarmCard
+import com.morgunbaen.app.ui.AppBarTitle
 import com.morgunbaen.app.ui.InfoCard
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import com.morgunbaen.app.ui.PrayerCard
@@ -232,7 +233,9 @@ private fun MainScreen() {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            CenterAlignedTopAppBar(
+                title = { AppBarTitle(stringResource(R.string.app_name)) }
+            )
         }
     ) { padding ->
         Column(

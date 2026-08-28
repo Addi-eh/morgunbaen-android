@@ -21,6 +21,18 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   07:00" á þeim tíma sólarhringsins sem fréttatíminn var ekki kominn út —
   staða sem svarar ekki spurningunni sem raunverulega er spurð, hvað gerist ef
   ég kveiki. Viðvörunin um vekjara sem hringir fyrir kl. 07:00 er óbreytt.
+- **Teljarinn fluttur til hægri**, á sömu línu og „Breyta tíma". Þá stendur
+  ekkert á milli klukkunnar og hnappsins sem breytir henni, og spjaldið styttist
+  um eina línu. Belgurinn minnkaði lítillega (12dp innskot, 18dp tákn) svo
+  lengsti teljaratextinn — „2 dagar 19 klst" — rúmist við hlið hnappsins á
+  360dp skjá.
+- **Cormorant Garamond á titlinum** á báðum skjám, 26sp (letrið hefur lága
+  x-hæð og virkar minna en sans-letur í sömu stærð). Aðeins titillinn —
+  klukkan, teljarinn og brauðtextinn halda kerfisletrinu, sem er læsilegra í
+  hálfopnum augum. Leturskráin fylgir með í `res/font/` (SIL OFL, leyfið í
+  `THIRD_PARTY_LICENSES/`) og bætir ~290 KB við APK-inn.
+- **„Þú ert með nýjustu bænina"** í stað „Nýjasta bænin var þegar til staðar"
+  þegar ýtt er á „Sækja núna" og ekkert nýtt er að hafa.
 - **Skýrari texti á helgarrofanum þegar slökkt er á honum**: „Sami tími alla
   daga — kveiktu til að sofa lengur um helgar" í stað „Hrein tímastilling —
   bæn dagsins næst alla daga", sem sagði frá forsendu hönnunarinnar en ekki
