@@ -26,16 +26,6 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   um eina línu. Belgurinn minnkaði lítillega (12dp innskot, 18dp tákn) svo
   lengsti teljaratextinn — „2 dagar 19 klst" — rúmist við hlið hnappsins á
   360dp skjá.
-- **Cormorant Garamond á titlinum** á báðum skjám, 26sp (letrið hefur lága
-  x-hæð og virkar minna en sans-letur í sömu stærð). Aðeins titillinn —
-  klukkan, teljarinn og brauðtextinn halda kerfisletrinu, sem er læsilegra í
-  hálfopnum augum. Leturskráin fylgir með í `res/font/` (SIL OFL, leyfið í
-  `THIRD_PARTY_LICENSES/`) og bætir ~290 KB við APK-inn.
-- **Titringsrofinn laug í slökktri stöðu.** Lýsingin greindist eingöngu á
-  „Vaxandi hljóðstyrkur" og aldrei á rofanum sjálfum, svo „Titrar meðan
-  vekjarinn hringir" stóð undir slökktum titringi. Slökkta staðan segir núna
-  „Aðeins hljóð", til samræmis við systurstillingarnar. Titringurinn var eina
-  stillingin í appinu sem hunsaði sinn eigin rofa.
 - **„Þú ert með nýjustu bænina"** í stað „Nýjasta bænin var þegar til staðar"
   þegar ýtt er á „Sækja núna" og ekkert nýtt er að hafa.
 - **Skýrari texti á helgarrofanum þegar slökkt er á honum**: „Sami tími alla
