@@ -24,7 +24,7 @@
     <string name="weekend_days_warning">Hvorki laugardagur né sunnudagur er valinn — helgartíminn hefur engin áhrif</string>
 
     <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
-    <string name="sync_already_have">Nýjasta bænin var þegar til staðar</string>
+    <string name="sync_already_have">Þú ert með nýjustu bænina</string>
     <string name="sync_stream_only">Bænin er tilbúin en verður streymd — nettenging þarf að vera til staðar þegar vekjarinn hringir</string>
     <string name="sync_failed">Tókst ekki: %1$s</string>
 

@@ -29,6 +29,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.data.Dates
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.RuvClient
+import com.morgunbaen.app.ui.AppBarTitle
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -156,7 +157,7 @@ private fun HistoryScreen(player: ExoPlayer?, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.history_title)) },
+                title = { AppBarTitle(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

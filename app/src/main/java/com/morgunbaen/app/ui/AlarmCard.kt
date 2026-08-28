@@ -81,18 +81,26 @@ internal fun AlarmCard(
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
 
+            Spacer(Modifier.height(4.dp))
+
+            // "Breyta tima" beint undir klukkunni, teljarinn haegra megin
+            // a somu linu. Tha stendur ekkert a milli klukkunnar og
+            // hnappsins sem breytir henni.
+            //
             // Teljarinn svarar teirri spurningu sem klukkan sjalf svarar
             // ekki: hve lengi ma eg enn sofa? Adeins tegar vekjarinn er a -
             // slokktur vekjari hefur engan bidtima.
-            if (enabled && countdownText != null) {
-                Spacer(Modifier.height(10.dp))
-                CountdownPill(text = countdownText)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            TextButton(onClick = onPickTime) {
-                Text(stringResource(R.string.change_time))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onPickTime) {
+                    Text(stringResource(R.string.change_time))
+                }
+                if (enabled && countdownText != null) {
+                    CountdownPill(text = countdownText)
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -176,15 +184,15 @@ private fun CountdownPill(text: String) {
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Outlined.Alarm,
                 contentDescription = stringResource(R.string.cd_countdown),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = text,
                 style = MaterialTheme.typography.titleMedium

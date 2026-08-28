@@ -10,6 +10,22 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import com.morgunbaen.app.R
+
+/**
+ * Letrid a titlinum - Cormorant Garamond, endurgerd Garamond-leturs
+ * fra 16. old (SIL OFL, sja THIRD_PARTY_LICENSES/).
+ *
+ * ADEINS titillinn - kerfisletrid er latid i fridi annars stadar.
+ * Klukkan, teljarinn og brodtextinn eiga ad vera laesileg i halfopnum
+ * augum kl. 07:00, og fingert Garamond er ekki letrid i tad verk.
+ */
+val TitleFont = FontFamily(
+    Font(R.font.cormorant_garamond_semibold, FontWeight.SemiBold)
+)
 
 // Rolegir, daufir tonar - appid er notad snemma morguns
 // tegar augun tola ekki sterka liti.
