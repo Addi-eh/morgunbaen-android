@@ -12,8 +12,12 @@ android {
         applicationId = "com.morgunbaen.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Fylgir BREYTINGAR.md og v-taggunum sem release.yml byggir a.
+        // versionCode er versionName an punkts (0.93 -> 93) svo tolurnar
+        // tvaer geti ekki rekid i sundur: v0.92 var gefid ut med
+        // versionCode 1 og versionName "1.0", sem sagdi hvorugt satt.
+        versionCode = 93
+        versionName = "0.93"
     }
 
     buildTypes {
