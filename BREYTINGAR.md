@@ -12,6 +12,15 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   svo teljarinn standi ekki á núlli heila mínútu áður en hringt er. Hann
   tikkar á mínútumótum meðan skjárinn er opinn og telur niður að blundslokum
   þegar blundað er, til samræmis við textann undir honum.
+- **Titillinn er í miðju** á báðum skjám (`CenterAlignedTopAppBar`); til-baka-örin
+  á „Fyrri bænir" situr áfram vinstra megin.
+- **Klukkan sjálf opnar tímavalið** — fyrsta hreyfing margra er að ýta á töluna.
+  „Breyta tíma"-hnappurinn stendur áfram fyrir þá sem giska ekki á það.
+- **Textinn undir „Fréttir" lýsir eiginleikanum** í stað sóknarstöðu:
+  „Fréttayfirlit RÚV á eftir bæninni". Áður stóð þar „Fréttir dagsins koma kl.
+  07:00" á þeim tíma sólarhringsins sem fréttatíminn var ekki kominn út —
+  staða sem svarar ekki spurningunni sem raunverulega er spurð, hvað gerist ef
+  ég kveiki. Viðvörunin um vekjara sem hringir fyrir kl. 07:00 er óbreytt.
 - **Skýrari texti á helgarrofanum þegar slökkt er á honum**: „Sami tími alla
   daga — kveiktu til að sofa lengur um helgar" í stað „Hrein tímastilling —
   bæn dagsins næst alla daga", sem sagði frá forsendu hönnunarinnar en ekki

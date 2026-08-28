@@ -1,5 +1,6 @@
 package com.morgunbaen.app.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
@@ -62,9 +64,19 @@ internal fun AlarmCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Ad yta a klukkuna sjalfa er fyrsta hreyfing margra. Hun
+                // opnar sama tolvalsglugga og "Breyta tima"-hnappurinn, sem
+                // stendur afram - flytileid fyrir ta sem giska a hana, ekki
+                // stadgengill fyrir synilegu leidina.
                 Text(
                     text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
-                    style = MaterialTheme.typography.displayMedium
+                    style = MaterialTheme.typography.displayMedium,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(
+                            onClickLabel = stringResource(R.string.change_time),
+                            onClick = onPickTime
+                        )
                 )
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
