@@ -78,4 +78,4 @@ Allt efni er höfundarréttarvarið RÚV. Þetta verkefni er ótengt RÚV.
 
 ## Leyfi
 
-GPL-3.0 — sjá [LICENSE](LICENSE). Höfundarréttur © 2026 Adam Einar Hildarson.
+GPL-3.0 — sjá [LICENSE](LICENSE). Höfundarréttur © 2026 AEH.
