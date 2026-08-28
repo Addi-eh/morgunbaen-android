@@ -22,7 +22,9 @@ val keystoreProps = Properties().apply {
 }
 
 fun signingValue(prop: String, env: String): String? =
-    keystoreProps.getProperty(prop) ?: System.getenv(env)
+    (keystoreProps.getProperty(prop) ?: System.getenv(env))
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
 
 android {
     namespace = "com.morgunbaen.app"
@@ -47,6 +49,10 @@ android {
                 storePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
                 keyAlias = signingValue("keyAlias", "KEY_ALIAS")
                 keyPassword = signingValue("keyPassword", "KEY_PASSWORD")
+                // Lykillinn er PKCS12 (Java 9+ sjalfigildi) tho skrain heiti
+                // .jks. An thessa treystum vid KeyStore.getDefaultType(), sem
+                // er PKCS12 a Java 21 i dag en ekki trygging.
+                storeType = "PKCS12"
 
                 // Skemun sett SKYRT frekar en ad treysta sjalfgildum AGP:
                 // uppfaersla a byggingartolunum ma ekki breyta undirritun
