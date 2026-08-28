@@ -67,12 +67,15 @@ internal fun WakeSettingsCard(
 
             Spacer(Modifier.height(12.dp))
 
+            // Slokkta stadan fyrst. Adur greindist lysingin EINGONGU a
+            // fadeIn og aldrei a rofanum sjalfum, svo "Titrar medan
+            // vekjarinn hringir" stod undir slokktum titringi.
             SettingRow(
                 label = stringResource(R.string.vibrate_label),
-                description = if (fadeIn) {
-                    stringResource(R.string.vibrate_desc_fade)
-                } else {
-                    stringResource(R.string.vibrate_desc)
+                description = when {
+                    !vibrate -> stringResource(R.string.vibrate_off_desc)
+                    fadeIn -> stringResource(R.string.vibrate_desc_fade)
+                    else -> stringResource(R.string.vibrate_desc)
                 },
                 checked = vibrate,
                 onCheckedChange = onVibrateChange
