@@ -296,7 +296,49 @@ teljarann.**
 
 ---
 
-## 10. Áður en þetta fer í Play Store
+## 10. Útgáfa og Play Store
+
+### Undirritun
+
+Útgáfur eru undirritaðar lykli sem býr **hvergi í repo-inu**. `release.yml` les
+hann úr fjórum GitHub-leyndarmálum; heimavinnsla les hann úr `keystore.properties`
+sem `.gitignore` heldur úti. Finnist hvorugt er enginn `signingConfig` settur — það
+er viljandi, svo hver sem er geti klónað verkefnið og keyrt `./gradlew test` og
+`assembleDebug` án þess að eiga lykilinn.
+
+| Leyndarmál | Gildi |
+|---|---|
+| `KEYSTORE_BASE64` | `base64 -w0 morgunbaen-release.jks` |
+| `KEYSTORE_PASSWORD` | store-lykilorðið |
+| `KEY_ALIAS` | dulnefni lykilsins |
+| `KEY_PASSWORD` | key-lykilorðið |
+
+**Afrit af lyklinum er forsenda þess að appið sé uppfæranlegt.** Android hafnar
+uppfærslu sem er undirrituð öðrum lykli en þeim sem fyrir er; týnist hann þarf
+hver einasti notandi að fjarlægja appið og setja upp á nýtt — og tapar þá
+vekjarastillingum. Geymdu hann í lykilorðageymslu og utan tölvunnar.
+
+v1-undirritun (JAR) er slökkt því `minSdk` er 26; v2 og v3 eru kveiktar **skýrt**
+frekar en að treysta sjálfgildum AGP, svo uppfærsla á byggingartólunum breyti ekki
+undirritun útgáfa í kyrrþey. v3 er forsenda þess að geta skipt um lykil síðar.
+
+### Að klippa útgáfu
+
+1. Uppfærðu `versionCode`/`versionName` í `app/build.gradle.kts` og bættu kafla
+   við `BREYTINGAR.md`. Reglan er: `versionCode` er `versionName` án punkts
+   (0.94 → 94).
+2. `git tag -a v0.94 -m "..."` og `git push origin v0.94`.
+3. `release.yml` keyrir prófin, byggir undirritað APK, staðfestir undirritunina
+   með `apksigner` og birtir það undir Releases sem `morgunbaen-v0.94.apk`.
+
+Vinnuflæðið **stöðvar sig með læsilegri villu** vanti `KEYSTORE_BASE64`, frekar en
+að byggja óundirritað APK sem enginn getur sett upp. SHA-256 vottorðsins er prentað
+í loggið — beri maður það saman milli útgáfna sést strax ef lyklinum var skipt út.
+
+> v0.92 og v0.93 voru **debug-undirritaðar** og því ekki uppfæranlegar í v0.94.
+> Sú leið er brotin einu sinni, í eitt skipti; eftir það er hún stöðug.
+
+### Áður en þetta fer í Play Store
 
 **Sendu RÚV póst.** Mikilvægast. Viðmótið er óskjalfest og ein breyting slekkur
 á appinu hjá öllum samtímis. Grænt ljós og tengiliður eru meira virði en
@@ -310,15 +352,15 @@ viðmótsvinna.
 
 Annað sem vantar:
 
-- **Undirritunarlykill.** Ekki til. Búðu hann til, taktu afrit, geymdu utan
-  tölvunnar. Týnist hann geturðu aldrei uppfært appið.
 - **`USE_EXACT_ALARM`** þarf réttlætingu í Play Console. Vekjari er gild ástæða.
 - **`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`** er takmörkuð heimild. Vekjaraöpp
   eru á lista Google yfir gildar undantekningar.
 - **Forgrunnsþjónusta `mediaPlayback`** — Play biður um lýsingu og stundum myndband.
 - **Persónuverndarstefna** — krafist þótt appið safni engu.
-- **`isMinifyEnabled`** er `false` og `proguard-rules.pro` tóm.
-- **`versionCode`/`versionName`** standa í 1 / 1.0.
+- **`isMinifyEnabled`** er `false` og `proguard-rules.pro` tóm. R8 er viljandi
+  slökkt: Compose, media3, WorkManager og OkHttp reiða sig öll á endurskin að
+  einhverju leyti, og klippi R8 of nærri birtist það sem vekjari sem hringir ekki.
+  Sú ferð þarf eigin prófun á tæki.
 
 ---
 

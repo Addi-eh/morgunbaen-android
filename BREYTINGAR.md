@@ -3,6 +3,23 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## Óútgefið
+
+- **Útgáfur eru nú undirritaðar alvöru lykli.** `release.yml` byggði áður
+  `assembleDebug` og birti debug-undirritað APK, svo v0.92 og v0.93 voru
+  undirritaðar debug-lykli hlauparans. Android hafnar uppfærslu sem er
+  undirrituð öðrum lykli en þeim sem fyrir er — fólk þurfti því að fjarlægja
+  appið, og tapa vekjarastillingum, við hverja uppfærslu. Nú byggir hún
+  `assembleRelease` með lykli úr GitHub-leyndarmálum, staðfestir undirritunina
+  með `apksigner` og prentar SHA-256 vottorðsins í loggið. Lykillinn býr hvergi
+  í repo-inu; `signingConfig` er einfaldlega ekki settur finnist hann ekki, svo
+  hver sem er getur áfram klónað og keyrt próf og debug-byggingu án hans.
+  v1-undirritun slökkt (minSdk 26), v2 og v3 kveiktar skýrt frekar en að treysta
+  sjálfgildum AGP. Release-APK er um leið 31% minna en debug-APK (15,0 MB í stað
+  21,9), eingöngu af því debug-upplýsingar falla brott — R8 er áfram slökkt.
+  **Leiðin úr debug-undirritaðri v0.93 í næstu útgáfu krefst þess að notendur
+  fjarlægi appið einu sinni enn.** Eftir það er hún stöðug.
+
 ## v0.93
 
 - **Teljari að næstu hringingu** birtist undir vekjaraklukkunni — „2 klst
