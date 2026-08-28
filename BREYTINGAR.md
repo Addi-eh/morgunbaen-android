@@ -3,7 +3,7 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
-## Óútgefið
+## v0.94
 
 - **Útgáfur eru nú undirritaðar alvöru lykli.** `release.yml` byggði áður
   `assembleDebug` og birti debug-undirritað APK, svo v0.92 og v0.93 voru
