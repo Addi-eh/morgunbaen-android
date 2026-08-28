@@ -36,6 +36,7 @@
     <string name="vibrate_label">Titringur</string>
     <string name="vibrate_desc_fade">Byrjar þegar fullum styrk er náð</string>
     <string name="vibrate_desc">Titrar meðan vekjarinn hringir</string>
+    <string name="vibrate_off_desc">Aðeins hljóð</string>
     <string name="news_label">Fréttir</string>
     <string name="news_desc">Fréttayfirlit RÚV á eftir bæninni</string>
     <string name="news_alarm_too_early">Vekjarinn hringir fyrir kl. 07:00 — fréttirnar eru ekki komnar þá og bænin spilast ein</string>
