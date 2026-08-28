@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -232,7 +232,7 @@ private fun MainScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            CenterAlignedTopAppBar(title = { Text(stringResource(R.string.app_name)) })
         }
     ) { padding ->
         Column(
@@ -562,9 +562,12 @@ private fun newsDescription(
         stringResource(R.string.news_alarm_too_early)
 
     // 2) KLUKKAN er undir 07:00 akkurat nu og frettatimi dagsins er tvi
-    //    ekki kominn ut enn. Skammvinnt astand sem leysist af sjalfu ser.
+    //    ekki kominn ut enn. Tad er edlilegt astand, ekki bilun, svo her
+    //    lysum vid tvi sem rofinn GERIR i stad tess ad kvarta undan tvi
+    //    sem vantar - "Nadi ekki i frettatima dagsins" a ekki heima a
+    //    teim tima solarhringsins tegar hann er einfaldlega ekki kominn.
     currentHour() < RuvClient.FRETTIR_HOUR && !Dates.isToday(newsFirstrun) ->
-        stringResource(R.string.news_not_yet)
+        stringResource(R.string.news_desc)
 
     Dates.isToday(newsFirstrun) -> stringResource(
         R.string.news_ready,
