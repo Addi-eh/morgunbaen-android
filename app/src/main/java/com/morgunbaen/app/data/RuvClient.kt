@@ -146,7 +146,7 @@ class RuvClient {
         private const val BASE_URL = "https://spilari.nyr.ruv.is/gql/"
 
         /** Kynning appsins i ollum netkollum - hja RUV og vid nidurhal. */
-        const val USER_AGENT = "Morgunbaen-Android/0.951"
+        const val USER_AGENT = "Morgunbaen-Android/0.952"
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         /** "Morgunbæn og orð dagsins" a Ras 1. */

@@ -16,7 +16,6 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -102,35 +101,6 @@ internal fun AlarmCard(
             Spacer(Modifier.height(8.dp))
             DayPicker(selected = days, onChange = onDaysChange)
 
-            if (enabled) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = nextAlarmText,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(8.dp))
-                if (skipActive && skippedWhenText != null) {
-                    Text(
-                        text = stringResource(R.string.skip_active, skippedWhenText),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    OutlinedButton(
-                        onClick = onUndoSkip,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.skip_undo))
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = onSkipNext,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.skip_next))
-                    }
-                }
-            }
-
             Spacer(Modifier.height(16.dp))
 
             // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er hrein
@@ -165,6 +135,32 @@ internal fun AlarmCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
+                }
+            }
+
+            if (enabled) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = nextAlarmText,
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                // Ein hringing, ekki auka vekjari. Þjóðhátíð, veikindi.
+                if (days.isNotEmpty()) {
+                    if (skipActive && skippedWhenText != null) {
+                        Text(
+                            text = stringResource(R.string.skip_active, skippedWhenText),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        TextButton(onClick = onUndoSkip) {
+                            Text(stringResource(R.string.skip_undo))
+                        }
+                    } else {
+                        TextButton(onClick = onSkipNext) {
+                            Text(stringResource(R.string.skip_next))
+                        }
+                    }
                 }
             }
 
