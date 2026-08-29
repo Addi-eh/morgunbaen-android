@@ -48,6 +48,8 @@ internal fun AlarmCard(
     weekendDaysMissing: Boolean,
     nextAlarmText: String,
     countdownText: String?,
+    skipActive: Boolean,
+    skippedWhenText: String?,
     testArmed: Boolean,
     testSeconds: Int,
     onEnabledChange: (Boolean) -> Unit,
@@ -55,6 +57,8 @@ internal fun AlarmCard(
     onDaysChange: (Set<Int>) -> Unit,
     onWeekendEnabledChange: (Boolean) -> Unit,
     onPickWeekendTime: () -> Unit,
+    onSkipNext: () -> Unit,
+    onUndoSkip: () -> Unit,
     onTest: () -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -149,6 +153,24 @@ internal fun AlarmCard(
                     text = nextAlarmText,
                     style = MaterialTheme.typography.bodySmall
                 )
+
+                // Ein hringing, ekki auka vekjari. Þjóðhátíð, veikindi.
+                if (days.isNotEmpty()) {
+                    if (skipActive && skippedWhenText != null) {
+                        Text(
+                            text = stringResource(R.string.skip_active, skippedWhenText),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        TextButton(onClick = onUndoSkip) {
+                            Text(stringResource(R.string.skip_undo))
+                        }
+                    } else {
+                        TextButton(onClick = onSkipNext) {
+                            Text(stringResource(R.string.skip_next))
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))

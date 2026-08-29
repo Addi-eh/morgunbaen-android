@@ -146,11 +146,19 @@ class RuvClient {
         private const val BASE_URL = "https://spilari.nyr.ruv.is/gql/"
 
         /** Kynning appsins i ollum netkollum - hja RUV og vid nidurhal. */
-        const val USER_AGENT = "Morgunbaen-Android/0.91"
+        const val USER_AGENT = "Morgunbaen-Android/0.95"
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         /** "Morgunbæn og orð dagsins" a Ras 1. */
         const val MORGUNBAEN_PROGRAM_ID = 25329
+
+        /**
+         * Beint HLS-streymi Rásar 1. Notað sem varaleið þegar engin
+         * bæn er á disknum — nær útvarpsupprunanum. Óskjalfest slóð
+         * eins og GraphQL-viðmótið; getur breyst án fyrirvara.
+         */
+        const val RAS1_LIVE_URL =
+            "https://ruv-radio-live.akamaized.net/streymi/ras1/ras1.m3u8"
 
         /**
          * "Fréttir" kl. 07:00 - naesti dagskrarlidur a eftir Morgunbaeninni.

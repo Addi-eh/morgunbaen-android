@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -129,17 +128,14 @@ class AlarmService : Service() {
             is EpisodeRepository.PlaybackSource.LocalFile -> Uri.fromFile(source.file)
             is EpisodeRepository.PlaybackSource.Stream -> Uri.parse(source.url)
             null -> {
-                // Engin baen til stadar - notandinn ma samt EKKI sofa yfir sig.
-                //
-                // VISVITANDI: stage helst PRAYER og repeatMode er OFF, svo
-                // tonninn spilast einu sinni og advanceToNextStage tekur vid.
-                // Seu frettir til heyrist tvi: tonn -> frettir -> tonn i lykkju.
-                // Tad er rett rod - frettirnar eiga ad fa ad spilast tott
-                // baenin hafi ekki nadst. "Lagfaering" sem stekkur beint i
-                // FALLBACK myndi taka frettirnar af notandanum.
-                Log.w(TAG, "Engin bæn til - nota varahljóð símans")
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                // Engin baen a diski. Rás 1 er næst útvarpsupprunanum —
+                // ef netið er til staðar heyrist útsendingin sjálf.
+                // Streymið endar ekki, svo 15 mínútna tímamörkin slökkva.
+                // Brjóti streymið (ekkert net) fer onPlayerError í fréttir
+                // eða kirkjuklukku.
+                Log.w(TAG, "Engin bæn á diski - streymi Rásar 1")
+                updateNotification(getString(R.string.ras1_fallback))
+                Uri.parse(com.morgunbaen.app.data.RuvClient.RAS1_LIVE_URL)
             }
         }
 
@@ -412,15 +408,26 @@ class AlarmService : Service() {
         }
     }
 
-    /** Ef baenin klikkar eda klarast - spilum venjulegt vekjarahljod i lykkju. */
+    /**
+     * Eldri klukka Staðarfellskirkju, í APK-inu.
+     * Kerfisvekjari getur vantað; þá þegði appið áður.
+     */
+    private fun bundledBellUri(): Uri =
+        Uri.parse("android.resource://$packageName/${R.raw.stadarfell_eldri}")
+
+    /** Ef baenin klikkar eda klarast - kirkjuklukka i lykkju. */
     private fun playFallbackTone() {
-        val fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) ?: return
-        player?.apply {
-            setMediaItem(MediaItem.fromUri(fallback))
-            repeatMode = Player.REPEAT_MODE_ONE
-            prepare()
-            play()
+        val bell = bundledBellUri()
+        val existing = player
+        if (existing == null) {
+            playAudio(bell)
+            player?.repeatMode = Player.REPEAT_MODE_ONE
+            return
         }
+        existing.setMediaItem(MediaItem.fromUri(bell))
+        existing.repeatMode = Player.REPEAT_MODE_ONE
+        existing.prepare()
+        existing.play()
     }
 
     private fun raiseAlarmVolume() {

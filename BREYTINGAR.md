@@ -3,6 +3,20 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.95
+
+- **Sleppa næstu hringingu** — einn takki á vekjaraspjaldinu, enginn auka
+  vekjari. Fyrir þjóðhátíð og veikindi. Hægt að hætta við. Prófunarhnappurinn
+  er óháður sleppingunni.
+- **Bakgrunnssvefn: Xiaomi/HyperOS, Huawei, Oppo og OnePlus** fá sömu
+  viðvörun og Samsung, með leiðbeiningum og óskjalfestum leið inn í
+  stillingarnar (fellur á app-upplýsingar ef intentið bregst).
+- **Eigið varahljóð:** eldri klukka Staðarfellskirkju (upptaka af
+  kirkjuklukkur.is) er í APK-inu og spilast í lykkju þegar bæn/fréttir
+  klárast eða klikka. Kerfisvekjari getur vantað; þá þagði appið áður.
+- **Rás 1 sem varaleið** þegar engin bæn er á disknum. Beint HLS-streymi;
+  brjóti netið tekur kirkjuklukkan (og fréttir dagsins, séu þær til) við.
+
 ## v0.94
 
 - **Útgáfur eru nú undirritaðar alvöru lykli.** `release.yml` byggði áður

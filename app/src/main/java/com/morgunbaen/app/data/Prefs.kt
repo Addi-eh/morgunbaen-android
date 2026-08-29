@@ -197,6 +197,16 @@ class Prefs(context: Context) {
         get() = sp.getLong(KEY_LAST_SCHEDULED, 0L)
         set(value) = sp.edit().putLong(KEY_LAST_SCHEDULED, value).apply()
 
+    /**
+     * Ein hringing sem á að sleppa, í millisekúndum.
+     * 0 = ekkert sleppt. Vistað sem nákvæmlega sá triggerAt sem
+     * TriggerTimes.next skilaði þegar notandinn ýtti á takkann —
+     * svo tímabreyting eftir á ógildi sleppinguna náttúrulega.
+     */
+    var skipNextMillis: Long
+        get() = sp.getLong(KEY_SKIP_NEXT, 0L)
+        set(value) = sp.edit().putLong(KEY_SKIP_NEXT, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -225,6 +235,7 @@ class Prefs(context: Context) {
         private const val KEY_WEEKEND_ENABLED = "weekend_time_enabled"
         private const val KEY_WEEKEND_HOUR = "weekend_hour"
         private const val KEY_WEEKEND_MINUTE = "weekend_minute"
+        private const val KEY_SKIP_NEXT = "skip_next_millis"
 
         const val PREFS_NAME = "morgunbaen"
 

@@ -38,8 +38,8 @@ android {
         // versionCode er versionName an punkts (0.93 -> 93) svo tolurnar
         // tvaer geti ekki rekid i sundur: v0.92 var gefid ut med
         // versionCode 1 og versionName "1.0", sem sagdi hvorugt satt.
-        versionCode = 94
-        versionName = "0.94"
+        versionCode = 95
+        versionName = "0.95"
     }
 
     signingConfigs {

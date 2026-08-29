@@ -114,6 +114,39 @@ class TriggerTimesTest {
         )
     }
 
+    @Test
+    fun `slepping stekkur yfir eina hringingu`() {
+        // Midvikudagur kl. 06:00, sleppa 07:00 i dag -> fimmtudagur
+        val today = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
+            from = at(12, 6)
+        )!!
+        val skipped = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
+            from = at(12, 6),
+            skipMillis = today
+        )!!.asCalendar()
+
+        assertEquals(13, skipped.get(Calendar.DAY_OF_MONTH))
+        assertEquals(Calendar.THURSDAY, skipped.get(Calendar.DAY_OF_WEEK))
+        assertEquals(7, skipped.get(Calendar.HOUR_OF_DAY))
+    }
+
+    @Test
+    fun `slepptimastimpill sem passar ekki vid neinn kandídat er hunsaður`() {
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
+            from = at(12, 6),
+            skipMillis = at(12, 8).timeInMillis
+        )!!.asCalendar()
+
+        assertEquals(12, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+    }
+
     // ------------------------------------------------------------------
     //  previous
     // ------------------------------------------------------------------

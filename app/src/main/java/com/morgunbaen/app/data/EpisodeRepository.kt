@@ -176,7 +176,8 @@ class EpisodeRepository(private val context: Context) {
 
     /**
      * Hvad a ad spila tegar vekjarinn hringir?
-     * Skilar null ef ekkert er til - tha spilar AlarmService varahljod simans.
+     * Skilar null ef ekkert er til - tha streymir AlarmService Rás 1,
+     * og kirkjuklukka Staðarfells tekur við ef það klikkar.
      */
     fun playbackSource(): PlaybackSource? {
         val path = prefs.cachedFilePath

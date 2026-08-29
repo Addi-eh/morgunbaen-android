@@ -154,16 +154,23 @@ object AlarmScheduler {
      * Reikningurinn sjalfur byr i TriggerTimes - hreinni einingu sem
      * einingaprof na utan sima. Skilar null ef enginn dagur er valinn.
      */
-    fun nextTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? =
-        TriggerTimes.next(
+    fun nextTriggerTime(prefs: Prefs, from: Calendar = Calendar.getInstance()): Long? {
+        val skip = prefs.skipNextMillis
+        val now = from.timeInMillis
+        if (skip > 0L && skip <= now) {
+            prefs.skipNextMillis = 0L
+        }
+        return TriggerTimes.next(
             days = prefs.alarmDays,
             hour = prefs.alarmHour,
             minute = prefs.alarmMinute,
             weekendEnabled = prefs.weekendTimeEnabled,
             weekendHour = prefs.weekendHour,
             weekendMinute = prefs.weekendMinute,
-            from = from
+            from = from,
+            skipMillis = prefs.skipNextMillis
         )
+    }
 
     /**
      * Sidasti timi sem vekjarinn ATTI ad hringja. Heilsuvoktunin notar

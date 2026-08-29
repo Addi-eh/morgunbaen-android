@@ -126,6 +126,12 @@ private fun MainScreen() {
     var newsAttempted by remember { mutableStateOf(prefs.newsFirstrun != null) }
     var testArmed by remember { mutableStateOf(false) }
     var playingToday by remember { mutableStateOf(false) }
+    var skipActive by remember {
+        mutableStateOf(prefs.skipNextMillis > System.currentTimeMillis())
+    }
+    var skippedWhenText by remember {
+        mutableStateOf(formatSkipTime(prefs.skipNextMillis))
+    }
 
     // Lettur spilari fyrir "Spila baenina" - hegdar ser eins og venjulegur
     // midill (USAGE_MEDIA + sjalfvirkur hljodfokus), OLIKT vekjaranum.
@@ -164,6 +170,8 @@ private fun MainScreen() {
                     fullScreenOk = canUseFullScreenIntent(context)
                     nextAlarmText = nextAlarmDescription(context, prefs)
                     countdownText = countdownDescription(context, prefs)
+                    skipActive = prefs.skipNextMillis > System.currentTimeMillis()
+                    skippedWhenText = formatSkipTime(prefs.skipNextMillis)
                     cachedTitle = prefs.cachedTitle
                     cachedDate = prefs.cachedFirstrun
                     cachedEpisodeId = prefs.cachedEpisodeId
@@ -213,6 +221,8 @@ private fun MainScreen() {
             // timi a naesta dag - teljarinn og textinn undir honum verda
             // ad snuast vid a sama augnabliki.
             nextAlarmText = nextAlarmDescription(context, prefs)
+            skipActive = prefs.skipNextMillis > System.currentTimeMillis()
+            skippedWhenText = formatSkipTime(prefs.skipNextMillis)
         }
     }
 
@@ -227,6 +237,8 @@ private fun MainScreen() {
         CatchUpScheduler.schedule(context)
         nextAlarmText = nextAlarmDescription(context, prefs)
         countdownText = countdownDescription(context, prefs)
+        skipActive = prefs.skipNextMillis > System.currentTimeMillis()
+        skippedWhenText = formatSkipTime(prefs.skipNextMillis)
         health = checkHealth(prefs)
     }
 
@@ -256,6 +268,8 @@ private fun MainScreen() {
                     days.none { it == Calendar.SATURDAY || it == Calendar.SUNDAY },
                 nextAlarmText = nextAlarmText,
                 countdownText = countdownText,
+                skipActive = skipActive,
+                skippedWhenText = skippedWhenText,
                 testArmed = testArmed,
                 testSeconds = TEST_ALARM_SECONDS,
                 onEnabledChange = {
@@ -294,6 +308,23 @@ private fun MainScreen() {
                         },
                         weekendHour, weekendMinute, true
                     ).show()
+                },
+                onSkipNext = {
+                    val toSkip = TriggerTimes.next(
+                        days = days,
+                        hour = hour,
+                        minute = minute,
+                        weekendEnabled = weekendEnabled,
+                        weekendHour = weekendHour,
+                        weekendMinute = weekendMinute,
+                        skipMillis = 0L
+                    )
+                    prefs.skipNextMillis = toSkip ?: 0L
+                    persistAndReschedule()
+                },
+                onUndoSkip = {
+                    prefs.skipNextMillis = 0L
+                    persistAndReschedule()
                 },
                 onTest = {
                     AlarmScheduler.scheduleTest(context, TEST_ALARM_SECONDS)
@@ -513,18 +544,16 @@ private fun MainScreen() {
                 Spacer(Modifier.height(12.dp))
             }
 
-            // ---------- Samsung ----------
-            // Samsung svaefir opp sem hafa ekki verid opnud i trja daga.
-            // Hringi vekjarinn adeins a virkum dogum er appid ONOTAD yfir
-            // helgi. Ekkert API laetur vita og ekkert API slekkur a tessu;
-            // notandinn verdur ad gera tad sjalfur.
-            if (isSamsung() && !oemGuideDone) {
+            // Framleidendur sem svaefa opp sem sofa yfir helgi.
+            // Ekkert API laetur vita og ekkert API slekkur a tessu.
+            val oemKind = OemBatteryGuide.kind()
+            if (oemKind != null && !oemGuideDone) {
                 InfoCard(
-                    title = stringResource(R.string.samsung_title),
-                    text = stringResource(R.string.samsung_body),
+                    title = stringResource(OemBatteryGuide.titleRes(oemKind)),
+                    text = stringResource(OemBatteryGuide.bodyRes(oemKind)),
                     primaryLabel = stringResource(R.string.open_settings),
-                    onPrimary = { openDeviceCare(context) },
-                    secondaryLabel = stringResource(R.string.samsung_done),
+                    onPrimary = { OemBatteryGuide.open(context, oemKind) },
+                    secondaryLabel = stringResource(R.string.oem_done),
                     onSecondary = {
                         prefs.oemGuideDone = true
                         oemGuideDone = true
@@ -690,32 +719,10 @@ private fun openFullScreenIntentSettings(context: Context) {
     }
 }
 
-private fun isSamsung(): Boolean =
-    Build.MANUFACTURER.equals("samsung", ignoreCase = true)
-
-/**
- * Reynir ad opna Device Care hja Samsung, tar sem "Svefnopp" listinn byr.
- * Samsung gefur enga opinbera leid ad tessum skja, svo tetta getur brugdist
- * - tha opnum vid venjulegu app-stillingarnar i stadinn.
- */
-private fun openDeviceCare(context: Context) {
-    val deviceCare = Intent().apply {
-        setClassName(
-            "com.samsung.android.lool",
-            "com.samsung.android.sm.ui.battery.BatteryActivity"
-        )
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-    }
-    try {
-        context.startActivity(deviceCare)
-    } catch (e: Exception) {
-        context.startActivity(
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-        )
-    }
+private fun formatSkipTime(millis: Long): String? {
+    if (millis <= System.currentTimeMillis()) return null
+    val format = SimpleDateFormat("EEEE d. MMMM 'kl.' HH:mm", Locale("is", "IS"))
+    return format.format(Date(millis))
 }
 
 /** Hversu langt profunarhringingin er fram i timann. */

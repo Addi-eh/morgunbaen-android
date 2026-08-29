@@ -23,6 +23,9 @@ object TriggerTimes {
      * @param hour,minute    Venjulegi vekjaratíminn
      * @param weekendEnabled Gildir annar tími um helgar?
      * @param weekendHour,weekendMinute  Helgartíminn, ef virkur
+     * @param skipMillis     Ein hringing til að sleppa (þjóðhátíð, veikindi).
+     *                       0 = engin slepping. Samanburður er á mínútu:
+     *                       skipið er nákvæmlega sá triggerAt sem var vistaður.
      */
     fun next(
         days: Set<Int>,
@@ -31,7 +34,8 @@ object TriggerTimes {
         weekendEnabled: Boolean,
         weekendHour: Int,
         weekendMinute: Int,
-        from: Calendar = Calendar.getInstance()
+        from: Calendar = Calendar.getInstance(),
+        skipMillis: Long = 0L
     ): Long? {
         if (days.isEmpty()) return null
 
@@ -49,6 +53,8 @@ object TriggerTimes {
 
             // Tíminn í dag getur verið liðinn hjá.
             if (candidate.timeInMillis <= from.timeInMillis) continue
+
+            if (skipMillis > 0L && candidate.timeInMillis == skipMillis) continue
 
             return candidate.timeInMillis
         }

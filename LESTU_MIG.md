@@ -6,7 +6,7 @@ fréttirnar kl. 07:00 á eftir.
 Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
 **Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
 
-Staða: **v0.92** (`3834e16`).
+Staða: **v0.95**.
 
 ---
 
@@ -91,13 +91,14 @@ alarm/AlarmActivity.kt     Skjárinn á læstum skjá, langt ýt til að slökkv
 alarm/BootReceiver.kt      Endurskráir allt eftir ræsingu
 
 MainActivity.kt            Samhæfingarlag: state og hliðarverk fyrir spjöldin
-ui/AlarmCard.kt             Vekjaratími, dagar, helgartími, prófunarhnappur
+OemBatteryGuide.kt         Samsung/Xiaomi/Huawei/Oppo bakgrunnssvefn
+ui/AlarmCard.kt             Vekjaratími, dagar, helgartími, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Fade-in, titringur, fréttir, blundur
 ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
 
-test/alarm/TriggerTimesTest.kt   17 próf á tímareikningnum, keyra með `./gradlew test`
+test/alarm/TriggerTimesTest.kt   19 próf á tímareikningnum, keyra með `./gradlew test`
 ```
 
 Lestu `TriggerTimes.kt` fyrst — hreinn tímareikningur, engin Android-tenging,
@@ -180,7 +181,7 @@ aftur á „núna + 24 klst" í því tilfelli, sem skráði gluggann á tíma s
 færðist með klukkunni dag frá degi í stað þess að hverfa. Sú villa hefði
 aldrei komist í gegnum einfaldasta einingapróf, en reikningurinn lá læstur
 inni í hlutum sem þurftu `Context` til að keyra yfirleitt. `TriggerTimesTest.kt`
-hefur núna 17 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
+hefur núna 19 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
 tilfelli.
 
 `countdown()` býr líka þarna: biðtíminn fram að næstu hringingu, sundurliðaður
@@ -236,10 +237,9 @@ styrk en eigandinn valdi.
 fyrstu setningarnar hverfa ef styrkurinn er enn að hækka, og titringur keppir
 við rödd prestsins. Hvort tveggja er í boði fyrir þá sem vilja.
 
-**Varahljóðið sjálft getur vantað.** `RingtoneManager.getDefaultUri(TYPE_ALARM)`
-skilar `null` ef enginn sjálfgefinn vekjaratónn er stilltur á tækinu — sjaldgæft,
-en gerist. Appið fellur þá á `TYPE_NOTIFICATION`, og titrar (sé titringur á)
-í stað þess að hrynja ef hvorugt er til. Betra að vekja hljóðlaust en alls ekki.
+**Varahljóð er í APK-inu** — eldri klukka Staðarfellskirkju. Hún spilast í
+lykkju þegar bæn eða fréttir klárast. Ef engin bæn er á disknum er fyrst
+reynt að streymi Rás 1; brjóti netið tekur kirkjuklukkan við.
 
 ---
 
@@ -248,12 +248,11 @@ en gerist. Appið fellur þá á `TYPE_NOTIFICATION`, og titrar (sé titringur �
 **Rafhlöðusparnaður.** Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
 **Ótakmarkað**.
 
-**Samsung svæfir öpp sem hafa ekki verið opnuð í þrjá daga.** Þetta er sértækt
-vandamál fyrir þetta app: vekjari sem hringir aðeins á virkum dögum er ónotaður
-frá föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Settu appið á
-listann **„Öpp sem sofa aldrei"** í Umhirða tækis → Rafhlaða. Appið sýnir
-Samsung-notendum þessar leiðbeiningar sjálfkrafa; þeir munu samt hunsa þær, og
-þess vegna er heilsuvöktunin til.
+**Samsung, Xiaomi, Huawei, Oppo og OnePlus svæfa öpp sem hafa ekki verið opnuð
+í þrjá daga.** Vekjari sem hringir aðeins á virkum dögum er ónotaður frá
+föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Appið sýnir
+leiðbeiningarnar sjálfkrafa; fólk mun samt hunsa þær, og þess vegna er
+heilsuvöktunin til.
 
 **Full-screen intent eða tilkynningaheimild vantar.** Appið varar við báðum efst
 á forsíðunni með takka beint í réttu stillinguna.
@@ -263,7 +262,7 @@ Samsung-notendum þessar leiðbeiningar sjálfkrafa; þeir munu samt hunsa þær
 ## 9. Prófanir
 
 **Fyrst, á tölvunni — engan síma þarf:** `./gradlew test` keyrir
-`TriggerTimesTest.kt`, 12 próf á tímareikningnum. Grípur ekki neitt sem
+`TriggerTimesTest.kt`, 19 próf á tímareikningnum. Grípur ekki neitt sem
 snertir Android sjálft, en grípur allt sem snertir *hvenær* vekjarinn og
 sóknarglugginn eiga að fara í gang — ódýrasta og hraðasta staðfestingin sem
 til er á verkefninu.
@@ -366,9 +365,6 @@ Annað sem vantar:
 
 ## 11. Það sem vantar enn
 
-- **Eigið varahljóð.** Sjálfgefið vekjarahljóð símans er kalt vakningarúrræði.
-- **Fleiri framleiðendur en Samsung.** Xiaomi, Huawei, Oppo og OnePlus drepa
-  bakgrunn jafn mikið.
 - **Einingapróf víðar.** `TriggerTimesTest.kt` nær yfir tímareikninginn; ekkert
   annað í verkefninu er prófað enn — t.d. `Dates.kt`-þáttun eða
   `EpisodeRepository`-röklegan gang (án nettengingar, með mock-uðum `RuvClient`).
@@ -423,3 +419,10 @@ byggingu og próf óbreytt (eins og v0.92 gerði) er ekki sönnun þess að ekke
 standi eftir — aðeins að þessi tiltekna sending hafi ekkert nýtt fundið til að
 bæta við. Hvort tveggja kallar á sama viðbragð: `grep` breiðar en þrengri
 lagfæringar, og hverja nýja sendingu sem sjálfstæða tilraun, ekki lokapunkt.
+
+---
+
+Höfundarréttur © 2026 AEH. GPL-3.0 — sjá [LICENSE](LICENSE).
+
+Varahljóð: eldri klukka Staðarfellskirkju (líklega fyrir 1300), upptaka af
+[kirkjuklukkur.is](https://www.kirkjuklukkur.is/vesturlandsprofastsdaemi/stadarfellskirkja/).

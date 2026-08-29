@@ -23,10 +23,10 @@ viðvörun ef eitthvað vantar:
 | Birta á læstum skjá | Bænin spilar en enginn skjár kemur upp til að slökkva |
 | Ótakmörkuð rafhlöðunotkun | Bænin sækist ekki á nóttunni |
 
-**Ef þú ert á Samsung** þarf eitt í viðbót: Stillingar → Umhirða tækis →
-Rafhlaða → Takmörk á bakgrunnsnotkun → **Öpp sem sofa aldrei**. Samsung svæfir
-öpp sem hafa ekki verið opnuð í þrjá daga, og vekjari sem hringir aðeins á
-virkum dögum er ónotaður yfir helgi. Appið sýnir þessar leiðbeiningar sjálfkrafa.
+**Ef þú ert á Samsung, Xiaomi, Huawei, Oppo eða OnePlus** þarf eitt í viðbót:
+þessir framleiðendur svæfa öpp sem hafa ekki verið opnuð í þrjá daga, og
+vekjari sem hringir aðeins á virkum dögum er ónotaður yfir helgi. Appið sýnir
+leiðbeiningarnar sjálfkrafa.
 
 Ýttu svo á **Prófa vekjarann**, læstu símanum og staðfestu að hann hringi.
 Það tekur hálfa mínútu og sparar þér einn morgun.
@@ -44,6 +44,9 @@ virkum dögum er ónotaður yfir helgi. Appið sýnir þessar leiðbeiningar sj�
 - Lætur vita ef síminn hefur stöðvað appið — Android segir ekkert sjálft.
 - Fyrri bænir, deiling, blundur, valkvæður helgartími, vaxandi hljóðstyrkur
   og titringur.
+- Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
+- Ef engin bæn er á disknum streymir appið Rás 1. Varahljóð í APK-inu er
+  eldri klukka Staðarfellskirkju.
 
 Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).
@@ -79,3 +82,6 @@ Allt efni er höfundarréttarvarið RÚV. Þetta verkefni er ótengt RÚV.
 ## Leyfi
 
 GPL-3.0 — sjá [LICENSE](LICENSE). Höfundarréttur © 2026 AEH.
+
+Varahljóð: eldri klukka Staðarfellskirkju, upptaka af
+[kirkjuklukkur.is](https://www.kirkjuklukkur.is/vesturlandsprofastsdaemi/stadarfellskirkja/).
