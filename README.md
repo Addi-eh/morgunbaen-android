@@ -30,6 +30,23 @@ yfir helgi ef vekjarinn hringir aðeins á virkum dögum.
 Ýttu svo á **Prófa vekjarann**, læstu símanum og staðfestu að hann hringi.
 Það tekur hálfa mínútu og sparar þér einn morgun.
 
+### Obtainium — uppfærslur án Play Store
+
+[Obtainium](https://github.com/ImranR98/Obtainium/releases) sækir nýjar
+útgáfur beint héðan af GitHub og lætur vita (eða setur inn) þegar næsta
+útgáfa kemur.
+
+1. Settu Obtainium upp (APK undir Releases þar).
+2. Opnaðu Obtainium → **Add app**.
+3. Límdu þessa slóð og ýttu á **Add**:
+
+   `https://github.com/Addi-eh/morgunbaen-android`
+
+Ef Obtainium er þegar uppsett má [bæta Morgunbæn við með einum smelli](https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Addi-eh/morgunbaen-android).
+
+Obtainium verður að vera uppspretta uppfærslna héðan í frá — blandaðu
+ekki Play Store eða annarri undirritun við þetta APK.
+
 ---
 
 ## Hvað appið gerir

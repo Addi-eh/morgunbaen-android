@@ -79,7 +79,17 @@ jobs:
         run: |
           APK="morgunbaen-${{ github.ref_name }}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$APK"
-          gh release create "${{ github.ref_name }}" \
+          TAG="${{ github.ref_name }}"
+          {
+            awk -v tag="$TAG" '
+              $0 == "## " tag { p=1; next }
+              /^## / && p { exit }
+              p
+            ' BREYTINGAR.md
+            echo
+            echo "**Breytingaskrá:** https://github.com/Addi-eh/morgunbaen-android/blob/master/BREYTINGAR.md"
+          } > /tmp/release-notes.md
+          gh release create "$TAG" \
             "$APK" \
-            --title "${{ github.ref_name }}" \
-            --generate-notes
+            --title "$TAG" \
+            --notes-file /tmp/release-notes.md
