@@ -207,6 +207,14 @@ class Prefs(context: Context) {
         get() = sp.getLong(KEY_SKIP_NEXT, 0L)
         set(value) = sp.edit().putLong(KEY_SKIP_NEXT, value).apply()
 
+    /**
+     * Varaleið þegar bæn er búin eða vantar: false = kirkjuklukka,
+     * true = Rás 1 í beinni. Brjóti streymið tekur klukkan við.
+     */
+    var fallbackRas1: Boolean
+        get() = sp.getBoolean(KEY_FALLBACK_RAS1, false)
+        set(value) = sp.edit().putBoolean(KEY_FALLBACK_RAS1, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -223,7 +231,7 @@ class Prefs(context: Context) {
         private const val KEY_LAST_FIRED = "last_alarm_fired"
         private const val KEY_LAST_SCHEDULED = "last_scheduled_trigger"
         private const val KEY_MISSED_ACK = "missed_alarm_ack"
-        private const val KEY_OEM_GUIDE = "oem_guide_done"
+        private const val KEY_OEM_GUIDE = "unused_apps_guide_done"
         private const val KEY_FADE_IN = "fade_in_enabled"
         private const val KEY_FADE_SECONDS = "fade_in_seconds"
         private const val KEY_VIBRATE = "vibrate_enabled"
@@ -236,6 +244,7 @@ class Prefs(context: Context) {
         private const val KEY_WEEKEND_HOUR = "weekend_hour"
         private const val KEY_WEEKEND_MINUTE = "weekend_minute"
         private const val KEY_SKIP_NEXT = "skip_next_millis"
+        private const val KEY_FALLBACK_RAS1 = "fallback_ras1"
 
         const val PREFS_NAME = "morgunbaen"
 

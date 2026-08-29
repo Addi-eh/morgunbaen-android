@@ -3,10 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Kemur í staðinn fyrir Termux + ffmpeg + cron + MacroDroid + Sleep as Android.
-**Appið tekur ekkert upp** — það sækir tilbúna MP3-skrá frá RÚV.
-
-Staða: **v0.95**.
+Staða: **v0.951**.
 
 ---
 
@@ -91,7 +88,7 @@ alarm/AlarmActivity.kt     Skjárinn á læstum skjá, langt ýt til að slökkv
 alarm/BootReceiver.kt      Endurskráir allt eftir ræsingu
 
 MainActivity.kt            Samhæfingarlag: state og hliðarverk fyrir spjöldin
-OemBatteryGuide.kt         Samsung/Xiaomi/Huawei/Oppo bakgrunnssvefn
+OemBatteryGuide.kt         „Remove permissions if app is unused"
 ui/AlarmCard.kt             Vekjaratími, dagar, helgartími, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Fade-in, titringur, fréttir, blundur
@@ -237,9 +234,8 @@ styrk en eigandinn valdi.
 fyrstu setningarnar hverfa ef styrkurinn er enn að hækka, og titringur keppir
 við rödd prestsins. Hvort tveggja er í boði fyrir þá sem vilja.
 
-**Varahljóð er í APK-inu** — eldri klukka Staðarfellskirkju. Hún spilast í
-lykkju þegar bæn eða fréttir klárast. Ef engin bæn er á disknum er fyrst
-reynt að streymi Rás 1; brjóti netið tekur kirkjuklukkan við.
+**Varahljóð** er val notandans: kirkjuklukka Staðarfells (í APK-inu, í lykkju)
+eða Rás 1 í beinni. Brjóti streymið tekur klukkan við.
 
 ---
 
@@ -248,11 +244,9 @@ reynt að streymi Rás 1; brjóti netið tekur kirkjuklukkan við.
 **Rafhlöðusparnaður.** Stillingar → Rafhlaða → Bakgrunnsnotkun → Morgunbæn →
 **Ótakmarkað**.
 
-**Samsung, Xiaomi, Huawei, Oppo og OnePlus svæfa öpp sem hafa ekki verið opnuð
-í þrjá daga.** Vekjari sem hringir aðeins á virkum dögum er ónotaður frá
-föstudagskvöldi til mánudagsmorguns — nákvæmlega þrír dagar. Appið sýnir
-leiðbeiningarnar sjálfkrafa; fólk mun samt hunsa þær, og þess vegna er
-heilsuvöktunin til.
+**Android tekur heimildir af ónotuðu appi.** Afhakaðu við
+„Remove permissions if app is unused" undir Settings → Apps → Morgunbæn.
+Vekjari á virkum dögum er ónotaður yfir helgi — nákvæmlega þröskuldurinn.
 
 **Full-screen intent eða tilkynningaheimild vantar.** Appið varar við báðum efst
 á forsíðunni með takka beint í réttu stillinguna.

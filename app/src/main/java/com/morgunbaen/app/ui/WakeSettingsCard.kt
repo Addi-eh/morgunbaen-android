@@ -1,11 +1,15 @@
 package com.morgunbaen.app.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,17 +25,20 @@ import com.morgunbaen.app.R
  * baedi vekjaratimann og klukkuna, og su rokfraedi a heima a einum stad.
  */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun WakeSettingsCard(
     fadeIn: Boolean,
     fadeSeconds: Int,
     vibrate: Boolean,
     newsEnabled: Boolean,
     newsDescription: String,
+    fallbackRas1: Boolean,
     snoozeMinutes: Int,
     onFadeInChange: (Boolean) -> Unit,
     onFadeSecondsChange: (Int) -> Unit,
     onVibrateChange: (Boolean) -> Unit,
     onNewsChange: (Boolean) -> Unit,
+    onFallbackRas1Change: (Boolean) -> Unit,
     onSnoozeChange: (Int) -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -91,6 +98,34 @@ internal fun WakeSettingsCard(
                 checked = newsEnabled,
                 onCheckedChange = onNewsChange
             )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.fallback_label),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = stringResource(R.string.fallback_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(6.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = !fallbackRas1,
+                    onClick = { onFallbackRas1Change(false) },
+                    label = { Text(stringResource(R.string.fallback_bell)) }
+                )
+                FilterChip(
+                    selected = fallbackRas1,
+                    onClick = { onFallbackRas1Change(true) },
+                    label = { Text(stringResource(R.string.fallback_ras1)) }
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 

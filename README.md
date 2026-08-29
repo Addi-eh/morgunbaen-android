@@ -23,10 +23,9 @@ viðvörun ef eitthvað vantar:
 | Birta á læstum skjá | Bænin spilar en enginn skjár kemur upp til að slökkva |
 | Ótakmörkuð rafhlöðunotkun | Bænin sækist ekki á nóttunni |
 
-**Ef þú ert á Samsung, Xiaomi, Huawei, Oppo eða OnePlus** þarf eitt í viðbót:
-þessir framleiðendur svæfa öpp sem hafa ekki verið opnuð í þrjá daga, og
-vekjari sem hringir aðeins á virkum dögum er ónotaður yfir helgi. Appið sýnir
-leiðbeiningarnar sjálfkrafa.
+**Eitt í viðbót:** afhakaðu við **Remove permissions if app is unused**
+(Settings → Apps → Morgunbæn). Android tekur annars heimildir af appinu
+yfir helgi ef vekjarinn hringir aðeins á virkum dögum.
 
 Ýttu svo á **Prófa vekjarann**, læstu símanum og staðfestu að hann hringi.
 Það tekur hálfa mínútu og sparar þér einn morgun.
@@ -45,8 +44,7 @@ leiðbeiningarnar sjálfkrafa.
 - Fyrri bænir, deiling, blundur, valkvæður helgartími, vaxandi hljóðstyrkur
   og titringur.
 - Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
-- Ef engin bæn er á disknum streymir appið Rás 1. Varahljóð í APK-inu er
-  eldri klukka Staðarfellskirkju.
+- Varahljóð: kirkjuklukka Staðarfells eða Rás 1 í beinni.
 
 Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).

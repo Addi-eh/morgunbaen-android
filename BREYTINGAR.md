@@ -3,6 +3,17 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.951
+
+- **Sleppa næstu** er nú `OutlinedButton` ofar á vekjaraspjaldinu, sýnilegt
+  um leið og vekjarinn er kveiktur.
+- **Helgartími** er jafn stór og aðalklukkan þegar „Annar tími um helgar"
+  er kveikt.
+- **Varahljóð:** notandinn velur kirkjuklukku eða Rás 1.
+- **Heimildaleiðbeining** er ein og á ensku eins og í símanum:
+  afhaka við „Remove permissions if app is unused".
+- Termux/ffmpeg-upprunasaga tekin úr LESTU_MIG — óviðkomandi notendum.
+
 ## v0.95
 
 - **Sleppa næstu hringingu** — einn takki á vekjaraspjaldinu, enginn auka

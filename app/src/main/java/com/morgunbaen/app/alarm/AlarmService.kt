@@ -127,20 +127,14 @@ class AlarmService : Service() {
         val mediaUri: Uri? = when (source) {
             is EpisodeRepository.PlaybackSource.LocalFile -> Uri.fromFile(source.file)
             is EpisodeRepository.PlaybackSource.Stream -> Uri.parse(source.url)
-            null -> {
-                // Engin baen a diski. Rás 1 er næst útvarpsupprunanum —
-                // ef netið er til staðar heyrist útsendingin sjálf.
-                // Streymið endar ekki, svo 15 mínútna tímamörkin slökkva.
-                // Brjóti streymið (ekkert net) fer onPlayerError í fréttir
-                // eða kirkjuklukku.
-                Log.w(TAG, "Engin bæn á diski - streymi Rásar 1")
-                updateNotification(getString(R.string.ras1_fallback))
-                Uri.parse(com.morgunbaen.app.data.RuvClient.RAS1_LIVE_URL)
-            }
+            null -> fallbackUri()
         }
 
         if (mediaUri != null) {
             playAudio(mediaUri)
+            if (source == null && !prefs.fallbackRas1) {
+                player?.repeatMode = Player.REPEAT_MODE_ONE
+            }
         } else {
             Log.e(TAG, "Ekkert hljóð til að spila — skjárinn og titringur verða að duga")
             startVibrationIfEnabled()
@@ -383,7 +377,8 @@ class AlarmService : Service() {
             }
 
             Stage.FALLBACK -> {
-                // Varahljodid er thegar i lykkju - ekkert ad gera.
+                // Rás 1 klikkaði — kirkjuklukkan má ekki þegja.
+                playBellLoop()
             }
         }
     }
@@ -415,17 +410,40 @@ class AlarmService : Service() {
     private fun bundledBellUri(): Uri =
         Uri.parse("android.resource://$packageName/${R.raw.stadarfell_eldri}")
 
-    /** Ef baenin klikkar eda klarast - kirkjuklukka i lykkju. */
+    private fun ras1Uri(): Uri =
+        Uri.parse(com.morgunbaen.app.data.RuvClient.RAS1_LIVE_URL)
+
+    /** Notandinn velur kirkjuklukku eða Rás 1. Streymi endar ekki. */
+    private fun fallbackUri(): Uri {
+        if (prefs.fallbackRas1) {
+            Log.i(TAG, "Varaleið: Rás 1")
+            updateNotification(getString(R.string.ras1_fallback))
+            return ras1Uri()
+        }
+        Log.i(TAG, "Varaleið: kirkjuklukka")
+        updateNotification(getString(R.string.fallback_bell))
+        return bundledBellUri()
+    }
+
+    /** Ef baenin klikkar eda klarast — valin varaleið. */
     private fun playFallbackTone() {
-        val bell = bundledBellUri()
+        playUri(fallbackUri(), loop = !prefs.fallbackRas1)
+    }
+
+    private fun playBellLoop() {
+        updateNotification(getString(R.string.fallback_bell))
+        playUri(bundledBellUri(), loop = true)
+    }
+
+    private fun playUri(uri: Uri, loop: Boolean) {
         val existing = player
         if (existing == null) {
-            playAudio(bell)
-            player?.repeatMode = Player.REPEAT_MODE_ONE
+            playAudio(uri)
+            if (loop) player?.repeatMode = Player.REPEAT_MODE_ONE
             return
         }
-        existing.setMediaItem(MediaItem.fromUri(bell))
-        existing.repeatMode = Player.REPEAT_MODE_ONE
+        existing.setMediaItem(MediaItem.fromUri(uri))
+        existing.repeatMode = if (loop) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         existing.prepare()
         existing.play()
     }

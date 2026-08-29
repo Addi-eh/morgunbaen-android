@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -72,16 +73,7 @@ internal fun AlarmCard(
                 // opnar sama tolvalsglugga og "Breyta tima"-hnappurinn, sem
                 // stendur afram - flytileid fyrir ta sem giska a hana, ekki
                 // stadgengill fyrir synilegu leidina.
-                Text(
-                    text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
-                    style = MaterialTheme.typography.displayMedium,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(
-                            onClickLabel = stringResource(R.string.change_time),
-                            onClick = onPickTime
-                        )
-                )
+                BigClock(hour = hour, minute = minute, onClick = onPickTime)
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
 
@@ -110,6 +102,35 @@ internal fun AlarmCard(
             Spacer(Modifier.height(8.dp))
             DayPicker(selected = days, onChange = onDaysChange)
 
+            if (enabled) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = nextAlarmText,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                if (skipActive && skippedWhenText != null) {
+                    Text(
+                        text = stringResource(R.string.skip_active, skippedWhenText),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    OutlinedButton(
+                        onClick = onUndoSkip,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.skip_undo))
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = onSkipNext,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.skip_next))
+                    }
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
 
             // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er hrein
@@ -117,13 +138,7 @@ internal fun AlarmCard(
             SettingRow(
                 label = stringResource(R.string.weekend_label),
                 description = if (weekendEnabled) {
-                    stringResource(
-                        R.string.weekend_time,
-                        String.format(
-                            Locale.getDefault(),
-                            "%02d:%02d", weekendHour, weekendMinute
-                        )
-                    )
+                    stringResource(R.string.weekend_desc_on)
                 } else {
                     stringResource(R.string.weekend_desc)
                 },
@@ -132,6 +147,12 @@ internal fun AlarmCard(
             )
 
             if (weekendEnabled) {
+                Spacer(Modifier.height(8.dp))
+                BigClock(
+                    hour = weekendHour,
+                    minute = weekendMinute,
+                    onClick = onPickWeekendTime
+                )
                 TextButton(onClick = onPickWeekendTime) {
                     Text(stringResource(R.string.change_time))
                 }
@@ -144,32 +165,6 @@ internal fun AlarmCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
-                }
-            }
-
-            if (enabled) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = nextAlarmText,
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                // Ein hringing, ekki auka vekjari. Þjóðhátíð, veikindi.
-                if (days.isNotEmpty()) {
-                    if (skipActive && skippedWhenText != null) {
-                        Text(
-                            text = stringResource(R.string.skip_active, skippedWhenText),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        TextButton(onClick = onUndoSkip) {
-                            Text(stringResource(R.string.skip_undo))
-                        }
-                    } else {
-                        TextButton(onClick = onSkipNext) {
-                            Text(stringResource(R.string.skip_next))
-                        }
-                    }
                 }
             }
 
@@ -198,6 +193,20 @@ internal fun AlarmCard(
  * Textinn er nu tegar samsettur - belgurinn veit ekkert um klukkur.
  * Taknid faer lysinguna svo skjalesarar segi hvad talan tydir.
  */
+@Composable
+private fun BigClock(hour: Int, minute: Int, onClick: () -> Unit) {
+    Text(
+        text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
+        style = MaterialTheme.typography.displayMedium,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(
+                onClickLabel = stringResource(R.string.change_time),
+                onClick = onClick
+            )
+    )
+}
+
 @Composable
 private fun CountdownPill(text: String) {
     Surface(

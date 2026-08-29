@@ -117,6 +117,7 @@ private fun MainScreen() {
     var weekendHour by remember { mutableIntStateOf(prefs.weekendHour) }
     var weekendMinute by remember { mutableIntStateOf(prefs.weekendMinute) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
+    var fallbackRas1 by remember { mutableStateOf(prefs.fallbackRas1) }
     var newsEnabled by remember { mutableStateOf(prefs.newsEnabled) }
     var newsFirstrun by remember { mutableStateOf(prefs.newsFirstrun) }
     var newsSyncing by remember { mutableStateOf(false) }
@@ -432,6 +433,7 @@ private fun MainScreen() {
                     weekendHour = weekendHour,
                     days = days
                 ),
+                fallbackRas1 = fallbackRas1,
                 snoozeMinutes = snoozeMinutes,
                 onFadeInChange = {
                     fadeIn = it
@@ -444,6 +446,10 @@ private fun MainScreen() {
                 onVibrateChange = {
                     vibrate = it
                     prefs.vibrateEnabled = it
+                },
+                onFallbackRas1Change = {
+                    fallbackRas1 = it
+                    prefs.fallbackRas1 = it
                 },
                 onNewsChange = {
                     newsEnabled = it
@@ -544,15 +550,14 @@ private fun MainScreen() {
                 Spacer(Modifier.height(12.dp))
             }
 
-            // Framleidendur sem svaefa opp sem sofa yfir helgi.
-            // Ekkert API laetur vita og ekkert API slekkur a tessu.
-            val oemKind = OemBatteryGuide.kind()
-            if (oemKind != null && !oemGuideDone) {
+            // Android tekur heimildir af opnum sem enginn opnar i nokkra daga.
+            // Vekjari a virkum dogum er onotadur yfir helgi.
+            if (!oemGuideDone) {
                 InfoCard(
-                    title = stringResource(OemBatteryGuide.titleRes(oemKind)),
-                    text = stringResource(OemBatteryGuide.bodyRes(oemKind)),
+                    title = stringResource(R.string.oem_unused_title),
+                    text = stringResource(R.string.oem_unused_body),
                     primaryLabel = stringResource(R.string.open_settings),
-                    onPrimary = { OemBatteryGuide.open(context, oemKind) },
+                    onPrimary = { OemBatteryGuide.open(context) },
                     secondaryLabel = stringResource(R.string.oem_done),
                     onSecondary = {
                         prefs.oemGuideDone = true
