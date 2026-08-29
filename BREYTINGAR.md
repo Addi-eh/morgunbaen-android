@@ -64,11 +64,6 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   21,9), eingöngu af því debug-upplýsingar falla brott — R8 er áfram slökkt.
   **Leiðin úr debug-undirritaðri v0.93 í næstu útgáfu krefst þess að notendur
   fjarlægi appið einu sinni enn.** Eftir það er hún stöðug.
-- **Fyrsta útgáfukeyrslan féll** á `packageRelease` með „keystore password
-  was incorrect" þótt leyndarmálin væru til staðar. `gh secret set` getur
-  geymt lykilorðið með eftirhengdri nýlínu; Gradle las það bókstaflega.
-  `signingValue` trimmar nú gildin, og `storeType` er PKCS12 skýrt — lykillinn
-  er PKCS12 þótt skráin heiti `.jks`. Taggið var fært áður en útgáfa birtist.
 
 ## v0.93
 
