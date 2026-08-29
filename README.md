@@ -1,29 +1,29 @@
 # Morgunbæn
 
-Vekjaraklukka fyrir Android sem spilar „Morgunbæn og orð dagsins" af Rás 1 —
-og valkvætt fréttirnar kl. 07:00 á eftir, eins og í útsendingunni sjálfri.
+Vekjaraklukka fyrir Android sem spilar „Morgunbæn og orð dagsins“ af Rás 1 —
+og fréttirnar kl. 07:00 á eftir ef vill, eins og í útsendingunni sjálfri.
 
-Appið tekur ekkert upp. Það sækir þáttinn frá RÚV og geymir hann á tækinu, svo
-bænin spilast þótt síminn sé án nettengingar þegar vekjarinn hringir.
+Appið tekur ekkert upp. Það sækir þáttinn frá RÚV og geymir hann á tækinu, svo að
+bænin spilist þótt síminn sé án nettengingar þegar vekjarinn hringir.
 
 ---
 
 ## Að setja upp
 
 Sæktu nýjustu APK-skrána undir [Releases](../../releases) og opnaðu hana í
-símanum. Android spyr hvort þú viljir leyfa uppsetningu frá þessari uppsprettu —
-það er eðlilegt fyrir öpp sem koma ekki úr Play Store.
+símanum. Android spyr hvort þú viljir leyfa uppsetningu frá þessum uppruna —
+svo er um öll öpp sem koma ekki úr Play Store.
 
-**Þrennt þarf að leyfa í fyrstu opnun.** Appið biður um það og sýnir rauða
+**Þrennt þarf að leyfa við fyrstu opnun.** Appið biður um það og sýnir rauða
 viðvörun ef eitthvað vantar:
 
 | Heimild | Án hennar |
 |---|---|
 | Tilkynningar | Vekjarinn birtist alls ekki |
-| Birta á læstum skjá | Bænin spilar en enginn skjár kemur upp til að slökkva |
-| Ótakmörkuð rafhlöðunotkun | Bænin sækist ekki á nóttunni |
+| Birta á læstum skjá | Bænin hljómar en enginn skjár kemur upp til að slökkva á henni |
+| Ótakmörkuð rafhlöðunotkun | Bænin næst ekki á nóttunni |
 
-**Eitt í viðbót:** afhakaðu við **Remove permissions if app is unused**
+**Eitt í viðbót:** taktu hakið úr **Remove permissions if app is unused**
 (Settings → Apps → Morgunbæn). Android tekur annars heimildir af appinu
 yfir helgi ef vekjarinn hringir aðeins á virkum dögum.
 
@@ -33,7 +33,7 @@ yfir helgi ef vekjarinn hringir aðeins á virkum dögum.
 ### Obtainium — uppfærslur án Play Store
 
 [Obtainium](https://github.com/ImranR98/Obtainium/releases) sækir nýjar
-útgáfur beint héðan af GitHub og lætur vita (eða setur inn) þegar næsta
+útgáfur beint héðan af GitHub og lætur vita (eða setur upp) þegar næsta
 útgáfa kemur.
 
 1. Settu Obtainium upp (APK undir Releases þar).
@@ -44,26 +44,27 @@ yfir helgi ef vekjarinn hringir aðeins á virkum dögum.
 
 Ef Obtainium er þegar uppsett má [bæta Morgunbæn við með einum smelli](https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Addi-eh/morgunbaen-android).
 
-Obtainium verður að vera uppspretta uppfærslna héðan í frá — blandaðu
-ekki Play Store eða annarri undirritun við þetta APK.
+Obtainium á að sjá um uppfærslur héðan í frá. APK með annarri undirritun
+uppfærir ekki þetta app — það þyrfti að fjarlægja appið fyrst.
 
 ---
 
 ## Hvað appið gerir
 
-- Sækir bæn dagsins sjálfkrafa — leitarglugginn opnast kl. 07:00 og reynir
-  á fimm mínútna fresti þar til þátturinn finnst, með sex tíma öryggisneti
+- Sækir bæn dagsins sjálfkrafa — sóknarglugginn opnast kl. 07:00 og appið
+  leitar á fimm mínútna fresti þar til þátturinn finnst, með sex tíma öryggisneti
   allan sólarhringinn.
 - Hringir með `setAlarmClock`, sem kemst í gegnum Doze og orkusparnað.
-- Virkar þótt síminn hafi endurræst um nóttina og enginn slegið inn PIN
+- Virkar þótt síminn hafi endurræst sig um nóttina og enginn slegið inn PIN
   (Direct Boot).
 - Lætur vita ef síminn hefur stöðvað appið — Android segir ekkert sjálft.
 - Fyrri bænir, deiling, blundur, valkvæður helgartími, vaxandi hljóðstyrkur
   og titringur.
-- Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
-- Varahljóð: kirkjuklukka Staðarfells eða Rás 1 í beinni.
+- Leyfir að sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva
+  á vekjaranum.
+- Varahljóð: klukka Staðarfellskirkju eða Rás 1 í beinni.
 
-Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
+Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md) og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).
 
 ---
@@ -71,7 +72,7 @@ breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).
 ## Að byggja
 
 Kotlin og Jetpack Compose. Opnaðu möppuna í Android Studio — veldu **Gradle JVM
-21**, nýrri Java ræður Gradle ekki við.
+21**; Gradle ræður ekki við nýrri útgáfur af Java.
 
 ```bash
 ./gradlew test            # einingapróf á tímareikningi vekjarans
@@ -82,15 +83,15 @@ Kotlin og Jetpack Compose. Opnaðu möppuna í Android Studio — veldu **Gradle
 
 ## Um efnið frá RÚV
 
-Appið hvorki geymir né dreifir efni RÚV. Það sækir sömu MP3-skrár og
-[Spilari RÚV](https://www.ruv.is/utvarp) birtir, í tæki notandans, og deiling
-sendir hlekk á ruv.is frekar en hljóðskrána sjálfa.
+Appið geymir hvorki né dreifir efni RÚV. Það sækir sömu MP3-skrár og
+[Spilari RÚV](https://www.ruv.is/utvarp) birtir, beint í tæki notandans, og
+deiling sendir tengil á ruv.is en ekki hljóðskrána sjálfa.
 
-Viðmótið sem notað er (`spilari.nyr.ruv.is/gql/`) er **óskjalfest og getur
-breyst án fyrirvara.** Hætti appið að finna bænina er það fyrsta sem á að
+Viðmótið sem appið notar (`spilari.nyr.ruv.is/gql/`) er **óskjalfest og getur
+breyst án fyrirvara**. Hætti appið að finna bænina er það fyrsta sem á að
 athuga — sjá lið 1 í LESTU_MIG.md.
 
-Allt efni er höfundarréttarvarið RÚV. Þetta verkefni er ótengt RÚV.
+Allt efni er í höfundarrétti RÚV. Þetta verkefni er ótengt RÚV.
 
 ---
 
