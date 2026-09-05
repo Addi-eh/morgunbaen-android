@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bráðabirgðatákn: hús með loppufari inni í.
+
+    Teiknað í kóða frekar en sótt sem mynd, svo það sé skarpt í öllum
+    upplausnum og engin tvíræðni um höfundarrétt. Á að víkja fyrir
+    almennilegri mynd — sjá BREYTINGAR.md.
+
+    Adaptive icon er 108x108, öruggi hringurinn er innstu 72x72.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Húsið -->
+    <path
+        android:fillColor="#F3EEE4"
+        android:pathData="M54,24 L84,50 L76,50 L76,82 L32,82 L32,50 L24,50 Z" />
+
+    <!-- Loppufar: fjórar tær og púði -->
+    <path
+        android:fillColor="#1F4A3A"
+        android:pathData="M41.5,60 a3.6,3.6 0 1,0 7.2,0 a3.6,3.6 0 1,0 -7.2,0 Z" />
+    <path
+        android:fillColor="#1F4A3A"
+        android:pathData="M49.5,55 a3.6,3.6 0 1,0 7.2,0 a3.6,3.6 0 1,0 -7.2,0 Z" />
+    <path
+        android:fillColor="#1F4A3A"
+        android:pathData="M57.5,55.5 a3.6,3.6 0 1,0 7.2,0 a3.6,3.6 0 1,0 -7.2,0 Z" />
+    <path
+        android:fillColor="#1F4A3A"
+        android:pathData="M64.5,61 a3.6,3.6 0 1,0 7.2,0 a3.6,3.6 0 1,0 -7.2,0 Z" />
+    <path
+        android:fillColor="#1F4A3A"
+        android:pathData="M54,64 C61,64 66,68.5 66,72.5 C66,76.5 61,78 54,78 C47,78 42,76.5 42,72.5 C42,68.5 47,64 54,64 Z" />
+</vector>
