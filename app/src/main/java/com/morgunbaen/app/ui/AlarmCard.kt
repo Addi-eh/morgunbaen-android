@@ -21,13 +21,16 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
-import java.util.Calendar
 import java.util.Locale
 
 /**
@@ -106,10 +109,18 @@ internal fun AlarmCard(
             // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er hrein
             // timastilling: sofa lengur, eda fara fyrr a faetur, an tess
             // ad missa af baen tess dags. Leysti helgartimann af holmi.
+            //
+            // Listinn sjalfur er i bladi nedan fra (DayTimesSheet): inni a
+            // spjaldinu ytti hann "Naest:" og "Sleppa naestu" allt ad sjo
+            // linur nidur. Spjaldid synir adeins samantekt - hvada dagar
+            // vikja fra storu klukkunni - svo ekki turfi ad opna neitt til
+            // ad sja stoduna.
+            var sheetOpen by rememberSaveable { mutableStateOf(false) }
+
             SettingRow(
                 label = stringResource(R.string.per_day_label),
                 description = if (perDayEnabled) {
-                    stringResource(R.string.per_day_desc_on)
+                    dayTimesSummary(days, dayTimes, hour, minute)
                 } else {
                     stringResource(R.string.per_day_desc)
                 },
@@ -117,21 +128,23 @@ internal fun AlarmCard(
                 onCheckedChange = onPerDayEnabledChange
             )
 
-            // Adeins valdir dagar: timi a degi sem hringir aldrei er
-            // stilling sem gerir ekkert og villir um fyrir notandanum.
             if (perDayEnabled) {
-                Spacer(Modifier.height(4.dp))
-                WEEK_ORDER.filter { it.first in days }.forEach { (day, labelRes) ->
-                    val own = dayTimes[day]
-                    DayTimeRow(
-                        label = stringResource(labelRes),
-                        hour = own?.div(60) ?: hour,
-                        minute = own?.rem(60) ?: minute,
-                        isOwn = own != null,
-                        onPick = { onPickDayTime(day) },
-                        onReset = { onResetDayTime(day) }
-                    )
+                TextButton(onClick = { sheetOpen = true }) {
+                    Text(stringResource(R.string.per_day_open))
                 }
+            }
+
+            // Lokast ef rofinn fer af - bladid a ekkert erindi an hans.
+            if (sheetOpen && perDayEnabled) {
+                DayTimesSheet(
+                    days = days,
+                    dayTimes = dayTimes,
+                    hour = hour,
+                    minute = minute,
+                    onPickDayTime = onPickDayTime,
+                    onResetDayTime = onResetDayTime,
+                    onDismiss = { sheetOpen = false }
+                )
             }
 
             if (enabled) {
@@ -176,64 +189,6 @@ internal fun AlarmCard(
                 )
             }
         }
-    }
-}
-
-/** Manudagur fyrst, eins og i DayPicker. */
-private val WEEK_ORDER = listOf(
-    Calendar.MONDAY to R.string.day_monday,
-    Calendar.TUESDAY to R.string.day_tuesday,
-    Calendar.WEDNESDAY to R.string.day_wednesday,
-    Calendar.THURSDAY to R.string.day_thursday,
-    Calendar.FRIDAY to R.string.day_friday,
-    Calendar.SATURDAY to R.string.day_saturday,
-    Calendar.SUNDAY to R.string.day_sunday
-)
-
-/**
- * Ein lina i dagalistanum: nafn dagsins, klukka sem ma yta a, og
- * "Sjalfgefid" ef dagurinn hefur eigin tima. Dagur an eigin tima synir
- * sjalfgefna timann daufan - hann fylgir storu klukkunni.
- */
-@Composable
-private fun DayTimeRow(
-    label: String,
-    hour: Int,
-    minute: Int,
-    isOwn: Boolean,
-    onPick: () -> Unit,
-    onReset: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
-        if (isOwn) {
-            TextButton(onClick = onReset) {
-                Text(stringResource(R.string.per_day_reset))
-            }
-        }
-        Text(
-            text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
-            style = MaterialTheme.typography.titleLarge,
-            color = if (isOwn) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(
-                    onClickLabel = stringResource(R.string.change_time),
-                    onClick = onPick
-                )
-                .padding(horizontal = 8.dp, vertical = 6.dp)
-        )
     }
 }
 

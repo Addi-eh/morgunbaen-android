@@ -22,6 +22,10 @@
     <string name="per_day_desc">Sami tími alla daga — kveiktu til að stilla hvern dag fyrir sig</string>
     <string name="per_day_desc_on">Ýttu á klukku dagsins til að breyta. Dagar án eigin tíma fylgja stóru klukkunni.</string>
     <string name="per_day_reset">Sjálfgefið</string>
+    <string name="per_day_open">Stilla daga ›</string>
+    <string name="per_day_sheet_title">Tími hvers dags</string>
+    <string name="per_day_done">Lokið</string>
+    <string name="per_day_all_same">Allir dagar kl. %1$s — ýttu á „Stilla daga“ til að breyta einstökum dögum</string>
     <string name="day_monday">Mánudagur</string>
     <string name="day_tuesday">Þriðjudagur</string>
     <string name="day_wednesday">Miðvikudagur</string>
@@ -29,6 +33,13 @@
     <string name="day_friday">Föstudagur</string>
     <string name="day_saturday">Laugardagur</string>
     <string name="day_sunday">Sunnudagur</string>
+    <string name="day_monday_short">Mán</string>
+    <string name="day_tuesday_short">Þri</string>
+    <string name="day_wednesday_short">Mið</string>
+    <string name="day_thursday_short">Fim</string>
+    <string name="day_friday_short">Fös</string>
+    <string name="day_saturday_short">Lau</string>
+    <string name="day_sunday_short">Sun</string>
 
     <string name="fallback_label">Varahljóð</string>
     <string name="fallback_desc">Þegar bænin er búin, eða vantar á diskinn</string>
@@ -125,7 +136,7 @@
 
     <string name="oem_done">Búið</string>
     <string name="oem_unused_title">Android getur tekið heimildir af ónotuðu appi</string>
-    <string name="oem_unused_body">Afhakaðu við „Remove permissions if app is unused" (eða „Fjarlægja heimildir ef appið er ónotað") undir Settings → Apps → Morgunbæn.\n\nVekjari á virkum dögum er ónotaður yfir helgi — þá þegir hann á mánudegi.</string>
+    <string name="oem_unused_body">Afhakaðu við „Remove permissions if app is unused“ (eða „Fjarlægja heimildir ef appið er ónotað“) undir Settings → Apps → Morgunbæn.\n\nVekjari á virkum dögum er ónotaður yfir helgi — þá þegir hann á mánudegi.</string>
 
     <string name="next_alarm">Næst: %1$s</string>
     <string name="countdown_minutes">%1$d mín</string>
