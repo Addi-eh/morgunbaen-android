@@ -113,9 +113,8 @@ private fun MainScreen() {
     var fadeSeconds by remember { mutableIntStateOf(prefs.fadeInSeconds) }
     var vibrate by remember { mutableStateOf(prefs.vibrateEnabled) }
     var snoozeMinutes by remember { mutableIntStateOf(prefs.snoozeMinutes) }
-    var weekendEnabled by remember { mutableStateOf(prefs.weekendTimeEnabled) }
-    var weekendHour by remember { mutableIntStateOf(prefs.weekendHour) }
-    var weekendMinute by remember { mutableIntStateOf(prefs.weekendMinute) }
+    var perDayEnabled by remember { mutableStateOf(prefs.perDayEnabled) }
+    var dayTimes by remember { mutableStateOf(prefs.dayTimes) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
     var fallbackRas1 by remember { mutableStateOf(prefs.fallbackRas1) }
     var newsEnabled by remember { mutableStateOf(prefs.newsEnabled) }
@@ -262,11 +261,8 @@ private fun MainScreen() {
                 minute = minute,
                 enabled = enabled,
                 days = days,
-                weekendEnabled = weekendEnabled,
-                weekendHour = weekendHour,
-                weekendMinute = weekendMinute,
-                weekendDaysMissing = weekendEnabled &&
-                    days.none { it == Calendar.SATURDAY || it == Calendar.SUNDAY },
+                perDayEnabled = perDayEnabled,
+                dayTimes = dayTimes,
                 nextAlarmText = nextAlarmText,
                 countdownText = countdownText,
                 skipActive = skipActive,
@@ -292,32 +288,34 @@ private fun MainScreen() {
                     days = it
                     persistAndReschedule()
                 },
-                onWeekendEnabledChange = {
-                    weekendEnabled = it
-                    prefs.weekendTimeEnabled = it
+                onPerDayEnabledChange = {
+                    perDayEnabled = it
+                    prefs.perDayEnabled = it
                     persistAndReschedule()
                 },
-                onPickWeekendTime = {
+                onPickDayTime = { day ->
+                    val current = dayTimes[day] ?: (hour * 60 + minute)
                     TimePickerDialog(
                         context,
                         { _, h, m ->
-                            weekendHour = h
-                            weekendMinute = m
-                            prefs.weekendHour = h
-                            prefs.weekendMinute = m
+                            dayTimes = dayTimes + (day to h * 60 + m)
+                            prefs.dayTimes = dayTimes
                             persistAndReschedule()
                         },
-                        weekendHour, weekendMinute, true
+                        current / 60, current % 60, true
                     ).show()
+                },
+                onResetDayTime = { day ->
+                    dayTimes = dayTimes - day
+                    prefs.dayTimes = dayTimes
+                    persistAndReschedule()
                 },
                 onSkipNext = {
                     val toSkip = TriggerTimes.next(
                         days = days,
                         hour = hour,
                         minute = minute,
-                        weekendEnabled = weekendEnabled,
-                        weekendHour = weekendHour,
-                        weekendMinute = weekendMinute,
+                        dayTimes = if (perDayEnabled) dayTimes else emptyMap(),
                         skipMillis = 0L
                     )
                     prefs.skipNextMillis = toSkip ?: 0L
@@ -429,8 +427,7 @@ private fun MainScreen() {
                     newsAttempted = newsAttempted,
                     newsFirstrun = newsFirstrun,
                     alarmHour = hour,
-                    weekendEnabled = weekendEnabled,
-                    weekendHour = weekendHour,
+                    dayTimes = if (perDayEnabled) dayTimes else emptyMap(),
                     days = days
                 ),
                 fallbackRas1 = fallbackRas1,
@@ -581,8 +578,7 @@ private fun newsDescription(
     newsAttempted: Boolean,
     newsFirstrun: String?,
     alarmHour: Int,
-    weekendEnabled: Boolean,
-    weekendHour: Int,
+    dayTimes: Map<Int, Int>,
     days: Set<Int>
 ): String = when {
     !newsEnabled -> stringResource(R.string.news_desc_off)
@@ -590,11 +586,11 @@ private fun newsDescription(
 
     // TVO OLIK ASTOND - ekki rugla teim saman.
     //
-    // 1) EINHVER vekjaratimi (virkur dagur EDA helgi) er fyrir kl. 07:00.
+    // 1) EINHVER vekjaratimi (hvada valinn dagur sem er) er fyrir kl. 07:00.
     //    Tha eru frettirnar aldrei til tegar sa dagur hringir.
     //    Aður var aðeins alarmHour skoðað — helgartími 06:30 með
     //    virkum degi kl. 08:00 sagði þá ranglega að fréttir næðust.
-    alarmRingsBeforeNews(days, alarmHour, weekendEnabled, weekendHour) ->
+    alarmRingsBeforeNews(days, alarmHour, dayTimes) ->
         stringResource(R.string.news_alarm_too_early)
 
     // 2) KLUKKAN er undir 07:00 akkurat nu og frettatimi dagsins er tvi
@@ -615,26 +611,16 @@ private fun newsDescription(
 
 /**
  * Hringir vekjarinn einhvern valinn dag fyrir fréttirnar kl. 07:00?
- * Helgartími er skoðaður sér — hann má ekki fela sig á bak við virkan dag.
+ * Hver dagur er skoðaður á sínum eigin tíma — snemmbúinn föstudagur má
+ * ekki fela sig á bak við sjálfgefna tímann.
  */
 private fun alarmRingsBeforeNews(
     days: Set<Int>,
     alarmHour: Int,
-    weekendEnabled: Boolean,
-    weekendHour: Int
-): Boolean {
-    val hasWeekday = days.any {
-        it != Calendar.SATURDAY && it != Calendar.SUNDAY
-    }
-    val hasWeekend = days.any {
-        it == Calendar.SATURDAY || it == Calendar.SUNDAY
-    }
-    if (hasWeekday && alarmHour < RuvClient.FRETTIR_HOUR) return true
-    if (hasWeekend) {
-        val hour = if (weekendEnabled) weekendHour else alarmHour
-        if (hour < RuvClient.FRETTIR_HOUR) return true
-    }
-    return false
+    dayTimes: Map<Int, Int>
+): Boolean = days.any { day ->
+    val hour = dayTimes[day]?.div(60) ?: alarmHour
+    hour < RuvClient.FRETTIR_HOUR
 }
 
 /** Einkenni sem heilsuvoktunin fann. Tomt mengi = allt i lagi. */

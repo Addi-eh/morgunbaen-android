@@ -22,6 +22,9 @@ class MorgunbaenApp : Application() {
         // Appid er directBootAware, svo onCreate getur keyrt ADUR en notandinn
         // hefur opnad simann eftir endurraesingu. Allt her verdur ad tola tad.
         migrateLegacyPrefs()
+        // Á undan schedule(): annars reiknast fyrsta hringing eftir
+        // uppfærslu án helgartímans sem notandinn hafði stillt.
+        Prefs(this).migrateWeekendTime()
         createNotificationChannels()
         AlarmScheduler.schedule(this)
 

@@ -114,23 +114,52 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putString(KEY_NEWS_ID, value).apply()
 
     /**
-     * Annar vekjaratimi um helgar.
+     * Mismunandi tími eftir dögum.
      *
-     * Morgunbaenin er flutt alla daga. Thetta er hrein timastilling:
-     * sofa lengur um helgar og fa samt baen THESS dags, ekki sidustu
-     * baen vikunnar. Gildir adeins ef laugardagur eda sunnudagur er valinn.
+     * Morgunbænin er flutt alla daga. Þetta er hrein tímastilling: sofa
+     * lengur á laugardögum, fara fyrr á fætur á föstudögum — og fá samt
+     * bæn ÞESS dags. Leysti af hólmi „Annar tími um helgar" (v0.96).
      */
-    var weekendTimeEnabled: Boolean
-        get() = sp.getBoolean(KEY_WEEKEND_ENABLED, false)
-        set(value) = sp.edit().putBoolean(KEY_WEEKEND_ENABLED, value).apply()
+    var perDayEnabled: Boolean
+        get() = sp.getBoolean(KEY_PER_DAY_ENABLED, false)
+        set(value) = sp.edit().putBoolean(KEY_PER_DAY_ENABLED, value).apply()
 
-    var weekendHour: Int
-        get() = sp.getInt(KEY_WEEKEND_HOUR, 9)
-        set(value) = sp.edit().putInt(KEY_WEEKEND_HOUR, value).apply()
+    /**
+     * Eigin tími einstakra daga, í mínútum frá miðnætti.
+     * Dagur sem vantar hér notar alarmHour:alarmMinute.
+     * Vistað sem "1=540,7=540" — StringSet tapar engu en er óraðað og
+     * erfiðara að lesa í adb.
+     */
+    var dayTimes: Map<Int, Int>
+        get() = parseDayTimes(sp.getString(KEY_DAY_TIMES, null))
+        set(value) = sp.edit()
+            .putString(KEY_DAY_TIMES, value.entries.joinToString(",") { "${it.key}=${it.value}" })
+            .apply()
 
-    var weekendMinute: Int
-        get() = sp.getInt(KEY_WEEKEND_MINUTE, 0)
-        set(value) = sp.edit().putInt(KEY_WEEKEND_MINUTE, value).apply()
+    /** Kortið sem TriggerTimes á að nota: tómt ef rofinn er af. */
+    val activeDayTimes: Map<Int, Int>
+        get() = if (perDayEnabled) dayTimes else emptyMap()
+
+    /**
+     * Færir „Annar tími um helgar" (til og með v0.952) yfir í tíma fyrir
+     * hvern dag. Keyrir einu sinni; gömlu lyklarnir eru aðeins lesnir hér.
+     */
+    fun migrateWeekendTime() {
+        if (sp.getBoolean(KEY_PER_DAY_MIGRATED, false)) return
+        val editor = sp.edit()
+        if (sp.getBoolean(KEY_WEEKEND_ENABLED, false)) {
+            val minutes = sp.getInt(KEY_WEEKEND_HOUR, 9) * 60 + sp.getInt(KEY_WEEKEND_MINUTE, 0)
+            editor.putBoolean(KEY_PER_DAY_ENABLED, true)
+            editor.putString(KEY_DAY_TIMES, "1=$minutes,7=$minutes")
+        }
+        editor.remove(KEY_WEEKEND_ENABLED)
+            .remove(KEY_WEEKEND_HOUR)
+            .remove(KEY_WEEKEND_MINUTE)
+            .putBoolean(KEY_PER_DAY_MIGRATED, true)
+            // commit: vekjarinn les þetta strax á eftir í sama ferli,
+            // og tapist skrifin fer helgartíminn forgörðum.
+            .commit()
+    }
 
     /**
      * Vaxandi hljodstyrkur: byrjar lagt og haekkar rolega upp i fullan styrk.
@@ -243,6 +272,9 @@ class Prefs(context: Context) {
         private const val KEY_WEEKEND_ENABLED = "weekend_time_enabled"
         private const val KEY_WEEKEND_HOUR = "weekend_hour"
         private const val KEY_WEEKEND_MINUTE = "weekend_minute"
+        private const val KEY_PER_DAY_ENABLED = "per_day_enabled"
+        private const val KEY_DAY_TIMES = "day_times"
+        private const val KEY_PER_DAY_MIGRATED = "per_day_migrated"
         private const val KEY_SKIP_NEXT = "skip_next_millis"
         private const val KEY_FALLBACK_RAS1 = "fallback_ras1"
 
@@ -250,5 +282,15 @@ class Prefs(context: Context) {
 
         // Manudagur (2) til fostudags (6) - venja, ekki takmorkun
         private val DEFAULT_DAYS = setOf("2", "3", "4", "5", "6")
+
+        /** Ógild færsla er hunsuð frekar en að fella vekjarann. */
+        internal fun parseDayTimes(raw: String?): Map<Int, Int> =
+            raw.orEmpty().split(",").mapNotNull { entry ->
+                val (day, minutes) = entry.split("=").takeIf { it.size == 2 }
+                    ?: return@mapNotNull null
+                val d = day.toIntOrNull() ?: return@mapNotNull null
+                val m = minutes.toIntOrNull() ?: return@mapNotNull null
+                if (d in 1..7 && m in 0 until 24 * 60) d to m else null
+            }.toMap()
     }
 }

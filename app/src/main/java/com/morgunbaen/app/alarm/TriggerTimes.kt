@@ -20,9 +20,10 @@ object TriggerTimes {
      * Skilar null ef enginn dagur er valinn.
      *
      * @param days           Valdir dagar, Calendar.SUNDAY=1 .. SATURDAY=7
-     * @param hour,minute    Venjulegi vekjaratíminn
-     * @param weekendEnabled Gildir annar tími um helgar?
-     * @param weekendHour,weekendMinute  Helgartíminn, ef virkur
+     * @param hour,minute    Sjálfgefni vekjaratíminn
+     * @param dayTimes       Eigin tími einstakra daga, í mínútum frá miðnætti.
+     *                       Dagur sem vantar hér notar sjálfgefna tímann.
+     *                       Tómt kort = sami tími alla daga.
      * @param skipMillis     Ein hringing til að sleppa (þjóðhátíð, veikindi).
      *                       0 = engin slepping. Samanburður er á mínútu:
      *                       skipið er nákvæmlega sá triggerAt sem var vistaður.
@@ -31,9 +32,7 @@ object TriggerTimes {
         days: Set<Int>,
         hour: Int,
         minute: Int,
-        weekendEnabled: Boolean,
-        weekendHour: Int,
-        weekendMinute: Int,
+        dayTimes: Map<Int, Int> = emptyMap(),
         from: Calendar = Calendar.getInstance(),
         skipMillis: Long = 0L
     ): Long? {
@@ -49,7 +48,7 @@ object TriggerTimes {
             val dayOfWeek = candidate.get(Calendar.DAY_OF_WEEK)
             if (dayOfWeek !in days) continue
 
-            applyTime(candidate, dayOfWeek, hour, minute, weekendEnabled, weekendHour, weekendMinute)
+            applyTime(candidate, dayOfWeek, hour, minute, dayTimes)
 
             // Tíminn í dag getur verið liðinn hjá.
             if (candidate.timeInMillis <= from.timeInMillis) continue
@@ -69,9 +68,7 @@ object TriggerTimes {
         days: Set<Int>,
         hour: Int,
         minute: Int,
-        weekendEnabled: Boolean,
-        weekendHour: Int,
-        weekendMinute: Int,
+        dayTimes: Map<Int, Int> = emptyMap(),
         from: Calendar = Calendar.getInstance()
     ): Long? {
         if (days.isEmpty()) return null
@@ -86,7 +83,7 @@ object TriggerTimes {
             val dayOfWeek = candidate.get(Calendar.DAY_OF_WEEK)
             if (dayOfWeek !in days) continue
 
-            applyTime(candidate, dayOfWeek, hour, minute, weekendEnabled, weekendHour, weekendMinute)
+            applyTime(candidate, dayOfWeek, hour, minute, dayTimes)
 
             if (candidate.timeInMillis > from.timeInMillis) continue
 
@@ -161,13 +158,10 @@ object TriggerTimes {
         dayOfWeek: Int,
         hour: Int,
         minute: Int,
-        weekendEnabled: Boolean,
-        weekendHour: Int,
-        weekendMinute: Int
+        dayTimes: Map<Int, Int>
     ) {
-        val isWeekend = dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY
-        val useWeekend = isWeekend && weekendEnabled
-        calendar.set(Calendar.HOUR_OF_DAY, if (useWeekend) weekendHour else hour)
-        calendar.set(Calendar.MINUTE, if (useWeekend) weekendMinute else minute)
+        val own = dayTimes[dayOfWeek]
+        calendar.set(Calendar.HOUR_OF_DAY, own?.div(60) ?: hour)
+        calendar.set(Calendar.MINUTE, own?.rem(60) ?: minute)
     }
 }

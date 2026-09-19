@@ -164,9 +164,7 @@ object AlarmScheduler {
             days = prefs.alarmDays,
             hour = prefs.alarmHour,
             minute = prefs.alarmMinute,
-            weekendEnabled = prefs.weekendTimeEnabled,
-            weekendHour = prefs.weekendHour,
-            weekendMinute = prefs.weekendMinute,
+            dayTimes = prefs.activeDayTimes,
             from = from,
             skipMillis = prefs.skipNextMillis
         )
@@ -181,9 +179,7 @@ object AlarmScheduler {
             days = prefs.alarmDays,
             hour = prefs.alarmHour,
             minute = prefs.alarmMinute,
-            weekendEnabled = prefs.weekendTimeEnabled,
-            weekendHour = prefs.weekendHour,
-            weekendMinute = prefs.weekendMinute,
+            dayTimes = prefs.activeDayTimes,
             from = from
         )
 

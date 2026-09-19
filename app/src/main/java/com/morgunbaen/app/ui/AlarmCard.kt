@@ -27,14 +27,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
+import java.util.Calendar
 import java.util.Locale
 
 /**
- * Efsta spjaldid: vekjaratimi, dagar, helgartimi og profunarhnappur.
+ * Efsta spjaldid: vekjaratimi, dagar, timi hvers dags og profunarhnappur.
  *
  * Allt state byr i MainScreen - spjaldid faer gildi og skilar atburdum.
  * TimePickerDialog er lika hja MainScreen, tvi hann tarf Activity-context;
- * her eru bara onPickTime/onPickWeekendTime.
+ * her eru bara onPickTime/onPickDayTime.
  */
 @Composable
 internal fun AlarmCard(
@@ -42,10 +43,8 @@ internal fun AlarmCard(
     minute: Int,
     enabled: Boolean,
     days: Set<Int>,
-    weekendEnabled: Boolean,
-    weekendHour: Int,
-    weekendMinute: Int,
-    weekendDaysMissing: Boolean,
+    perDayEnabled: Boolean,
+    dayTimes: Map<Int, Int>,
     nextAlarmText: String,
     countdownText: String?,
     skipActive: Boolean,
@@ -55,8 +54,9 @@ internal fun AlarmCard(
     onEnabledChange: (Boolean) -> Unit,
     onPickTime: () -> Unit,
     onDaysChange: (Set<Int>) -> Unit,
-    onWeekendEnabledChange: (Boolean) -> Unit,
-    onPickWeekendTime: () -> Unit,
+    onPerDayEnabledChange: (Boolean) -> Unit,
+    onPickDayTime: (Int) -> Unit,
+    onResetDayTime: (Int) -> Unit,
     onSkipNext: () -> Unit,
     onUndoSkip: () -> Unit,
     onTest: () -> Unit
@@ -104,36 +104,32 @@ internal fun AlarmCard(
             Spacer(Modifier.height(16.dp))
 
             // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er hrein
-            // timastilling: sofa lengur an tess ad missa af baen tess dags.
+            // timastilling: sofa lengur, eda fara fyrr a faetur, an tess
+            // ad missa af baen tess dags. Leysti helgartimann af holmi.
             SettingRow(
-                label = stringResource(R.string.weekend_label),
-                description = if (weekendEnabled) {
-                    stringResource(R.string.weekend_desc_on)
+                label = stringResource(R.string.per_day_label),
+                description = if (perDayEnabled) {
+                    stringResource(R.string.per_day_desc_on)
                 } else {
-                    stringResource(R.string.weekend_desc)
+                    stringResource(R.string.per_day_desc)
                 },
-                checked = weekendEnabled,
-                onCheckedChange = onWeekendEnabledChange
+                checked = perDayEnabled,
+                onCheckedChange = onPerDayEnabledChange
             )
 
-            if (weekendEnabled) {
-                Spacer(Modifier.height(8.dp))
-                BigClock(
-                    hour = weekendHour,
-                    minute = weekendMinute,
-                    onClick = onPickWeekendTime
-                )
-                TextButton(onClick = onPickWeekendTime) {
-                    Text(stringResource(R.string.change_time))
-                }
-
-                // Helgartimi an helgardaga gerir bokstaflega ekkert -
-                // segjum tad i stad tess ad lata rofann ljuga tognandi.
-                if (weekendDaysMissing) {
-                    Text(
-                        text = stringResource(R.string.weekend_days_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+            // Adeins valdir dagar: timi a degi sem hringir aldrei er
+            // stilling sem gerir ekkert og villir um fyrir notandanum.
+            if (perDayEnabled) {
+                Spacer(Modifier.height(4.dp))
+                WEEK_ORDER.filter { it.first in days }.forEach { (day, labelRes) ->
+                    val own = dayTimes[day]
+                    DayTimeRow(
+                        label = stringResource(labelRes),
+                        hour = own?.div(60) ?: hour,
+                        minute = own?.rem(60) ?: minute,
+                        isOwn = own != null,
+                        onPick = { onPickDayTime(day) },
+                        onReset = { onResetDayTime(day) }
                     )
                 }
             }
@@ -180,6 +176,64 @@ internal fun AlarmCard(
                 )
             }
         }
+    }
+}
+
+/** Manudagur fyrst, eins og i DayPicker. */
+private val WEEK_ORDER = listOf(
+    Calendar.MONDAY to R.string.day_monday,
+    Calendar.TUESDAY to R.string.day_tuesday,
+    Calendar.WEDNESDAY to R.string.day_wednesday,
+    Calendar.THURSDAY to R.string.day_thursday,
+    Calendar.FRIDAY to R.string.day_friday,
+    Calendar.SATURDAY to R.string.day_saturday,
+    Calendar.SUNDAY to R.string.day_sunday
+)
+
+/**
+ * Ein lina i dagalistanum: nafn dagsins, klukka sem ma yta a, og
+ * "Sjalfgefid" ef dagurinn hefur eigin tima. Dagur an eigin tima synir
+ * sjalfgefna timann daufan - hann fylgir storu klukkunni.
+ */
+@Composable
+private fun DayTimeRow(
+    label: String,
+    hour: Int,
+    minute: Int,
+    isOwn: Boolean,
+    onPick: () -> Unit,
+    onReset: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        if (isOwn) {
+            TextButton(onClick = onReset) {
+                Text(stringResource(R.string.per_day_reset))
+            }
+        }
+        Text(
+            text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
+            style = MaterialTheme.typography.titleLarge,
+            color = if (isOwn) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    onClickLabel = stringResource(R.string.change_time),
+                    onClick = onPick
+                )
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+        )
     }
 }
 

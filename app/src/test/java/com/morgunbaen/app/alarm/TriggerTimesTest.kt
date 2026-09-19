@@ -42,7 +42,6 @@ class TriggerTimesTest {
         // Midvikudagur kl. 06:00, vekjari 07:00 -> i dag kl. 07:00
         val next = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 6)
         )!!.asCalendar()
 
@@ -56,7 +55,6 @@ class TriggerTimesTest {
         // Midvikudagur kl. 08:00, vekjari 07:00 -> fimmtudagur
         val next = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 8)
         )!!.asCalendar()
 
@@ -69,7 +67,6 @@ class TriggerTimesTest {
         // Fostudagur 14. kl. 12:00 -> manudagur 17. kl. 07:00
         val next = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(14, 12)
         )!!.asCalendar()
 
@@ -78,11 +75,11 @@ class TriggerTimesTest {
     }
 
     @Test
-    fun `helgartimi gildir a laugardegi tegar hann er virkur`() {
+    fun `eigin timi laugardags gildir`() {
         // Fostudagur kl. 12:00, laugardagur valinn, helgartimi 09:30
         val next = TriggerTimes.next(
             days = weekdays + Calendar.SATURDAY, hour = 7, minute = 0,
-            weekendEnabled = true, weekendHour = 9, weekendMinute = 30,
+            dayTimes = mapOf(Calendar.SATURDAY to 9 * 60 + 30, Calendar.SUNDAY to 9 * 60 + 30),
             from = at(14, 12)
         )!!.asCalendar()
 
@@ -92,10 +89,9 @@ class TriggerTimesTest {
     }
 
     @Test
-    fun `an helgartima gildir venjulegi timinn lika um helgar`() {
+    fun `an eigin tima gildir sjalfgefni timinn lika um helgar`() {
         val next = TriggerTimes.next(
             days = weekdays + Calendar.SATURDAY, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 30,
             from = at(14, 12)
         )!!.asCalendar()
 
@@ -108,7 +104,6 @@ class TriggerTimesTest {
         assertNull(
             TriggerTimes.next(
                 days = emptySet(), hour = 7, minute = 0,
-                weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
                 from = at(12, 6)
             )
         )
@@ -119,12 +114,10 @@ class TriggerTimesTest {
         // Midvikudagur kl. 06:00, sleppa 07:00 i dag -> fimmtudagur
         val today = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 6)
         )!!
         val skipped = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 6),
             skipMillis = today
         )!!.asCalendar()
@@ -138,13 +131,117 @@ class TriggerTimesTest {
     fun `slepptimastimpill sem passar ekki vid neinn kandídat er hunsaður`() {
         val next = TriggerTimes.next(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 6),
             skipMillis = at(12, 8).timeInMillis
         )!!.asCalendar()
 
         assertEquals(12, next.get(Calendar.DAY_OF_MONTH))
         assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+    }
+
+    // ------------------------------------------------------------------
+    //  Tími fyrir hvern dag
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `fostudagur med eigin tima hringir a sinum tima`() {
+        // Fimmtudagur kl. 12:00, föstudagur 08:15 -> föstudagur 14. kl. 08:15
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.FRIDAY to 8 * 60 + 15),
+            from = at(13, 12)
+        )!!.asCalendar()
+
+        assertEquals(14, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(8, next.get(Calendar.HOUR_OF_DAY))
+        assertEquals(15, next.get(Calendar.MINUTE))
+    }
+
+    @Test
+    fun `eigin timi eins dags hreyfir ekki hina dagana`() {
+        // Miðvikudagur kl. 06:00, föstudagur með eigin tíma -> í dag kl. 07:00
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.FRIDAY to 5 * 60),
+            from = at(12, 6)
+        )!!.asCalendar()
+
+        assertEquals(12, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+    }
+
+    @Test
+    fun `eigin timi sem er lidinn i dag faerist a naesta dag`() {
+        // Miðvikudagur kl. 06:00, miðvikudagur á 05:30 -> fimmtudagur 07:00
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.WEDNESDAY to 5 * 60 + 30),
+            from = at(12, 6)
+        )!!.asCalendar()
+
+        assertEquals(13, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+        assertEquals(0, next.get(Calendar.MINUTE))
+    }
+
+    @Test
+    fun `slepping a degi med eigin tima`() {
+        // Fimmtudagur kl. 12:00. Föstudagur 08:15 sleppt -> mánudagur 07:00
+        val friday = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.FRIDAY to 8 * 60 + 15),
+            from = at(13, 12)
+        )!!
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.FRIDAY to 8 * 60 + 15),
+            from = at(13, 12),
+            skipMillis = friday
+        )!!.asCalendar()
+
+        assertEquals(17, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(Calendar.MONDAY, next.get(Calendar.DAY_OF_WEEK))
+        assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+    }
+
+    @Test
+    fun `eigin timi dags sem er ekki valinn er hunsadur`() {
+        // Laugardagur á tíma en ekki valinn: föstudagur 12:00 -> mánudagur
+        val next = TriggerTimes.next(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.SATURDAY to 9 * 60),
+            from = at(14, 12)
+        )!!.asCalendar()
+
+        assertEquals(17, next.get(Calendar.DAY_OF_MONTH))
+        assertEquals(7, next.get(Calendar.HOUR_OF_DAY))
+    }
+
+    @Test
+    fun `previous notar eigin tima dagsins`() {
+        // Mánudagur 17. kl. 06:00, föstudagur á 08:15 -> föstudagur 14. kl. 08:15
+        val prev = TriggerTimes.previous(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.FRIDAY to 8 * 60 + 15),
+            from = at(17, 6)
+        )!!.asCalendar()
+
+        assertEquals(14, prev.get(Calendar.DAY_OF_MONTH))
+        assertEquals(8, prev.get(Calendar.HOUR_OF_DAY))
+        assertEquals(15, prev.get(Calendar.MINUTE))
+    }
+
+    @Test
+    fun `previous med snemmbunum eigin tima i dag telur hann lidinn`() {
+        // Mánudagur 17. kl. 06:00, mánudagur á 05:00 -> í dag kl. 05:00
+        val prev = TriggerTimes.previous(
+            days = weekdays, hour = 7, minute = 0,
+            dayTimes = mapOf(Calendar.MONDAY to 5 * 60),
+            from = at(17, 6)
+        )!!.asCalendar()
+
+        assertEquals(17, prev.get(Calendar.DAY_OF_MONTH))
+        assertEquals(5, prev.get(Calendar.HOUR_OF_DAY))
     }
 
     // ------------------------------------------------------------------
@@ -156,7 +253,6 @@ class TriggerTimesTest {
         // Midvikudagur kl. 08:00 -> i dag kl. 07:00
         val prev = TriggerTimes.previous(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(12, 8)
         )!!.asCalendar()
 
@@ -169,7 +265,6 @@ class TriggerTimesTest {
         // Manudagur 17. kl. 06:00, bara virkir dagar -> fostudagur 14.
         val prev = TriggerTimes.previous(
             days = weekdays, hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(17, 6)
         )!!.asCalendar()
 
@@ -182,7 +277,6 @@ class TriggerTimesTest {
         assertNull(
             TriggerTimes.previous(
                 days = emptySet(), hour = 7, minute = 0,
-                weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
                 from = at(12, 8)
             )
         )
@@ -264,7 +358,6 @@ class TriggerTimesTest {
         // Fostudagur kl. 12:00, adeins manudagur valinn -> manudagur kl. 07:00
         val next = TriggerTimes.next(
             days = setOf(Calendar.MONDAY), hour = 7, minute = 0,
-            weekendEnabled = false, weekendHour = 9, weekendMinute = 0,
             from = at(14, 12)
         )!!
         val left = TriggerTimes.countdown(at(14, 12).timeInMillis, next)!!

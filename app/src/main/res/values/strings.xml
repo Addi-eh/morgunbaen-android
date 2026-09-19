@@ -18,10 +18,17 @@
     <string name="history_open">Fyrri bænir</string>
     <string name="history_empty">Náði ekki að sækja fyrri bænir frá RÚV.</string>
 
-    <string name="weekend_label">Annar tími um helgar</string>
-    <string name="weekend_desc">Sami tími alla daga — kveiktu til að sofa lengur um helgar</string>
-    <string name="weekend_desc_on">Helgartíminn gildir laugardag og sunnudag</string>
-    <string name="weekend_days_warning">Hvorki laugardagur né sunnudagur er valinn — helgartíminn hefur engin áhrif</string>
+    <string name="per_day_label">Mismunandi tími eftir dögum</string>
+    <string name="per_day_desc">Sami tími alla daga — kveiktu til að stilla hvern dag fyrir sig</string>
+    <string name="per_day_desc_on">Ýttu á klukku dagsins til að breyta. Dagar án eigin tíma fylgja stóru klukkunni.</string>
+    <string name="per_day_reset">Sjálfgefið</string>
+    <string name="day_monday">Mánudagur</string>
+    <string name="day_tuesday">Þriðjudagur</string>
+    <string name="day_wednesday">Miðvikudagur</string>
+    <string name="day_thursday">Fimmtudagur</string>
+    <string name="day_friday">Föstudagur</string>
+    <string name="day_saturday">Laugardagur</string>
+    <string name="day_sunday">Sunnudagur</string>
 
     <string name="fallback_label">Varahljóð</string>
     <string name="fallback_desc">Þegar bænin er búin, eða vantar á diskinn</string>
