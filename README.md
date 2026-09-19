@@ -58,10 +58,15 @@ ekki Play Store eða annarri undirritun við þetta APK.
 - Virkar þótt síminn hafi endurræst um nóttina og enginn slegið inn PIN
   (Direct Boot).
 - Lætur vita ef síminn hefur stöðvað appið — Android segir ekkert sjálft.
-- Fyrri bænir, deiling, blundur, valkvæður helgartími, vaxandi hljóðstyrkur
-  og titringur.
+- Mismunandi tími eftir dögum — sofa lengur á laugardögum, fara fyrr á fætur
+  á föstudögum, og fá samt bæn þess dags.
+- Vakna við bænina sjálfa, eða við vekjarahljóð og hlusta á bænina á eftir:
+  strax, eftir spurningu á skjánum, eða úr tilkynningu þegar hentar.
+- Eigið vekjarahljóð: hljóð símans eða eigin hljóðskrá. Sjálfgefið er
+  kirkjuklukka Staðarfells.
+- Fyrri bænir, deiling, blundur, vaxandi hljóðstyrkur og titringur.
 - Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
-- Varahljóð: kirkjuklukka Staðarfells eða Rás 1 í beinni.
+- Varahljóð: vekjarahljóðið eða Rás 1 í beinni.
 
 Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).

@@ -83,19 +83,21 @@ work/CatchUpScheduler.kt   Opnar gluggann kl. 07:00, ræður við læstan síma
 alarm/TriggerTimes.kt      Hreinn tímareikningur - næst/síðast/gluggi/teljari ← hjartað
 alarm/AlarmScheduler.kt    Þunn umbúð um TriggerTimes; skráir vekjara og blund
 alarm/AlarmReceiver.kt     Tekur við þegar klukkan hringir
-alarm/AlarmService.kt      Spilar bæn → fréttir → varahljóð
-alarm/AlarmActivity.kt     Skjárinn á læstum skjá, langt ýt til að slökkva
+alarm/AlarmService.kt      Spilar bæn → fréttir → varahljóð; vekjarahljóð + hlustun
+alarm/AlarmActivity.kt     Skjárinn á læstum skjá: hringing, spurning, hlustun
 alarm/BootReceiver.kt      Endurskráir allt eftir ræsingu
 
 MainActivity.kt            Samhæfingarlag: state og hliðarverk fyrir spjöldin
 OemBatteryGuide.kt         „Remove permissions if app is unused"
-ui/AlarmCard.kt             Vekjaratími, dagar, helgartími, sleppa næstu, prófun
+ui/AlarmCard.kt             Vekjaratími, dagar, tími hvers dags, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
-ui/WakeSettingsCard.kt      Fade-in, titringur, fréttir, blundur
+ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
 ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
+data/AlarmSoundStore.kt    Afritar valið vekjarahljóð í device-protected geymslu
 
-test/alarm/TriggerTimesTest.kt   19 próf á tímareikningnum, keyra með `./gradlew test`
+test/alarm/TriggerTimesTest.kt   26 próf á tímareikningnum, keyra með `./gradlew test`
+test/data/DayTimesParseTest.kt   3 próf á lestri vistaðra tíma hvers dags
 ```
 
 Lestu `TriggerTimes.kt` fyrst — hreinn tímareikningur, engin Android-tenging,
@@ -135,9 +137,9 @@ fréttir. Þátturinn er einfaldlega ekki til — útvarpið er ekki búið að 
 hann. Appið segir frá þessu í stað þess að láta þig bíða.
 
 Þessi athugun (`alarmRingsBeforeNews()` í `MainActivity.kt`) verður að skoða
-**bæði** virka daga og helgardaga sér — ekki bara stillta `alarmHour`. Vekjari
-kl. 08:00 virka daga en 06:30 um helgar (öðrum helgartíma, sjá lið 6) sagði
-áður ranglega „ekki of snemmt", því aðeins virki tíminn var skoðaður.
+**hvern valinn dag á sínum eigin tíma** — ekki bara stillta `alarmHour`. Vekjari
+kl. 08:00 virka daga en 06:30 á laugardögum (eigin tími dagsins, sjá lið 6)
+sagði áður ranglega „ekki of snemmt", því aðeins sjálfgefni tíminn var skoðaður.
 
 **Gamlar fréttir eru verri en engar.** Bæn gærdagsins eldist ekki og er geymd.
 Fréttatími gærdagsins er villandi og er hentur *áður* en reynt er að sækja nýjan.
@@ -151,8 +153,12 @@ Endurræsist síminn kl. 03:00 er geymslan dulkóðuð þar til einhver slær in
 Venjulegt app gæti hvorki lesið hvenær á að hringja né hvað á að spila.
 
 Þess vegna eru **bæði stillingarnar og hljóðskrárnar** í device-protected
-geymslu, appið er `directBootAware`, og `BootReceiver` hlustar á
-`LOCKED_BOOT_COMPLETED` sem berst strax við ræsingu.
+geymslu — líka vekjarahljóð sem notandinn velur sjálfur. `AlarmSoundStore`
+**afritar** það inn, í stað þess að geyma slóðina: bæði `content://media`
+(hljóð símans) og skrár úr skráavafranum eru ólæsilegar fyrir aflæsingu,
+og afritið lifir líka af að upprunaskránni sé eytt. Appið er
+`directBootAware`, og `BootReceiver` hlustar á `LOCKED_BOOT_COMPLETED` sem
+berst strax við ræsingu.
 
 Það síðasta er auðvelt að gleyma: það dugar ekki að vita hvenær á að hringja ef
 MP3-skráin er ólæsileg.
@@ -169,7 +175,8 @@ gegnum Doze. `AlarmReceiver` skráir næsta dag um leið og hann hringir — alg
 villan í heimasmíðuðum vekjurum er að gleyma því.
 
 **Tímareikningurinn sjálfur býr í `TriggerTimes.kt`** — hreint fall af
-gildum (dagar, klukka, helgartími), engin `Context` eða `SharedPreferences`.
+gildum (dagar, sjálfgefin klukka, eigin tími einstakra daga), engin
+`Context` eða `SharedPreferences`.
 `AlarmScheduler.nextTriggerTime()`/`previousTriggerTime()` og
 `CatchUpScheduler.schedule()` eru þunnar umbúðir sem lesa `Prefs` og kalla
 hann. Ástæðan fyrir aðskilnaðinum: `nextWindow()` skal skila `null` þegar
@@ -178,8 +185,16 @@ aftur á „núna + 24 klst" í því tilfelli, sem skráði gluggann á tíma s
 færðist með klukkunni dag frá degi í stað þess að hverfa. Sú villa hefði
 aldrei komist í gegnum einfaldasta einingapróf, en reikningurinn lá læstur
 inni í hlutum sem þurftu `Context` til að keyra yfirleitt. `TriggerTimesTest.kt`
-hefur núna 19 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
+hefur núna 26 próf á honum (`./gradlew test`), þar á meðal nákvæmlega þetta
 tilfelli.
+
+**Tími hvers dags** (v0.96) leysti „Annar tími um helgar" af hólmi.
+`TriggerTimes` tekur `dayTimes: Map<Int, Int>` — mínútur frá miðnætti fyrir
+þá daga sem hafa eigin tíma; aðrir dagar fylgja `alarmHour`/`alarmMinute`.
+`Prefs.activeDayTimes` skilar tómu korti þegar rofinn er af, svo fallið sjálft
+þarf ekki að vita af rofanum. Kveiktur helgartími úr eldri útgáfu færist yfir
+á lau/sun **einu sinni** í `Prefs.migrateWeekendTime()`, sem
+`Application.onCreate` kallar *á undan* fyrstu skráningu vekjarans.
 
 `countdown()` býr líka þarna: biðtíminn fram að næstu hringingu, sundurliðaður
 í daga, klukkustundir og mínútur. Mínúturnar eru námundaðar **upp** — annars
@@ -234,8 +249,27 @@ styrk en eigandinn valdi.
 fyrstu setningarnar hverfa ef styrkurinn er enn að hækka, og titringur keppir
 við rödd prestsins. Hvort tveggja er í boði fyrir þá sem vilja.
 
-**Varahljóð** er val notandans: kirkjuklukka Staðarfells (í APK-inu, í lykkju)
-eða Rás 1 í beinni. Brjóti streymið tekur klukkan við.
+**Varahljóð** er val notandans: vekjarahljóðið (sjálfgefið kirkjuklukka
+Staðarfells í APK-inu, í lykkju) eða Rás 1 í beinni. **Síðasta vörnin er alltaf
+innbyggða klukkan** — brjóti streymið, eða sé eigið hljóð skemmt, tekur hún við.
+Vekjari sem þegir af því notandinn valdi gallaða skrá er versta mögulega bilunin.
+
+**Vakna við vekjarahljóð, svo bæn.** Margir heyra ekki bæn sem þeir eru að
+vakna við. Í þessum ham hringir vekjarahljóðið í lykkju (`Stage.WAKE_SOUND`),
+og „Slökkva" sendir `ACTION_AWAKE` í stað `ACTION_DISMISS`. Þá þagnar
+vekjarinn, skilar hljóðstyrk og fókus, og `afterWake` ræður:
+
+- **Bæn strax** — `startListening()`, og skjárinn verður spilari.
+- **Spyrja mig** — skjárinn spyr. Slökkt úr *tilkynningunni* verður „Seinna",
+  því þá er enginn skjár til að spyrja.
+- **Seinna** — tilkynning á `morgunbaen_prayer`-rásinni sem spilar bænina;
+  hverfur eftir 12 klst.
+
+**Hlustun er ekki vekjari.** `USAGE_MEDIA` (miðlastyrkur; ExoPlayer sér um
+fókus og gerir hlé þegar heyrnartól eru tekin úr), engin 15 mín tímamörk, og
+þegar bæn og fréttir klárast **hættir hún** í stað þess að fara í varahljóð.
+Sé engin bæn á disknum spilast Rás 1. `AlarmService.listeningState` segir
+skjánum hvenær hlustun lýkur, svo hann loki sér.
 
 ---
 
@@ -256,7 +290,7 @@ Vekjari á virkum dögum er ónotaður yfir helgi — nákvæmlega þröskulduri
 ## 9. Prófanir
 
 **Fyrst, á tölvunni — engan síma þarf:** `./gradlew test` keyrir
-`TriggerTimesTest.kt`, 19 próf á tímareikningnum. Grípur ekki neitt sem
+`TriggerTimesTest.kt`, 26 próf á tímareikningnum, og `DayTimesParseTest.kt`. Grípur ekki neitt sem
 snertir Android sjálft, en grípur allt sem snertir *hvenær* vekjarinn og
 sóknarglugginn eiga að fara í gang — ódýrasta og hraðasta staðfestingin sem
 til er á verkefninu.
@@ -277,10 +311,15 @@ til er á verkefninu.
 5. **Direct Boot.** Endurræstu, ekki slá inn PIN.
 6. **Blundur.** Blundaðu, slökktu svo á blundinum, og athugaðu að
    „Næst:" sýni enn morgundaginn.
-7. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
+7. **Vekjarahljóð, svo bæn.** Veldu hljóð símans, svo eigin skrá, og keyrðu
+   „Prófa vekjarann" í hvoru tilviki. Prófaðu svo „Bæn strax", „Spyrja mig" og
+   „Seinna" — hlustunin á að hætta þegar bænin klárast, og blundur á að hringja
+   aftur með vekjarahljóðinu. Endurtaktu Direct Boot-prófið (5) með eigið hljóð
+   valið.
+8. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
    appinu (heim-takkinn) — hljóðið á að þagna. Kom það ekki, er
    `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
-8. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
+9. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
 
 Sú síðasta er sú eina sem sannar eitthvað. Vekjari sem virkar kl. 13:10 meðan þú
 horfir á símann sannar ekkert; vekjari sem hringir eftir sjö tíma svefn með
@@ -318,8 +357,10 @@ undirritun útgáfa í kyrrþey. v3 er forsenda þess að geta skipt um lykil s�
 ### Að klippa útgáfu
 
 1. Uppfærðu `versionCode`/`versionName` í `app/build.gradle.kts` og bættu kafla
-   við `BREYTINGAR.md`. Reglan er: `versionCode` er `versionName` án punkts
-   (0.94 → 94).
+   við `BREYTINGAR.md`. Reglan er: `versionCode` er `versionName` án punkts,
+   **með þremur aukastöfum** (0.96 → 960, 0.961 → 961, 1.0 → 1000). Án
+   núllsins yrði 0.96 að 96, sem er lægra en 0.952 → 952, og Android neitar
+   að uppfæra í lægra `versionCode`.
 2. `git tag -a v0.94 -m "..."` og `git push origin v0.94`.
 3. `release.yml` keyrir prófin, byggir undirritað APK, staðfestir undirritunina
    með `apksigner` og birtir það undir Releases sem `morgunbaen-v0.94.apk`.

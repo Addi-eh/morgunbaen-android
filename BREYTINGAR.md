@@ -3,6 +3,24 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.96
+
+- **Mismunandi tími eftir dögum.** „Annar tími um helgar" var of þröngur: sumir
+  vilja fara fyrr á fætur á föstudögum, aðrir sofa lengur bara á sunnudögum.
+  Rofinn heitir nú „Mismunandi tími eftir dögum" og opnar lista yfir valda
+  daga, hver með klukku sem má ýta á. Dagar án eigin tíma fylgja stóru
+  klukkunni. Helgartími sem var stilltur færist sjálfkrafa yfir á laugardag
+  og sunnudag — ekkert glatast við uppfærsluna.
+- **Vakna við vekjarahljóð, hlusta á bænina á eftir.** Margir heyra ekki bæn
+  sem þeir eru að vakna við. Undir Vakning er nú „Vakna við": bænina sjálfa,
+  eins og áður, eða vekjarahljóð fyrst. Eftir að slökkt er á hljóðinu byrjar
+  bænin strax, skjárinn spyr hvort eigi að hlusta, eða tilkynning bíður þar
+  til hentar. Bænin spilast þá á miðlastyrk og hættir þegar hún er búin.
+- **Eigið vekjarahljóð.** Hljóð símans eða eigin hljóðskrá, í stað
+  kirkjuklukkunnar. Hljóðið er afritað inn í appið svo það virki líka eftir
+  endurræsingu áður en síminn er opnaður. Klikki hljóðið tekur kirkjuklukkan
+  við — vekjarinn má aldrei þegja.
+
 ## v0.952
 
 - **„Sleppa næstu" aftur eins og í v0.95.** Stóri ramminn ofar á spjaldinu
