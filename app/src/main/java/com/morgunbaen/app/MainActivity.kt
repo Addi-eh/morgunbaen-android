@@ -25,6 +25,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -639,6 +641,16 @@ private fun MainScreen() {
 
             // Android tekur heimildir af opnum sem enginn opnar i nokkra daga.
             // Vekjari a virkum dogum er onotadur yfir helgi.
+            // Nedst, a eftir ollum spjoldum: enginn a ad rekast a tetta
+            // a undan vekjaranum sjalfum.
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = { AboutActivity.start(context) },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(stringResource(R.string.about_open))
+            }
+
             if (!oemGuideDone) {
                 InfoCard(
                     title = stringResource(R.string.oem_unused_title),

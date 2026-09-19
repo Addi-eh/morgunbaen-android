@@ -11,6 +11,24 @@
     <string name="test_alarm">Prófa vekjarann</string>
     <string name="test_alarm_armed">Hringir eftir %1$d sekúndur — læstu símanum og slökktu á skjánum</string>
     <string name="share">Deila</string>
+    <string name="about_open">♥ Styrkja Morgunbæn</string>
+    <string name="about_title">Um Morgunbæn</string>
+    <string name="about_verse">Á morgnana heyrir þú ákall mitt, Drottinn, á morgnana færi ég þér fórn mína og bíð þín.</string>
+    <string name="about_verse_ref">Sálm 5:4</string>
+    <string name="about_intro">Ég heiti Adam og bjó til Morgunbæn af því ég vildi vakna við bæn dagsins frá RÚV, sem minnir mig á að biðja og tengjast Drottni einlæglega að morgni hvers dags.</string>
+    <string name="about_donate_title">Styrkja</string>
+    <string name="about_donate_body">Viljirðu styrkja áframhaldandi vinnu við appið opnast síða með upplýsingum um millifærslu. Styrkur opnar ekkert í appinu — vekjarinn virkar eins fyrir alla.</string>
+    <string name="about_donate_button">Opna styrktarsíðu</string>
+    <string name="about_help_title">Aðrar leiðir til að hjálpa</string>
+    <string name="about_help_body">Að deila appinu, gefa því stjörnu á GitHub eða láta vita af villu hjálpar líka — og kostar ekkert.</string>
+    <string name="about_share_app">Deila appinu</string>
+    <string name="about_share_text">Morgunbæn — vekjaraklukka sem vekur þig við Morgunbæn og orð dagsins frá RÚV.\n\n%1$s</string>
+    <string name="about_open_github">Skoða á GitHub</string>
+    <string name="about_report_bug">Tilkynna villu</string>
+    <string name="about_version">Útgáfa %1$s</string>
+    <string name="about_credits">Efnið er frá RÚV. Varahljóð: kirkjuklukka Staðarfellskirkju, kirkjuklukkur.is</string>
+    <string name="about_no_browser">Enginn vafri fannst. Slóðin er %1$s</string>
+
     <string name="share_subject">Morgunbæn</string>
     <string name="share_text">Morgunbæn — %1$s, %2$s\n\n%3$s</string>
 

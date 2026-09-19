@@ -92,8 +92,10 @@ OemBatteryGuide.kt         „Remove permissions if app is unused"
 ui/AlarmCard.kt             Vekjaratími, dagar, tími hvers dags, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
+ui/DayTimesSheet.kt         Tími hvers dags í blaði neðan frá + samantektin
 ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
+AboutActivity.kt           Um appið, styrkir og leiðir til að hjálpa
 data/AlarmSoundStore.kt    Afritar valið vekjarahljóð í device-protected geymslu
 
 test/alarm/TriggerTimesTest.kt   26 próf á tímareikningnum, keyra með `./gradlew test`
@@ -371,6 +373,24 @@ að byggja óundirritað APK sem enginn getur sett upp. SHA-256 vottorðsins er 
 
 > v0.92 og v0.93 voru **debug-undirritaðar** og því ekki uppfæranlegar í v0.94.
 > Sú leið er brotin einu sinni, í eitt skipti; eftir það er hún stöðug.
+
+### Styrkir
+
+Greiðsluupplýsingar eru **hvergi í appinu**. `AboutActivity` opnar vefsíðu
+sem höfundurinn hýsir sjálfur (Tailscale Funnel á rpi5-sd); slóðin er eina
+gildið sem appið geymir, `BuildConfig.DONATE_URL` í `app/build.gradle.kts`.
+
+Ástæðan er sú sama og með undirritunarlykilinn: það sem fer í opinbert repó
+eða í útgefið APK verður ekki tekið til baka. Kennitala og reikningsnúmer á
+vefsíðu má hins vegar breyta eða fjarlægja hvenær sem er, án uppfærslu.
+
+**Slóðin má ekki breytast** — hún er í öllum útgefnum APK-skrám. Færist
+hýsingin þarf lén sem höfundurinn ræður yfir.
+
+`BuildConfig.SHOW_DONATION` felur „Styrkja“-hnappinn. Reglur Google um
+greiðslur takmarka hlekki á styrki utan Play, svo Play-útgáfa setur hann á
+`false`. Uppsetning síðunnar sjálfrar er skjöluð utan repósins, í
+`Morgunbæn android/styrkja-sida/UPPSETNING.md`.
 
 ### Áður en þetta fer í Play Store
 

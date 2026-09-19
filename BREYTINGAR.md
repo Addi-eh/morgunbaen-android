@@ -3,6 +3,20 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.97
+
+- **Dagarnir taka ekki lengur yfir vekjaraspjaldið.** Listinn með tíma hvers
+  dags ýtti „Næst:“ og „Sleppa næstu“ allt að sjö línur niður. Nú stendur
+  samantekt undir rofanum — „Fös 08:15 · Lau 09:30“ — og „Stilla daga“ opnar
+  blað sem rennur upp neðan frá. Breytingar vistast strax, eins og áður.
+- **„Styrkja Morgunbæn“ neðst á forsíðunni** opnar nýjan skjá: stutt um af
+  hverju appið varð til, leiðir til að styrkja, og leiðir sem kosta ekkert —
+  að deila appinu, gefa stjörnu eða tilkynna villu. Styrkur opnar ekkert í
+  appinu; vekjarinn hegðar sér eins fyrir alla.
+- **Lokagæsalappir birtust ekki.** Leiðbeiningin um „Remove permissions if app
+  is unused“ hefur vantað lokagæsalappir síðan v0.951, því ó-hjúpaðar
+  gæsalappir eru fjarlægðar úr strengjaskrám við byggingu.
+
 ## v0.96
 
 - **Mismunandi tími eftir dögum.** „Annar tími um helgar" var of þröngur: sumir

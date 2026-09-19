@@ -54,6 +54,13 @@
             android:parentActivityName=".MainActivity"
             android:label="@string/history_title" />
 
+        <!-- Um appid og styrkir -->
+        <activity
+            android:name=".AboutActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:label="@string/about_title" />
+
         <!-- Skjarinn sem birtist tegar vekjarinn hringir.
              showOnLockScreen + turnScreenOn laetur hann birtast a laestum skja. -->
         <activity

@@ -67,6 +67,8 @@ ekki Play Store eða annarri undirritun við þetta APK.
 - Fyrri bænir, deiling, blundur, vaxandi hljóðstyrkur og titringur.
 - Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
 - Varahljóð: vekjarahljóðið eða Rás 1 í beinni.
+- „Um Morgunbæn“-skjár með upplýsingum um verkefnið og leiðum til að styrkja
+  það. Appið er ókeypis og styrkur opnar ekkert í því.
 
 Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).

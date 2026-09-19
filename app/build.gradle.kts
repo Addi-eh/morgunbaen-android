@@ -14,6 +14,10 @@ plugins {
 // er a ad geta klonad verkefnid og keyrt ./gradlew test og assembleDebug an
 // tess ad eiga lykilinn. assembleRelease skilar tha ounderritudu APK-i, og
 // release.yml stodvar sig adur en ad tvi kemur.
+// Slod styrktarsidunnar. Hun endar i OLLUM utgefnum APK-skram, svo hun
+// verdur ad vera stodug - faerist hysingin sidar ma slodin ekki breytast.
+val DONATE_URL = "https://rpi5-sd.tail6b20ac.ts.net/styrkja"
+
 val keystoreProps = Properties().apply {
     rootProject.file("keystore.properties")
         .takeIf { it.exists() }
@@ -38,8 +42,18 @@ android {
         // versionCode er versionName an punkts (0.93 -> 93) svo tolurnar
         // tvaer geti ekki rekid i sundur: v0.92 var gefid ut med
         // versionCode 1 og versionName "1.0", sem sagdi hvorugt satt.
-        versionCode = 960
-        versionName = "0.96"
+        versionCode = 970
+        versionName = "0.97"
+
+        // Styrktarsidan er EKKI i appinu: kennitala og reikningsnumer
+        // i APK-i eda git-sogu verda ekki tekin til baka. Appid geymir
+        // adeins slodina; sidan sjalf er hyst af hofundinum og ma breyta
+        // hvenaer sem er.
+        buildConfigField("String", "DONATE_URL", "\"$DONATE_URL\"")
+
+        // Play-utgafa setur tetta a false: reglur Google um greidslur
+        // takmarka hlekki a styrki utan Play.
+        buildConfigField("boolean", "SHOW_DONATION", "true")
     }
 
     signingConfigs {
@@ -94,6 +108,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
