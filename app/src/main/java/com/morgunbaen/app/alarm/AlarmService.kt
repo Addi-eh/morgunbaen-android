@@ -27,6 +27,7 @@ import com.morgunbaen.app.R
 import com.morgunbaen.app.data.AlarmSoundStore
 import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Prefs
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Spilar bænina þegar vekjarinn hringir.
@@ -49,11 +50,19 @@ class AlarmService : Service() {
 
     /**
      * Hvar i rodinni vid erum. Baenin fyrst, sidan frettir (ef valid),
-     * loks varahljod sem spilar tar til slokkt er.
+     * loks varahljod sem spilar tar til slokkt er. WAKE_SOUND er
+     * vekjarahljodid sem hringir a undan baeninni i "Vekjarahljod, svo baen".
      */
     private var stage = Stage.PRAYER
 
-    private enum class Stage { PRAYER, NEWS, FALLBACK }
+    private enum class Stage { WAKE_SOUND, PRAYER, NEWS, FALLBACK }
+
+    /**
+     * Notandinn er vaknadur og hlustar. Tha er tetta venjuleg spilun:
+     * midlastyrkur, engin timamork, og hun HAETTIR tegar efnid klarast
+     * i stad tess ad halda afram i varahljod.
+     */
+    private var listening = false
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var prefs: Prefs
 
@@ -67,6 +76,8 @@ class AlarmService : Service() {
             ACTION_START -> startAlarm()
             ACTION_DISMISS -> stopAlarm()
             ACTION_SNOOZE -> snooze()
+            ACTION_AWAKE -> awake(intent.getBooleanExtra(EXTRA_FROM_SCREEN, false))
+            ACTION_LISTEN -> startListening()
             else -> stopAlarm()
         }
         // Aðeins ræsingin á að koma aftur ef Android drepur þjónustuna.
@@ -122,6 +133,16 @@ class AlarmService : Service() {
             stopAlarm()
         }, AUTO_STOP_MINUTES * 60 * 1000L)
 
+        // Vekjarahljod fyrst - baenin kemur tegar notandinn slekkur,
+        // sja awake(). Lykkja: hljodid a ad hringja tar til hann vaknar.
+        if (prefs.wakeWithSound) {
+            stage = Stage.WAKE_SOUND
+            updateNotification(alarmSoundLabel())
+            playAudio(alarmSoundUri())
+            player?.repeatMode = Player.REPEAT_MODE_ONE
+            return
+        }
+
         val repository = EpisodeRepository(this)
         val source = repository.playbackSource()
 
@@ -148,6 +169,8 @@ class AlarmService : Service() {
      * endurræsti þjónustuna - og má ekki leka ExoPlayer eða tvöfalda tímamörk.
      */
     private fun resetPlayback() {
+        listening = false
+        listeningState.value = false
         handler.removeCallbacksAndMessages(null)
         vibrator?.cancel()
         vibrator = null
@@ -359,6 +382,13 @@ class AlarmService : Service() {
      */
     private fun advanceToNextStage() {
         when (stage) {
+            Stage.WAKE_SOUND -> {
+                // Lykkja endar aldrei - hingad kemst adeins villa, t.d.
+                // skemmd skra. Kirkjuklukkan tekur vid; notandinn er ekki vaknadur.
+                stage = Stage.FALLBACK
+                playBellLoop()
+            }
+
             Stage.PRAYER -> {
                 val news = EpisodeRepository(this).newsPlaybackSource()
                 if (news != null) {
@@ -495,10 +525,14 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // I "Vekjarahljod, svo baen" tydir Slokkva "eg er vaknadur" -
+        // baenin a ad fylgja, lika tegar slokkt er ur tilkynningunni.
         val dismissIntent = PendingIntent.getService(
             this,
             1,
-            Intent(this, AlarmService::class.java).apply { action = ACTION_DISMISS },
+            Intent(this, AlarmService::class.java).apply {
+                action = if (prefs.wakeWithSound) ACTION_AWAKE else ACTION_DISMISS
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -535,6 +569,176 @@ class AlarmService : Service() {
             .build()
     }
 
+    // ------------------------------------------------------------------
+    //  Baen eftir voknun
+    // ------------------------------------------------------------------
+
+    /**
+     * Notandinn slokkti a vekjarahljodinu i "Vekjarahljod, svo baen".
+     * Vekjarinn thagnar og skilar hljodstyrk og fokus; svo fer eftir
+     * afterWake hvort baenin byrjar, skjarinn spyr, eda tilkynning bidur.
+     *
+     * fromScreen = false tydir ad slokkt var ur tilkynningunni. Tha er
+     * enginn skjar til ad spyrja, svo "Spyrja mig" verdur ad "Seinna".
+     */
+    private fun awake(fromScreen: Boolean) {
+        resetPlayback()
+        restoreAlarmVolume()
+        abandonAudioFocus()
+        when (prefs.afterWake) {
+            Prefs.AFTER_AUTO -> startListening()
+            Prefs.AFTER_ASK -> {
+                if (!fromScreen) postListenLaterNotification()
+                stopAlarm()
+            }
+            else -> {
+                postListenLaterNotification()
+                stopAlarm()
+            }
+        }
+    }
+
+    /**
+     * Spilar baen dagsins sem venjulegan midil - notandinn er vaknadur.
+     *
+     * USAGE_MEDIA: midlastyrkur, ExoPlayer ser sjalfur um hljodfokus (simtal
+     * gerir hle) og um ad gera hle tegar heyrnartol eru tekin ur.
+     * Engin timamork og ekkert varahljod: tegar efnid er buid er tvi lokid.
+     */
+    private fun startListening() {
+        resetPlayback()
+        // Vekjarinn helt vakandi i 15 min. ExoPlayer heldur sjalfur
+        // vakandi medan hann spilar - okkar las ma fara.
+        releaseWakeLock()
+        cancelListenLaterNotification()
+        listening = true
+        listeningState.value = true
+        stage = Stage.PRAYER
+
+        val source = EpisodeRepository(this).playbackSource()
+        val (uri, label) = when (source) {
+            is EpisodeRepository.PlaybackSource.LocalFile ->
+                Uri.fromFile(source.file) to (prefs.cachedTitle ?: getString(R.string.app_name))
+            is EpisodeRepository.PlaybackSource.Stream ->
+                Uri.parse(source.url) to (prefs.cachedTitle ?: getString(R.string.app_name))
+            // Engin baen - Ras 1 i beinni er naest thvi sem RUV er ad senda.
+            null -> ras1Uri() to getString(R.string.ras1_fallback)
+        }
+        startForeground(NOTIFICATION_ID, buildListenNotification(label))
+
+        player = ExoPlayer.Builder(this)
+            .setAudioAttributes(
+                androidx.media3.common.AudioAttributes.Builder()
+                    .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_SPEECH)
+                    .build(),
+                true
+            )
+            .setHandleAudioBecomingNoisy(true)
+            .setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
+            .build()
+            .apply {
+                setMediaItem(MediaItem.fromUri(uri))
+                addListener(object : Player.Listener {
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == Player.STATE_ENDED) advanceListening()
+                    }
+
+                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                        Log.w(TAG, "Hlustun mistókst", error)
+                        advanceListening()
+                    }
+                })
+                prepare()
+                play()
+            }
+    }
+
+    /** Baen -> frettir (ef valdar og til) -> buid. Aldrei varahljod. */
+    private fun advanceListening() {
+        if (stage == Stage.PRAYER) {
+            val news = EpisodeRepository(this).newsPlaybackSource()
+            if (news != null) {
+                stage = Stage.NEWS
+                val label = prefs.newsTitle ?: getString(R.string.news_label)
+                notifySafely(NOTIFICATION_ID, buildListenNotification(label))
+                playNext(Uri.fromFile(news))
+                return
+            }
+        }
+        Log.i(TAG, "Hlustun lokið")
+        stopAlarm()
+    }
+
+    private fun buildListenNotification(text: String): Notification {
+        val openIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, AlarmActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val stopIntent = PendingIntent.getService(
+            this,
+            1,
+            Intent(this, AlarmService::class.java).apply { action = ACTION_DISMISS },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, MorgunbaenApp.CHANNEL_PRAYER)
+            .setContentTitle(getString(R.string.listen_notification_title))
+            .setContentText(text)
+            .setSmallIcon(R.drawable.ic_alarm)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(openIntent)
+            .addAction(R.drawable.ic_alarm, getString(R.string.listen_stop), stopIntent)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+    }
+
+    /**
+     * "Seinna": tilkynning sem spilar baenina tegar notandanum hentar.
+     * Hverfur eftir 12 klst - baen dagsins a ekki ad bida til morguns.
+     */
+    private fun postListenLaterNotification() {
+        val listenIntent = PendingIntent.getForegroundService(
+            this,
+            3,
+            Intent(this, AlarmService::class.java).apply { action = ACTION_LISTEN },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(this, MorgunbaenApp.CHANNEL_PRAYER)
+            .setContentTitle(getString(R.string.listen_later_title))
+            .setContentText(prefs.cachedTitle ?: getString(R.string.listen_later_text))
+            .setSmallIcon(R.drawable.ic_alarm)
+            .setContentIntent(listenIntent)
+            .addAction(R.drawable.ic_alarm, getString(R.string.listen_now), listenIntent)
+            .setAutoCancel(true)
+            .setTimeoutAfter(LISTEN_LATER_TIMEOUT_MS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+        notifySafely(LISTEN_LATER_NOTIFICATION_ID, notification)
+    }
+
+    private fun cancelListenLaterNotification() {
+        try {
+            getSystemService(NotificationManager::class.java)
+                .cancel(LISTEN_LATER_NOTIFICATION_ID)
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að fjarlægja tilkynningu", e)
+        }
+    }
+
+    private fun notifySafely(id: Int, notification: Notification) {
+        try {
+            getSystemService(NotificationManager::class.java).notify(id, notification)
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að birta tilkynningu", e)
+        }
+    }
+
     private fun snooze() {
         AlarmScheduler.scheduleSnooze(this, prefs.snoozeMinutes)
         stopAlarm()
@@ -553,6 +757,8 @@ class AlarmService : Service() {
     }
 
     private fun stopAlarm() {
+        listening = false
+        listeningState.value = false
         handler.removeCallbacksAndMessages(null)
         restoreAlarmVolume()
         abandonAudioFocus()
@@ -583,6 +789,7 @@ class AlarmService : Service() {
     }
 
     override fun onDestroy() {
+        listeningState.value = false
         handler.removeCallbacksAndMessages(null)
         restoreAlarmVolume()
         abandonAudioFocus()
@@ -617,6 +824,36 @@ class AlarmService : Service() {
         const val ACTION_START = "com.morgunbaen.app.START_ALARM"
         const val ACTION_DISMISS = "com.morgunbaen.app.DISMISS_ALARM"
         const val ACTION_SNOOZE = "com.morgunbaen.app.SNOOZE_ALARM"
+        const val ACTION_AWAKE = "com.morgunbaen.app.AWAKE"
+        const val ACTION_LISTEN = "com.morgunbaen.app.LISTEN"
+        private const val EXTRA_FROM_SCREEN = "from_screen"
+
+        private const val LISTEN_LATER_NOTIFICATION_ID = 43
+        private const val LISTEN_LATER_TIMEOUT_MS = 12 * 60 * 60 * 1000L
+
+        /**
+         * Er baenin ad spila sem hlustun nuna? AlarmActivity lokar ser
+         * tegar tetta fer ur true i false - hlustun lokid eda stodvud.
+         * Sama ferli, svo einfalt StateFlow dugar.
+         */
+        val listeningState = MutableStateFlow(false)
+
+        /** Slokkt a vekjarahljodinu a skjanum - baenin fylgir samkvaemt afterWake. */
+        fun awake(context: Context) {
+            context.startService(
+                Intent(context, AlarmService::class.java).apply {
+                    action = ACTION_AWAKE
+                    putExtra(EXTRA_FROM_SCREEN, true)
+                }
+            )
+        }
+
+        /** Hlusta a baenina - ur "Spyrja mig"-skjanum. */
+        fun listen(context: Context) {
+            context.startForegroundService(
+                Intent(context, AlarmService::class.java).apply { action = ACTION_LISTEN }
+            )
+        }
 
         fun dismiss(context: Context) {
             context.startService(

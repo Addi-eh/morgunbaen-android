@@ -257,6 +257,29 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_ALARM_SOUND_TITLE, null)
         set(value) = sp.edit().putString(KEY_ALARM_SOUND_TITLE, value).apply()
 
+    /**
+     * Við hvað vaknar notandinn?
+     * WAKE_PRAYER: bænin er vekjarinn sjálfur (sjálfgefið, eins og alltaf).
+     * WAKE_SOUND: vekjarahljóð fyrst — bænin á eftir, þegar hann er vaknaður
+     * og getur í raun hlustað á hana.
+     */
+    var wakeMode: String
+        get() = sp.getString(KEY_WAKE_MODE, WAKE_PRAYER) ?: WAKE_PRAYER
+        set(value) = sp.edit().putString(KEY_WAKE_MODE, value).apply()
+
+    val wakeWithSound: Boolean
+        get() = wakeMode == WAKE_SOUND
+
+    /**
+     * Hvað gerist eftir að slökkt er á vekjarahljóðinu (aðeins í WAKE_SOUND):
+     * AFTER_AUTO: bænin byrjar strax.
+     * AFTER_ASK: skjárinn spyr hvort eigi að hlusta.
+     * AFTER_LATER: tilkynning sem spilar bænina þegar hentar.
+     */
+    var afterWake: String
+        get() = sp.getString(KEY_AFTER_WAKE, AFTER_AUTO) ?: AFTER_AUTO
+        set(value) = sp.edit().putString(KEY_AFTER_WAKE, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -292,6 +315,14 @@ class Prefs(context: Context) {
         private const val KEY_FALLBACK_RAS1 = "fallback_ras1"
         private const val KEY_ALARM_SOUND_PATH = "alarm_sound_path"
         private const val KEY_ALARM_SOUND_TITLE = "alarm_sound_title"
+        private const val KEY_WAKE_MODE = "wake_mode"
+        private const val KEY_AFTER_WAKE = "after_wake"
+
+        const val WAKE_PRAYER = "prayer"
+        const val WAKE_SOUND = "sound"
+        const val AFTER_AUTO = "auto"
+        const val AFTER_ASK = "ask"
+        const val AFTER_LATER = "later"
 
         const val PREFS_NAME = "morgunbaen"
 

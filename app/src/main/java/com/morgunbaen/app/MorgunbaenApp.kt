@@ -72,9 +72,22 @@ class MorgunbaenApp : Application() {
         }
 
         manager.createNotificationChannel(alarmChannel)
+
+        // Baen eftir voknun: venjuleg tilkynning, EKKI vekjari. Notandinn
+        // er vaknadur - hun a hvorki ad fara framhja "Ekki trufla" ne hringja.
+        val prayerChannel = NotificationChannel(
+            CHANNEL_PRAYER,
+            getString(R.string.channel_prayer),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = getString(R.string.channel_prayer_desc)
+            setSound(null, null)
+        }
+        manager.createNotificationChannel(prayerChannel)
     }
 
     companion object {
         const val CHANNEL_ALARM = "morgunbaen_alarm"
+        const val CHANNEL_PRAYER = "morgunbaen_prayer"
     }
 }

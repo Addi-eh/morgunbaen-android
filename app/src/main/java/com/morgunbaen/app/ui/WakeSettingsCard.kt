@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
+import com.morgunbaen.app.data.Prefs
 
 /**
  * Vakningarstillingar: fade-in, titringur, frettir, vekjarahljod og blundur.
@@ -28,6 +29,8 @@ import com.morgunbaen.app.R
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
 internal fun WakeSettingsCard(
+    wakeMode: String,
+    afterWake: String,
     fadeIn: Boolean,
     fadeSeconds: Int,
     vibrate: Boolean,
@@ -37,6 +40,8 @@ internal fun WakeSettingsCard(
     alarmSoundTitle: String?,
     soundImporting: Boolean,
     snoozeMinutes: Int,
+    onWakeModeChange: (String) -> Unit,
+    onAfterWakeChange: (String) -> Unit,
     onFadeInChange: (Boolean) -> Unit,
     onFadeSecondsChange: (Int) -> Unit,
     onVibrateChange: (Boolean) -> Unit,
@@ -54,7 +59,61 @@ internal fun WakeSettingsCard(
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
+
+            // Margir vilja heyra baenina VAKANDI. Vekjarahljodid vekur,
+            // baenin kemur a eftir - sja AlarmService.awake().
+            Text(
+                text = stringResource(R.string.wake_mode_label),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = if (wakeMode == Prefs.WAKE_SOUND) {
+                    stringResource(R.string.wake_mode_sound_desc)
+                } else {
+                    stringResource(R.string.wake_mode_prayer_desc)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(6.dp))
+            ChoiceChips(
+                options = listOf(
+                    Prefs.WAKE_PRAYER to stringResource(R.string.wake_mode_prayer),
+                    Prefs.WAKE_SOUND to stringResource(R.string.wake_mode_sound)
+                ),
+                selected = wakeMode,
+                onSelect = onWakeModeChange
+            )
+
+            if (wakeMode == Prefs.WAKE_SOUND) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.after_wake_label),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = when (afterWake) {
+                        Prefs.AFTER_ASK -> stringResource(R.string.after_wake_ask_desc)
+                        Prefs.AFTER_LATER -> stringResource(R.string.after_wake_later_desc)
+                        else -> stringResource(R.string.after_wake_auto_desc)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                ChoiceChips(
+                    options = listOf(
+                        Prefs.AFTER_AUTO to stringResource(R.string.after_wake_auto),
+                        Prefs.AFTER_ASK to stringResource(R.string.after_wake_ask),
+                        Prefs.AFTER_LATER to stringResource(R.string.after_wake_later)
+                    ),
+                    selected = afterWake,
+                    onSelect = onAfterWakeChange
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             SettingRow(
                 label = stringResource(R.string.fade_in_label),
@@ -181,6 +240,28 @@ internal fun WakeSettingsCard(
                 options = listOf(5, 9, 10, 15, 20),
                 selected = snoozeMinutes,
                 onChange = onSnoozeChange
+            )
+        }
+    }
+}
+
+/** Einval med flisum - sama utlit og varahljodsvalid. */
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
+private fun ChoiceChips(
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        options.forEach { (value, label) ->
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = { Text(label) }
             )
         }
     }

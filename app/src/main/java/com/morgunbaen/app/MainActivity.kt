@@ -121,6 +121,8 @@ private fun MainScreen() {
     var dayTimes by remember { mutableStateOf(prefs.dayTimes) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
     var fallbackRas1 by remember { mutableStateOf(prefs.fallbackRas1) }
+    var wakeMode by remember { mutableStateOf(prefs.wakeMode) }
+    var afterWake by remember { mutableStateOf(prefs.afterWake) }
     // null = kirkjuklukkan. Lesid ur AlarmSoundStore, ekki beint ur prefs:
     // hvarf skrain er heitid lygi.
     var alarmSoundTitle by remember {
@@ -475,6 +477,8 @@ private fun MainScreen() {
             Spacer(Modifier.height(16.dp))
 
             WakeSettingsCard(
+                wakeMode = wakeMode,
+                afterWake = afterWake,
                 fadeIn = fadeIn,
                 fadeSeconds = fadeSeconds,
                 vibrate = vibrate,
@@ -492,6 +496,14 @@ private fun MainScreen() {
                 alarmSoundTitle = alarmSoundTitle,
                 soundImporting = soundImporting,
                 snoozeMinutes = snoozeMinutes,
+                onWakeModeChange = {
+                    wakeMode = it
+                    prefs.wakeMode = it
+                },
+                onAfterWakeChange = {
+                    afterWake = it
+                    prefs.afterWake = it
+                },
                 onFadeInChange = {
                     fadeIn = it
                     prefs.fadeInEnabled = it

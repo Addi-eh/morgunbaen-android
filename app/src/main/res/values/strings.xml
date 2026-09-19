@@ -82,6 +82,30 @@
 
     <string name="channel_alarm">Vekjari</string>
     <string name="channel_alarm_desc">Tilkynning sem birtist þegar vekjarinn hringir</string>
+    <string name="channel_prayer">Morgunbæn eftir vöknun</string>
+    <string name="channel_prayer_desc">Spilun bænarinnar og áminning um að hlusta, þegar vaknað er við vekjarahljóð</string>
+    <string name="listen_notification_title">Morgunbæn</string>
+    <string name="listen_stop">Stöðva</string>
+    <string name="listen_later_title">Morgunbæn dagsins bíður</string>
+    <string name="listen_later_text">Ýttu til að hlusta</string>
+    <string name="listen_now">Hlusta</string>
+    <string name="listen_ask_heading">Viltu hlusta á morgunbænina?</string>
+    <string name="listen_ask_play">Hlusta á bænina</string>
+    <string name="listen_ask_close">Loka</string>
+    <string name="listen_playing_heading">Morgunbæn</string>
+
+    <string name="wake_mode_label">Vakna við</string>
+    <string name="wake_mode_prayer">Bænina</string>
+    <string name="wake_mode_sound">Vekjarahljóð, svo bæn</string>
+    <string name="wake_mode_prayer_desc">Bænin er vekjarinn sjálfur</string>
+    <string name="wake_mode_sound_desc">Vekjarahljóðið vekur þig. Bænin kemur á eftir, þegar þú getur hlustað á hana.</string>
+    <string name="after_wake_label">Eftir að þú slekkur</string>
+    <string name="after_wake_auto">Bæn strax</string>
+    <string name="after_wake_ask">Spyrja mig</string>
+    <string name="after_wake_later">Seinna</string>
+    <string name="after_wake_auto_desc">Bænin byrjar um leið og þú slekkur á vekjarahljóðinu</string>
+    <string name="after_wake_ask_desc">Skjárinn spyr hvort þú viljir hlusta</string>
+    <string name="after_wake_later_desc">Tilkynning bíður og spilar bænina þegar þér hentar</string>
 
     <string name="warn_exact_alarm">Appið hefur ekki leyfi til að skrá nákvæma vekjara. Án þess hringir vekjarinn ekki á réttum tíma.</string>
     <string name="warn_battery">Rafhlöðusparnaður er virkur fyrir þetta app. Það getur komið í veg fyrir að bænin sækist á nóttunni.</string>

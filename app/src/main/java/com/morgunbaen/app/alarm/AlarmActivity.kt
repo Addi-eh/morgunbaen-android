@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,32 +69,204 @@ class AlarmActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Bakktakkinn ma ekki loka vekjaranum - annars slekkur folk
-        // a honum i svefnrofunum an tess ad atta sig a tvi.
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        // a honum i svefnrofunum an tess ad atta sig a tvi. Eftir ad
+        // notandinn er vaknadur (spurning, hlustun) ma hann fara.
+        val backBlocker = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Visvitandi tomt
             }
-        })
+        }
+        onBackPressedDispatcher.addCallback(this, backBlocker)
 
         val prefs = Prefs(this)
         val title = prefs.cachedTitle
         val firstrun = prefs.cachedFirstrun
 
+        // Opnad ur hlustunartilkynningunni? Tha beint i hlustun.
+        val initial = if (AlarmService.listeningState.value) Phase.LISTENING else Phase.RINGING
+
         setContent {
             MorgunbaenTheme {
-                AlarmScreen(
-                    episodeTitle = title,
-                    firstrun = firstrun,
-                    onDismiss = {
-                        AlarmService.dismiss(this)
-                        finish()
-                    },
-                    onSnooze = {
-                        AlarmService.snooze(this)
-                        finish()
+                var phase by remember { mutableStateOf(initial) }
+
+                LaunchedEffect(phase) {
+                    backBlocker.isEnabled = phase == Phase.RINGING
+                    // Vaknadur notandi sem hlustar tarf ekki upplystan skja.
+                    if (phase == Phase.RINGING) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     }
-                )
+                }
+
+                // Hlustun lokid (baenin buin eda stodvud ur tilkynningu) -
+                // skjarinn lokar ser. Adeins vid true -> false: rett eftir
+                // awake() er tjonustan ekki enn byrjud ad spila.
+                if (phase == Phase.LISTENING) {
+                    LaunchedEffect(Unit) {
+                        var started = false
+                        AlarmService.listeningState.collect { now ->
+                            if (now) started = true
+                            else if (started) finish()
+                        }
+                    }
+                }
+
+                when (phase) {
+                    Phase.RINGING -> AlarmScreen(
+                        episodeTitle = if (prefs.wakeWithSound) null else title,
+                        firstrun = if (prefs.wakeWithSound) null else firstrun,
+                        onDismiss = {
+                            if (prefs.wakeWithSound) {
+                                AlarmService.awake(this)
+                                when (prefs.afterWake) {
+                                    Prefs.AFTER_AUTO -> phase = Phase.LISTENING
+                                    Prefs.AFTER_ASK -> phase = Phase.ASK
+                                    else -> finish()
+                                }
+                            } else {
+                                AlarmService.dismiss(this)
+                                finish()
+                            }
+                        },
+                        onSnooze = {
+                            AlarmService.snooze(this)
+                            finish()
+                        }
+                    )
+
+                    Phase.ASK -> AskScreen(
+                        episodeTitle = title,
+                        onListen = {
+                            AlarmService.listen(this)
+                            phase = Phase.LISTENING
+                        },
+                        onClose = { finish() }
+                    )
+
+                    Phase.LISTENING -> ListeningScreen(
+                        episodeTitle = title,
+                        firstrun = firstrun,
+                        onStop = {
+                            AlarmService.dismiss(this)
+                            finish()
+                        }
+                    )
+                }
             }
+        }
+    }
+}
+
+/** Hvar notandinn er staddur: vekjarinn hringir, spurning, eda hlustun. */
+private enum class Phase { RINGING, ASK, LISTENING }
+
+/**
+ * "Spyrja mig": vekjarinn er thagnadur, baenin bidur eftir svari.
+ * Venjulegir takkar - notandinn er vaknadur og tarf ekki ad sanna tad.
+ */
+@Composable
+private fun AskScreen(
+    episodeTitle: String?,
+    onListen: () -> Unit,
+    onClose: () -> Unit
+) {
+    CalmScreen {
+        Text(
+            text = stringResource(R.string.listen_ask_heading),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center
+        )
+        if (episodeTitle != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = episodeTitle,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+        }
+        Spacer(Modifier.height(48.dp))
+        Button(
+            onClick = onListen,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+        ) {
+            Text(stringResource(R.string.listen_ask_play))
+        }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onClose) {
+            Text(stringResource(R.string.listen_ask_close))
+        }
+    }
+}
+
+/** Baenin spilar. Einn takki, venjulegt yt - enginn a ad turfa ad halda inni. */
+@Composable
+private fun ListeningScreen(
+    episodeTitle: String?,
+    firstrun: String?,
+    onStop: () -> Unit
+) {
+    CalmScreen {
+        Text(
+            text = stringResource(R.string.listen_playing_heading),
+            style = MaterialTheme.typography.titleLarge
+        )
+        if (episodeTitle != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = episodeTitle,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+        }
+        if (firstrun != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = Dates.formatShort(firstrun),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Spacer(Modifier.height(48.dp))
+        OutlinedButton(
+            onClick = onStop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text(stringResource(R.string.listen_stop))
+        }
+    }
+}
+
+/** Klukkan efst og efnid fyrir midju - sama rammi og vekjaraskjarinn. */
+@Composable
+private fun CalmScreen(content: @Composable () -> Unit) {
+    var clock by remember { mutableStateOf(currentTimeString()) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            clock = currentTimeString()
+            delay(1_000)
+        }
+    }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = clock,
+                style = MaterialTheme.typography.displayLarge
+            )
+            Spacer(Modifier.height(40.dp))
+            content()
         }
     }
 }
