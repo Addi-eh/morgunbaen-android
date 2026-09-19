@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -19,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
 
 /**
- * Vakningarstillingar: fade-in, titringur, frettir og blundur.
+ * Vakningarstillingar: fade-in, titringur, frettir, vekjarahljod og blundur.
  *
  * Frettalysingin (newsDescription) er reiknud i MainScreen - hun tarf
  * baedi vekjaratimann og klukkuna, og su rokfraedi a heima a einum stad.
@@ -33,12 +34,17 @@ internal fun WakeSettingsCard(
     newsEnabled: Boolean,
     newsDescription: String,
     fallbackRas1: Boolean,
+    alarmSoundTitle: String?,
+    soundImporting: Boolean,
     snoozeMinutes: Int,
     onFadeInChange: (Boolean) -> Unit,
     onFadeSecondsChange: (Int) -> Unit,
     onVibrateChange: (Boolean) -> Unit,
     onNewsChange: (Boolean) -> Unit,
     onFallbackRas1Change: (Boolean) -> Unit,
+    onPickSystemSound: () -> Unit,
+    onPickSoundFile: () -> Unit,
+    onResetSound: () -> Unit,
     onSnoozeChange: (Int) -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -101,6 +107,38 @@ internal fun WakeSettingsCard(
 
             Spacer(Modifier.height(16.dp))
 
+            // Eitt hljod, notad alls stadar tar sem kirkjuklukkan var:
+            // tegar baenin vantar eda er buin. Sidasta vornin - ef hljod
+            // notandans klikkar - er alltaf innbyggda klukkan.
+            Text(
+                text = stringResource(R.string.alarm_sound_label),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = when {
+                    soundImporting -> stringResource(R.string.alarm_sound_importing)
+                    alarmSoundTitle != null -> alarmSoundTitle
+                    else -> stringResource(R.string.alarm_sound_default)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onPickSystemSound, enabled = !soundImporting) {
+                    Text(stringResource(R.string.alarm_sound_pick_system))
+                }
+                TextButton(onClick = onPickSoundFile, enabled = !soundImporting) {
+                    Text(stringResource(R.string.alarm_sound_pick_file))
+                }
+                if (alarmSoundTitle != null) {
+                    TextButton(onClick = onResetSound, enabled = !soundImporting) {
+                        Text(stringResource(R.string.fallback_bell))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
             Text(
                 text = stringResource(R.string.fallback_label),
                 style = MaterialTheme.typography.bodyLarge
@@ -118,7 +156,7 @@ internal fun WakeSettingsCard(
                 FilterChip(
                     selected = !fallbackRas1,
                     onClick = { onFallbackRas1Change(false) },
-                    label = { Text(stringResource(R.string.fallback_bell)) }
+                    label = { Text(stringResource(R.string.fallback_alarm_sound)) }
                 )
                 FilterChip(
                     selected = fallbackRas1,

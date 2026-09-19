@@ -34,6 +34,19 @@
     <string name="fallback_desc">Þegar bænin er búin, eða vantar á diskinn</string>
     <string name="fallback_bell">Kirkjuklukka</string>
     <string name="fallback_ras1">Rás 1</string>
+    <string name="fallback_alarm_sound">Vekjarahljóð</string>
+
+    <string name="alarm_sound_label">Vekjarahljóð</string>
+    <string name="alarm_sound_default">Kirkjuklukka Staðarfells</string>
+    <string name="alarm_sound_importing">Afrita hljóð…</string>
+    <string name="alarm_sound_pick_system">Hljóð símans</string>
+    <string name="alarm_sound_pick_file">Velja skrá</string>
+    <string name="alarm_sound_system">Hljóð símans</string>
+    <string name="alarm_sound_own_file">Eigið hljóð</string>
+    <string name="alarm_sound_set">Vekjarahljóð: %1$s</string>
+    <string name="alarm_sound_too_large">Skráin er of stór — hámarkið er 20 MB</string>
+    <string name="alarm_sound_not_audio">Þetta er ekki hljóðskrá sem síminn getur spilað</string>
+    <string name="alarm_sound_failed">Náði ekki að afrita hljóðið (%1$s). Fyrra hljóðið gildir áfram.</string>
 
     <string name="sync_downloaded">Ný bæn sótt og tilbúin</string>
     <string name="sync_already_have">Þú ert með nýjustu bænina</string>

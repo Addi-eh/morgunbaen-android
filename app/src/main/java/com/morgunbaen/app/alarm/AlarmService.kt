@@ -24,6 +24,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.MorgunbaenApp
 import com.morgunbaen.app.R
+import com.morgunbaen.app.data.AlarmSoundStore
 import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Prefs
 
@@ -377,7 +378,7 @@ class AlarmService : Service() {
             }
 
             Stage.FALLBACK -> {
-                // Rás 1 klikkaði — kirkjuklukkan má ekki þegja.
+                // Rás 1 eða eigið hljóð klikkaði — kirkjuklukkan má ekki þegja.
                 playBellLoop()
             }
         }
@@ -410,19 +411,32 @@ class AlarmService : Service() {
     private fun bundledBellUri(): Uri =
         Uri.parse("android.resource://$packageName/${R.raw.stadarfell_eldri}")
 
+    /**
+     * Vekjarahljóðið sem notandinn valdi, annars kirkjuklukkan.
+     * Skráin er afrituð í device-protected geymslu (AlarmSoundStore)
+     * og því læsileg þótt síminn hafi endurræst sig og sé enn læstur.
+     */
+    private fun alarmSoundUri(): Uri =
+        AlarmSoundStore(this).file()?.let { Uri.fromFile(it) } ?: bundledBellUri()
+
+    /** Heitið í tilkynningunni — sama hljóð og alarmSoundUri spilar. */
+    private fun alarmSoundLabel(): String =
+        AlarmSoundStore(this).file()?.let { prefs.alarmSoundTitle }
+            ?: getString(R.string.fallback_bell)
+
     private fun ras1Uri(): Uri =
         Uri.parse(com.morgunbaen.app.data.RuvClient.RAS1_LIVE_URL)
 
-    /** Notandinn velur kirkjuklukku eða Rás 1. Streymi endar ekki. */
+    /** Notandinn velur vekjarahljóð eða Rás 1. Streymi endar ekki. */
     private fun fallbackUri(): Uri {
         if (prefs.fallbackRas1) {
             Log.i(TAG, "Varaleið: Rás 1")
             updateNotification(getString(R.string.ras1_fallback))
             return ras1Uri()
         }
-        Log.i(TAG, "Varaleið: kirkjuklukka")
-        updateNotification(getString(R.string.fallback_bell))
-        return bundledBellUri()
+        Log.i(TAG, "Varaleið: vekjarahljóð")
+        updateNotification(alarmSoundLabel())
+        return alarmSoundUri()
     }
 
     /** Ef baenin klikkar eda klarast — valin varaleið. */
@@ -430,6 +444,10 @@ class AlarmService : Service() {
         playUri(fallbackUri(), loop = !prefs.fallbackRas1)
     }
 
+    /**
+     * Síðasta vörnin: ALLTAF innbyggða klukkan, aldrei hljóð notandans.
+     * Klikki eigið hljóð (skemmd skrá, óstutt snið) má vekjarinn ekki þegja.
+     */
     private fun playBellLoop() {
         updateNotification(getString(R.string.fallback_bell))
         playUri(bundledBellUri(), loop = true)

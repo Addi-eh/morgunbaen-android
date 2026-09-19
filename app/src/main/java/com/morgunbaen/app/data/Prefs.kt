@@ -244,6 +244,19 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_FALLBACK_RAS1, false)
         set(value) = sp.edit().putBoolean(KEY_FALLBACK_RAS1, value).apply()
 
+    /**
+     * Vekjarahljóð sem notandinn valdi, afritað inn í geymslu appsins
+     * (sjá AlarmSoundStore). null = kirkjuklukka Staðarfells.
+     */
+    var alarmSoundPath: String?
+        get() = sp.getString(KEY_ALARM_SOUND_PATH, null)
+        set(value) = sp.edit().putString(KEY_ALARM_SOUND_PATH, value).apply()
+
+    /** Heiti hljóðsins eins og það birtist notandanum. */
+    var alarmSoundTitle: String?
+        get() = sp.getString(KEY_ALARM_SOUND_TITLE, null)
+        set(value) = sp.edit().putString(KEY_ALARM_SOUND_TITLE, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -277,6 +290,8 @@ class Prefs(context: Context) {
         private const val KEY_PER_DAY_MIGRATED = "per_day_migrated"
         private const val KEY_SKIP_NEXT = "skip_next_millis"
         private const val KEY_FALLBACK_RAS1 = "fallback_ras1"
+        private const val KEY_ALARM_SOUND_PATH = "alarm_sound_path"
+        private const val KEY_ALARM_SOUND_TITLE = "alarm_sound_title"
 
         const val PREFS_NAME = "morgunbaen"
 

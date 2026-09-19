@@ -6,8 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.media.RingtoneManager
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -43,6 +46,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.alarm.AlarmScheduler
 import com.morgunbaen.app.alarm.TriggerTimes
+import com.morgunbaen.app.data.AlarmSoundStore
 import com.morgunbaen.app.data.Dates
 import com.morgunbaen.app.data.Episode
 import com.morgunbaen.app.data.EpisodeRepository
@@ -117,6 +121,12 @@ private fun MainScreen() {
     var dayTimes by remember { mutableStateOf(prefs.dayTimes) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
     var fallbackRas1 by remember { mutableStateOf(prefs.fallbackRas1) }
+    // null = kirkjuklukkan. Lesid ur AlarmSoundStore, ekki beint ur prefs:
+    // hvarf skrain er heitid lygi.
+    var alarmSoundTitle by remember {
+        mutableStateOf(AlarmSoundStore(context).file()?.let { prefs.alarmSoundTitle })
+    }
+    var soundImporting by remember { mutableStateOf(false) }
     var newsEnabled by remember { mutableStateOf(prefs.newsEnabled) }
     var newsFirstrun by remember { mutableStateOf(prefs.newsFirstrun) }
     var newsSyncing by remember { mutableStateOf(false) }
@@ -201,6 +211,54 @@ private fun MainScreen() {
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
+
+    // Afritar valid hljod inn i appid (sja AlarmSoundStore) og segir fra
+    // ef tad gekk ekki - fyrra hljodid helst ta obreytt.
+    fun importAlarmSound(uri: Uri, title: String) {
+        soundImporting = true
+        scope.launch {
+            val result = AlarmSoundStore(context).importFrom(uri, title)
+            soundImporting = false
+            val message = when (result) {
+                AlarmSoundStore.ImportResult.Ok -> {
+                    alarmSoundTitle = title
+                    context.getString(R.string.alarm_sound_set, title)
+                }
+                AlarmSoundStore.ImportResult.TooLarge ->
+                    context.getString(R.string.alarm_sound_too_large)
+                AlarmSoundStore.ImportResult.NotAudio ->
+                    context.getString(R.string.alarm_sound_not_audio)
+                is AlarmSoundStore.ImportResult.Failed ->
+                    context.getString(R.string.alarm_sound_failed, result.reason)
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    val ringtoneLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                it.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                it.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            }
+        } ?: return@rememberLauncherForActivityResult
+        val title = try {
+            RingtoneManager.getRingtone(context, uri)?.getTitle(context)
+        } catch (e: Exception) {
+            null
+        } ?: context.getString(R.string.alarm_sound_system)
+        importAlarmSound(uri, title)
+    }
+
+    val soundFileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) importAlarmSound(uri, displayName(context, uri))
+    }
 
     // Bidjum um tilkynningaheimild strax - an hennar birtist vekjarinn ekki.
     LaunchedEffect(Unit) {
@@ -431,6 +489,8 @@ private fun MainScreen() {
                     days = days
                 ),
                 fallbackRas1 = fallbackRas1,
+                alarmSoundTitle = alarmSoundTitle,
+                soundImporting = soundImporting,
                 snoozeMinutes = snoozeMinutes,
                 onFadeInChange = {
                     fadeIn = it
@@ -447,6 +507,24 @@ private fun MainScreen() {
                 onFallbackRas1Change = {
                     fallbackRas1 = it
                     prefs.fallbackRas1 = it
+                },
+                onPickSystemSound = {
+                    ringtoneLauncher.launch(
+                        Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                            putExtra(
+                                RingtoneManager.EXTRA_RINGTONE_TITLE,
+                                context.getString(R.string.alarm_sound_label)
+                            )
+                        }
+                    )
+                },
+                onPickSoundFile = { soundFileLauncher.launch(arrayOf("audio/*")) },
+                onResetSound = {
+                    AlarmSoundStore(context).clear()
+                    alarmSoundTitle = null
                 },
                 onNewsChange = {
                     newsEnabled = it
@@ -708,6 +786,21 @@ private fun openFullScreenIntentSettings(context: Context) {
     } catch (e: Exception) {
         openNotificationSettings(context)
     }
+}
+
+/** Heiti skrar an endingar: "Hanagal.mp3" -> "Hanagal". */
+private fun displayName(context: Context, uri: Uri): String {
+    val name = try {
+        context.contentResolver.query(
+            uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    } catch (e: Exception) {
+        null
+    }
+    return name?.substringBeforeLast('.')?.takeIf { it.isNotBlank() }
+        ?: context.getString(R.string.alarm_sound_own_file)
 }
 
 private fun formatSkipTime(millis: Long): String? {
