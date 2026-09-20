@@ -23,14 +23,15 @@ class MorgunbaenApp : Application() {
         // Appid er directBootAware, svo onCreate getur keyrt ADUR en notandinn
         // hefur opnad simann eftir endurraesingu. Allt her verdur ad tola tad.
         migrateLegacyPrefs()
+        val prefs = Prefs(this)
         // Á undan schedule(): annars reiknast fyrsta hringing eftir
         // uppfærslu án helgartímans sem notandinn hafði stillt.
-        Prefs(this).migrateWeekendTime()
+        prefs.migrateWeekendTime()
 
         // Á undan öllum skjám, svo enginn þeirra teikni sig í röngu útliti.
         // Prefs situr í device-protected geymslu, svo vekjaraskjárinn fær
         // rétt útlit líka áður en síminn er upplásinn.
-        AppTheme.mode.value = Prefs(this).themeMode
+        AppTheme.mode.value = prefs.themeMode
         createNotificationChannels()
         AlarmScheduler.schedule(this)
 

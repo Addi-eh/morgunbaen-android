@@ -3,6 +3,17 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.971
+
+- **Þú velur blundlengdina sjálf(ur).** Áður voru fastir kostir — 5, 9, 10, 15
+  og 20 mínútur — og ekkert þar á milli. Nú er teljari: frá einni mínútu upp í
+  sextíu, og það gengur hraðar að halda hnappnum inni.
+- **Ljóst og dökkt fylgir símanum.** Litirnir gerðu það áður, en glugginn ekki,
+  svo hvítur skjár blikkaði þegar appið var opnað í myrkri og táknin í
+  stöðustikunni gátu horfið. Hvort tveggja er lagað — líka á vekjaraskjánum.
+- **„Útlit“ neðst á forsíðunni.** Viljirðu appið dökkt þótt síminn sé ljós, eða
+  öfugt, þá velurðu það sjálf(ur): Kerfið, Ljóst eða Dökkt.
+
 ## v0.97
 
 - **Dagarnir taka ekki lengur yfir vekjaraspjaldið.** Listinn með tíma hvers

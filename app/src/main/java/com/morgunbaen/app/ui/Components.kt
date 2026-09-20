@@ -128,7 +128,7 @@ internal fun SettingRow(
 
 /**
  * Teljari fyrir minutur. Adur voru fastir kostir her - 5, 9, 10, 15, 20 -
- * en fólk vill sinn eigin tima, og blundur er eina stillingin tar sem
+ * en folk vill sinn eigin tima, og blundur er eina stillingin tar sem
  * ein minuta til eda fra skiptir raunverulegu mali.
  */
 @Composable

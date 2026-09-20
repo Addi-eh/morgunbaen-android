@@ -94,6 +94,7 @@ ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
 ui/DayTimesSheet.kt         Tími hvers dags í blaði neðan frá + samantektin
 ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
+ui/Theme.kt                 Litir, ljóst/dökkt og AppTheme.mode
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
 AboutActivity.kt           Um appið, styrkir og leiðir til að hjálpa
 data/AlarmSoundStore.kt    Afritar valið vekjarahljóð í device-protected geymslu
@@ -215,6 +216,10 @@ vekjaranum og **eyddi morgundeginum** um leið og ýtt var á Blunda.
 **Langt ýt til að slökkva** — 1,5 sekúndur, með sýnilegri framvindu. Blundur er
 venjulegt ýt: það á ekki að vera erfitt að sofna aftur, heldur að slökkva alveg.
 
+**Blundlengdin er frjáls** — teljari frá 1 upp í 60 mínútur (`Prefs.SNOOZE_RANGE`),
+ekki fastir kostir. Að halda hnappnum inni telur áfram eftir 400 ms; smellurinn
+sem kemur við að sleppa er þá hunsaður, svo talan hoppi ekki um eitt umfram það.
+
 **Full-screen intent.** Frá Android 14 er heimildin ekki sjálfvirk og
 hliðarhlaðin APK fær hana ekki. Appið varar við og býður þrjár varaleiðir:
 bein ræsing skjásins, tilkynning með Slökkva/Blunda, og ýt á tilkynninguna.
@@ -272,6 +277,32 @@ fókus og gerir hlé þegar heyrnartól eru tekin úr), engin 15 mín tímamörk
 þegar bæn og fréttir klárast **hættir hún** í stað þess að fara í varahljóð.
 Sé engin bæn á disknum spilast Rás 1. `AlarmService.listeningState` segir
 skjánum hvenær hlustun lýkur, svo hann loki sér.
+
+---
+
+## 7b. Ljóst og dökkt
+
+**Þemað er á tveimur stöðum og þau verða að vera samstillt.** Litirnir koma úr
+`ui/Theme.kt`, en glugginn sjálfur — það sem sést í fyrsta ramma, áður en
+Compose hefur teiknað neitt — kemur úr `res/values/themes.xml` og
+`res/values-night/themes.xml`. Lengi vel var aðeins ljósa þemað til, svo hvítur
+gluggi blikkaði áður en appið birtist í myrkri. `windowBackground` er nú bundinn
+við `@color/window_background`, sem hefur sömu gildi og `LightColors.background`
+og `DarkColors.background`. **Breytir þú öðrum staðnum þarftu að breyta hinum.**
+
+**`AppTheme.mode` er `MutableStateFlow`** — sama mynstur og
+`AlarmService.listeningState`. Allir fjórir skjáirnir vefja sig í
+`MorgunbaenTheme`, svo þeir skipta um ham samstundis, líka vekjaraskjárinn.
+Gildið er lesið úr `Prefs` í `MorgunbaenApp.onCreate`, á undan hverjum skjá og
+í device-protected geymslu, svo það gildi líka fyrir upplásningu símans.
+
+**Birta táknanna í stöðustikunni er sett í `MorgunbaenTheme`**, ekki í
+`enableEdgeToEdge`. Valið útlit getur gengið gegn stillingu símans, og
+`SystemBarStyle.auto` les eingöngu stillingu símans.
+
+`AlarmActivity` fær ekki `enableEdgeToEdge`. Innihald hennar er miðjujafnað með
+32 dp spássíu og hún birtist á læstum skjá, þar sem minnstu breytingar eru
+áhættusamastar.
 
 ---
 
