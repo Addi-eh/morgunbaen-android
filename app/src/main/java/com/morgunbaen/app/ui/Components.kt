@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
+import com.morgunbaen.app.data.Prefs
 import kotlinx.coroutines.delay
 import java.util.Calendar
 
@@ -278,6 +279,37 @@ internal fun InfoCard(
                 Spacer(Modifier.width(8.dp))
                 TextButton(onClick = onSecondary) { Text(secondaryLabel) }
             }
+        }
+    }
+}
+
+/**
+ * Utlitsvalid. Eigid spjald frekar en lina inni i Vakningu - tad spjald
+ * fjallar um hringinguna, ekki um hvernig appid litur ut.
+ */
+@Composable
+internal fun AppearanceCard(themeMode: String, onChange: (String) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.appearance_label),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.appearance_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            ChoiceChips(
+                options = listOf(
+                    Prefs.THEME_SYSTEM to stringResource(R.string.theme_system),
+                    Prefs.THEME_LIGHT to stringResource(R.string.theme_light),
+                    Prefs.THEME_DARK to stringResource(R.string.theme_dark)
+                ),
+                selected = themeMode,
+                onSelect = onChange
+            )
         }
     }
 }

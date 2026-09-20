@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sami litur og LightColors.background i ui/Theme.kt. Tetta er tad
+         sem sest i fyrsta ramma, adur en Compose hefur teiknad neitt. -->
+    <color name="window_background">#FAF9F7</color>
+</resources>

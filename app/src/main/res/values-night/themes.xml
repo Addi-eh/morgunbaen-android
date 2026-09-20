@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ljosa temad eitt og ser thydir hvitt blikk adur en appid teiknar
+         sig i myrkri. -night virkar fra API 8, svo tetta naer yfir allt
+         studningsbilid (minSdk 26). -->
+    <style name="Theme.Morgunbaen" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

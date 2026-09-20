@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,6 +51,9 @@ class HistoryActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Skjarinn nær undir stodu- og flettistiku. Scaffold skilar
+        // innskotunum sjalft, og MorgunbaenTheme raedur birtu taknanna.
+        enableEdgeToEdge()
 
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(

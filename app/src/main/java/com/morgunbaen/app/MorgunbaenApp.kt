@@ -7,6 +7,7 @@ import android.os.UserManager
 import com.morgunbaen.app.alarm.AlarmScheduler
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.data.deviceStorage
+import com.morgunbaen.app.ui.AppTheme
 import com.morgunbaen.app.work.CatchUpScheduler
 import com.morgunbaen.app.work.SyncWorker
 
@@ -25,6 +26,11 @@ class MorgunbaenApp : Application() {
         // Á undan schedule(): annars reiknast fyrsta hringing eftir
         // uppfærslu án helgartímans sem notandinn hafði stillt.
         Prefs(this).migrateWeekendTime()
+
+        // Á undan öllum skjám, svo enginn þeirra teikni sig í röngu útliti.
+        // Prefs situr í device-protected geymslu, svo vekjaraskjárinn fær
+        // rétt útlit líka áður en síminn er upplásinn.
+        AppTheme.mode.value = Prefs(this).themeMode
         createNotificationChannels()
         AlarmScheduler.schedule(this)
 

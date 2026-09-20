@@ -12,6 +12,7 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,6 +56,8 @@ import com.morgunbaen.app.data.EpisodeRepository
 import com.morgunbaen.app.data.Prefs
 import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.AlarmCard
+import com.morgunbaen.app.ui.AppTheme
+import com.morgunbaen.app.ui.AppearanceCard
 import com.morgunbaen.app.ui.InfoCard
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import com.morgunbaen.app.ui.PrayerCard
@@ -75,6 +78,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Skjarinn nær undir stodu- og flettistiku. Scaffold skilar
+        // innskotunum sjalft, og MorgunbaenTheme raedur birtu taknanna.
+        enableEdgeToEdge()
         setContent {
             MorgunbaenTheme {
                 MainScreen()
@@ -119,6 +125,7 @@ private fun MainScreen() {
     var fadeSeconds by remember { mutableIntStateOf(prefs.fadeInSeconds) }
     var vibrate by remember { mutableStateOf(prefs.vibrateEnabled) }
     var snoozeMinutes by remember { mutableIntStateOf(prefs.snoozeMinutes) }
+    var themeMode by remember { mutableStateOf(prefs.themeMode) }
     var perDayEnabled by remember { mutableStateOf(prefs.perDayEnabled) }
     var dayTimes by remember { mutableStateOf(prefs.dayTimes) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
@@ -562,6 +569,20 @@ private fun MainScreen() {
                 onSnoozeChange = {
                     snoozeMinutes = it
                     prefs.snoozeMinutes = it
+                }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // ---------- Utlit ----------
+            AppearanceCard(
+                themeMode = themeMode,
+                onChange = {
+                    themeMode = it
+                    prefs.themeMode = it
+                    // Allir fjorir skjairnir lesa tennan straum, svo
+                    // vekjaraskjarinn skiptir lika um ham - ekki bara tessi.
+                    AppTheme.mode.value = it
                 }
             )
 

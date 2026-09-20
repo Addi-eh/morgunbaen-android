@@ -106,6 +106,12 @@
     <string name="snooze_less">Stytta blund</string>
     <string name="snooze_more">Lengja blund</string>
 
+    <string name="appearance_label">Útlit</string>
+    <string name="appearance_desc">Fylgir tækinu nema þú veljir annað</string>
+    <string name="theme_system">Kerfið</string>
+    <string name="theme_light">Ljóst</string>
+    <string name="theme_dark">Dökkt</string>
+
     <string name="alarm_notification_title">Morgunbæn</string>
     <string name="alarm_screen_heading">Góðan og blessaðan daginn!</string>
     <string name="dismiss">Slökkva</string>

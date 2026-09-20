@@ -284,6 +284,15 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_AFTER_WAKE, AFTER_AUTO) ?: AFTER_AUTO
         set(value) = sp.edit().putString(KEY_AFTER_WAKE, value).apply()
 
+    /**
+     * Ljost eda dokkt. THEME_SYSTEM fylgir stillingu simans, hitt tvennt
+     * gengur gegn henni - sumir vilja dokkt app snemma morguns thott
+     * siminn sjalfur se ljos.
+     */
+    var themeMode: String
+        get() = sp.getString(KEY_THEME_MODE, THEME_SYSTEM) ?: THEME_SYSTEM
+        set(value) = sp.edit().putString(KEY_THEME_MODE, value).apply()
+
     companion object {
         private const val KEY_ENABLED = "alarm_enabled"
         private const val KEY_HOUR = "alarm_hour"
@@ -321,12 +330,17 @@ class Prefs(context: Context) {
         private const val KEY_ALARM_SOUND_TITLE = "alarm_sound_title"
         private const val KEY_WAKE_MODE = "wake_mode"
         private const val KEY_AFTER_WAKE = "after_wake"
+        private const val KEY_THEME_MODE = "theme_mode"
 
         const val WAKE_PRAYER = "prayer"
         const val WAKE_SOUND = "sound"
         const val AFTER_AUTO = "auto"
         const val AFTER_ASK = "ask"
         const val AFTER_LATER = "later"
+
+        const val THEME_SYSTEM = "system"
+        const val THEME_LIGHT = "light"
+        const val THEME_DARK = "dark"
 
         /** Efri mork eru handahofskennd, en klukkutimi er ekki blundur. */
         val SNOOZE_RANGE = 1..60

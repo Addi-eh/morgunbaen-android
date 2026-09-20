@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,9 @@ class AboutActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Skjarinn nær undir stodu- og flettistiku. Scaffold skilar
+        // innskotunum sjalft, og MorgunbaenTheme raedur birtu taknanna.
+        enableEdgeToEdge()
         setContent {
             MorgunbaenTheme {
                 AboutScreen(onBack = { finish() })
