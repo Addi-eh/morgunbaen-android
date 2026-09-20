@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Ræsiþema. Compose sér um allt annað; þetta ræður aðeins hvað sést
+        þann hálfa sekúndubrot sem líður áður en fyrsta myndin teiknast.
+    -->
+    <style name="Theme.Heimvisir" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/launch_background</item>
+    </style>
+</resources>

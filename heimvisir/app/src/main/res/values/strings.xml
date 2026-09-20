@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Heimvísir</string>
+
+    <string name="tab_lookup">Leit</string>
+    <string name="tab_history">Saga</string>
+    <string name="tab_about">Um</string>
+
+    <string name="lookup_heading">Fletta upp merki</string>
+    <string name="lookup_help">Sláðu inn örmerki eða eyrnamerki. Fyrirspurnin fer beint úr símanum í skrá Dýraauðkennis.</string>
+    <string name="tag_placeholder">t.d. 352000000000000</string>
+    <string name="action_search">Leita</string>
+    <string name="action_clear">Hreinsa</string>
+
+    <string name="error_tag_too_short">Merkið er of stutt — að minnsta kosti %1$d stafir.</string>
+    <string name="error_tag_too_long">Merkið er of langt — mest %1$d stafir.</string>
+    <string name="error_tag_illegal">Merki geta aðeins innihaldið tölustafi og bókstafi.</string>
+
+    <string name="result_not_found">Ekkert dýr er skráð með merkið %1$s. Athugaðu stafasetninguna eða hafðu samband við dýralækni.</string>
+    <string name="result_network_error">Náði ekki sambandi við Dýraauðkenni. Athugaðu nettenginguna og reyndu aftur.</string>
+    <string name="result_server_error">Dýraauðkenni svaraði með villu (%1$d). Reyndu aftur eftir smástund.</string>
+    <string name="result_malformed">Svarið frá Dýraauðkenni var ekki á því formi sem appið kann að lesa. Leitarviðmótið hefur líklega breyst.</string>
+
+    <string name="pet_unnamed">Ónefnt dýr</string>
+    <string name="badge_lost">Skráð týnt</string>
+
+    <string name="field_tag">Örmerki eða eyrnamerki</string>
+    <string name="field_species">Tegund</string>
+    <string name="field_gender">Kyn</string>
+    <string name="field_birth">Fæðing</string>
+    <string name="field_colour">Litur</string>
+    <string name="field_castrated">Geldur</string>
+    <string name="field_lost_since">Týnt síðan</string>
+    <string name="field_owner_name">Nafn</string>
+    <string name="field_address">Heimilisfang</string>
+    <string name="field_municipality">Sveitarfélag</string>
+    <string name="field_phone">Símanúmer</string>
+
+    <string name="yes">Já</string>
+    <string name="no">Nei</string>
+
+    <string name="section_owner">Eigandi</string>
+    <string name="owner_none">Enginn eigandi er skráður á þetta dýr. Hafðu samband við hallo@dyraaudkenni.is.</string>
+    <string name="owner_not_published">Þessi eigandi hefur ekki samþykkt birtingu upplýsinga. Hafðu samband við hallo@dyraaudkenni.is.</string>
+
+    <string name="history_heading">Nýlegar leitir</string>
+    <string name="history_local_only">Geymdar aðeins í þessu tæki. Engar eigendaupplýsingar eru vistaðar.</string>
+    <string name="history_empty">Engar leitir enn. Flettu upp merki á leitarskjánum.</string>
+    <string name="history_found">Fannst</string>
+    <string name="history_not_found">Fannst ekki</string>
+
+    <string name="about_heading">Um Heimvísi</string>
+    <string name="about_registry">Dýraauðkenni er skrá yfir örmerkt og einstaklingsmerkt gæludýr á Íslandi. Grunnupplýsingar um skráð dýr eru aðgengilegar hverjum þeim sem hefur merkið undir höndum. Heimvísir flettir þeim upp beint úr símanum.</string>
+    <string name="about_open_site">Opna dyraaudkenni.is</string>
+
+    <string name="about_disclaimer_heading">Það sem þú átt að vita</string>
+    <string name="about_unaffiliated">Heimvísir er ótengdur Dýraauðkenni. Skráning dýra, eigendaskipti og innskráning fara fram á vef þeirra.</string>
+    <string name="about_undocumented_api">Leitarviðmótið sem appið notar er óskjalfað og getur breyst án fyrirvara. Hætti appið að finna dýr er það líklegasta skýringin.</string>
+    <string name="about_privacy">Uppflettingar innihalda persónuupplýsingar annars fólks. Appið geymir engar slíkar upplýsingar — aðeins merkin sjálf, í þessu tæki — og sendir engin gögn annað en fyrirspurnina til Dýraauðkennis.</string>
+    <string name="about_contact">Fyrirspurnir um skrána sjálfa: hallo@dyraaudkenni.is</string>
+    <string name="about_version">Heimvísir 0.1 · GPL-3.0</string>
+</resources>
