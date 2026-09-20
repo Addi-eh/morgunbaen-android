@@ -236,32 +236,10 @@ internal fun WakeSettingsCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(6.dp))
-            MinutePicker(
-                options = listOf(5, 9, 10, 15, 20),
-                selected = snoozeMinutes,
+            MinuteStepper(
+                value = snoozeMinutes,
+                range = Prefs.SNOOZE_RANGE,
                 onChange = onSnoozeChange
-            )
-        }
-    }
-}
-
-/** Einval med flisum - sama utlit og varahljodsvalid. */
-@Composable
-@OptIn(ExperimentalLayoutApi::class)
-private fun ChoiceChips(
-    options: List<Pair<String, String>>,
-    selected: String,
-    onSelect: (String) -> Unit
-) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        options.forEach { (value, label) ->
-            FilterChip(
-                selected = selected == value,
-                onClick = { onSelect(value) },
-                label = { Text(label) }
             )
         }
     }

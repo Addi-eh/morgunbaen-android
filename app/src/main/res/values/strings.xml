@@ -102,6 +102,9 @@
 
     <string name="snooze_label">Blundur</string>
     <string name="snooze_desc">Hversu lengi vekjarinn þagnar</string>
+    <string name="snooze_value">%1$d mín</string>
+    <string name="snooze_less">Stytta blund</string>
+    <string name="snooze_more">Lengja blund</string>
 
     <string name="alarm_notification_title">Morgunbæn</string>
     <string name="alarm_screen_heading">Góðan og blessaðan daginn!</string>

@@ -196,10 +196,14 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_OEM_GUIDE, false)
         set(value) = sp.edit().putBoolean(KEY_OEM_GUIDE, value).apply()
 
-    /** Hversu lengi blundur varir, i minutum. */
+    /**
+     * Hversu lengi blundur varir, i minutum. Notandinn velur sjalfur
+     * innan SNOOZE_RANGE - coerceIn her er einungis vorn ef vistad gildi
+     * skemmist, svo enginn fai blund upp a null minutur.
+     */
     var snoozeMinutes: Int
-        get() = sp.getInt(KEY_SNOOZE, 9)
-        set(value) = sp.edit().putInt(KEY_SNOOZE, value).apply()
+        get() = sp.getInt(KEY_SNOOZE, 9).coerceIn(SNOOZE_RANGE)
+        set(value) = sp.edit().putInt(KEY_SNOOZE, value.coerceIn(SNOOZE_RANGE)).apply()
 
     /**
      * Hvenaer virkur blundur a ad hringja, i millisekundum.
@@ -323,6 +327,9 @@ class Prefs(context: Context) {
         const val AFTER_AUTO = "auto"
         const val AFTER_ASK = "ask"
         const val AFTER_LATER = "later"
+
+        /** Efri mork eru handahofskennd, en klukkutimi er ekki blundur. */
+        val SNOOZE_RANGE = 1..60
 
         const val PREFS_NAME = "morgunbaen"
 
