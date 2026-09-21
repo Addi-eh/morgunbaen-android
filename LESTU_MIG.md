@@ -413,11 +413,13 @@ Vekjari á virkum dögum er ónotaður yfir helgi — nákvæmlega þröskulduri
 
 ## 9. Prófanir
 
-**Fyrst, á tölvunni — engan síma þarf:** `./gradlew test` keyrir
-`TriggerTimesTest.kt`, 26 próf á tímareikningnum, og `DayTimesParseTest.kt`. Grípur ekki neitt sem
-snertir Android sjálft, en grípur allt sem snertir *hvenær* vekjarinn og
-sóknarglugginn eiga að fara í gang — ódýrasta og hraðasta staðfestingin sem
-til er á verkefninu.
+**Fyrst, á tölvunni — engan síma þarf:** `./gradlew test` keyrir **35 próf** —
+`TriggerTimesTest.kt` (26 á tímareikningnum), `DayTimesParseTest.kt` (3 á
+lestri vistaðra tíma) og `DayTimesLogicTest.kt` (6 á dálkunum: hvenær dagur
+fær eigin tíma, og hvaða tímar lifa af að rofinn var lagður niður). Grípur
+ekki neitt sem snertir Android sjálft, en grípur allt sem snertir *hvenær*
+vekjarinn og sóknarglugginn eiga að fara í gang — ódýrasta og hraðasta
+staðfestingin sem til er á verkefninu.
 
 Því næst, á símanum:
 
@@ -443,7 +445,15 @@ til er á verkefninu.
 8. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
    appinu (heim-takkinn) — hljóðið á að þagna. Kom það ekki, er
    `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
-9. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
+9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su. Ýttu á stóru
+   töluna og gættu að því að hún stilli **þann dag** en ekki alla vikuna;
+   ýttu á „sjálfgefið" til að hreyfa hina alla í einu. Stilltu dag á sama
+   tíma og sjálfgefið — hann á að verða daufur aftur. Opnaðu dag sem hringir
+   **ekki** næst og snúðu skífunni: talan undir henni á að hreyfast og segja
+   „Hringir eftir …"; opnirðu daginn sem hringir næst á hún að segja „Þú færð
+   … svefn" og vera sama tala og belgurinn á spjaldinu. Blundaðu og gáðu að
+   því að penninn hverfi meðan talan sýnir blundslok.
+10. **Raunverulegar aðstæður.** Láttu appið vekja þig í viku samfleytt.
 
 Sú síðasta er sú eina sem sannar eitthvað. Vekjari sem virkar kl. 13:10 meðan þú
 horfir á símann sannar ekkert; vekjari sem hringir eftir sjö tíma svefn með
@@ -542,9 +552,12 @@ Annað sem vantar:
 
 ## 11. Það sem vantar enn
 
-- **Einingapróf víðar.** `TriggerTimesTest.kt` nær yfir tímareikninginn; ekkert
-  annað í verkefninu er prófað enn — t.d. `Dates.kt`-þáttun eða
-  `EpisodeRepository`-röklegan gang (án nettengingar, með mock-uðum `RuvClient`).
+- **Einingapróf víðar.** Prófin ná yfir tímareikninginn og rökfræði dálkanna
+  (`TriggerTimesTest.kt`, `DayTimesParseTest.kt`, `DayTimesLogicTest.kt`), en
+  ekkert annað — t.d. `Dates.kt`-þáttun eða `EpisodeRepository`-röklegan gang
+  (án nettengingar, með mock-uðum `RuvClient`). Mynstrið er alltaf það sama:
+  draga ákvörðunina út í hreint fall á `companion object` og prófa hana á JVM.
+  Robolectric er ekki í verkefninu, svo allt sem snertir `Context` er óprófað.
 - **Kvöldstöðutékk.** Lítil hljóðlát tilkynning kl. 21 sem staðfestir að bæn
   morgundagsins hafi náðst, eða varar við ef eitthvað vantar heimild.
   Vekjaraklukkur bila á nóttunni; þetta er eina tækifærið til að segja frá

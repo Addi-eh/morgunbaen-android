@@ -58,13 +58,18 @@ ekki Play Store eða annarri undirritun við þetta APK.
 - Virkar þótt síminn hafi endurræst um nóttina og enginn slegið inn PIN
   (Direct Boot).
 - Lætur vita ef síminn hefur stöðvað appið — Android segir ekkert sjálft.
-- Mismunandi tími eftir dögum — sofa lengur á laugardögum, fara fyrr á fætur
-  á föstudögum, og fá samt bæn þess dags.
+- Vikan í dálkum: hver dagur hefur staf og tíma. Sofa lengur á laugardögum,
+  fara fyrr á fætur á föstudögum — og fá samt bæn þess dags. Stóra talan á
+  forsíðunni sýnir næstu hringingu, ekki abstrakt sjálfgefinn tíma.
+- Klukkuval sem segir hve langur svefninn verður **áður** en þú staðfestir.
 - Vakna við bænina sjálfa, eða við vekjarahljóð og hlusta á bænina á eftir:
   strax, eftir spurningu á skjánum, eða úr tilkynningu þegar hentar.
 - Eigið vekjarahljóð: hljóð símans eða eigin hljóðskrá. Sjálfgefið er
   kirkjuklukka Staðarfells.
-- Fyrri bænir, deiling, blundur, vaxandi hljóðstyrkur og titringur.
+- Fyrri bænir, deiling, vaxandi hljóðstyrkur og titringur.
+- Blundur að eigin vali, frá einni mínútu upp í sextíu.
+- Ljóst eða dökkt eftir stillingu símans — eða þitt eigið val, ef þig langar
+  að hafa appið dökkt þótt síminn sé ljós.
 - Sleppa næstu hringingu (þjóðhátíð, veikindi) án þess að slökkva á vekjaranum.
 - Varahljóð: vekjarahljóðið eða Rás 1 í beinni.
 - „Um Morgunbæn“-skjár með upplýsingum um verkefnið og leiðum til að styrkja
