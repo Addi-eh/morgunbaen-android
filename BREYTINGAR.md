@@ -14,16 +14,9 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   ekki lengur að kveikja á neinu til að láta laugardaginn sofa út. Dagur sem
   er stilltur á sama tíma og hinir fylgir þeim sjálfkrafa aftur.
 - **Nýtt klukkuval.** Gamli kerfisglugginn er farinn og í staðinn kemur
-  klukka í útliti appsins — sem fylgir loks Ljóst/Dökkt-valinu. Þú getur
-  slegið tímann inn í stað þess að snúa skífu, og **undir henni stendur hve
-  langur svefninn verður**, áður en þú staðfestir.
-- **Falinn helgartími getur ekki lengur vaknað til lífsins.** Hafðir þú stillt
-  einstaka daga og slökkt svo á rofanum voru tímarnir enn vistaðir, óvirkir.
-  Þeir eru hreinsaðir við uppfærslu, svo vekjarinn þinn haldist nákvæmlega
-  þar sem hann var.
-
-## v0.971
-
+  klukka í útliti appsins. Þú getur slegið tímann inn í stað þess að snúa
+  skífu, og **undir henni stendur hve langur svefninn verður**, áður en þú
+  staðfestir.
 - **Þú velur blundlengdina sjálf(ur).** Áður voru fastir kostir — 5, 9, 10, 15
   og 20 mínútur — og ekkert þar á milli. Nú er teljari: frá einni mínútu upp í
   sextíu, og það gengur hraðar að halda hnappnum inni.
@@ -32,6 +25,10 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   stöðustikunni gátu horfið. Hvort tveggja er lagað — líka á vekjaraskjánum.
 - **„Útlit“ neðst á forsíðunni.** Viljirðu appið dökkt þótt síminn sé ljós, eða
   öfugt, þá velurðu það sjálf(ur): Kerfið, Ljóst eða Dökkt.
+- **Falinn helgartími getur ekki lengur vaknað til lífsins.** Hafðir þú stillt
+  einstaka daga og slökkt svo á rofanum voru tímarnir enn vistaðir, óvirkir.
+  Þeir eru hreinsaðir við uppfærslu, svo vekjarinn þinn haldist nákvæmlega
+  þar sem hann var.
 
 ## v0.97
 

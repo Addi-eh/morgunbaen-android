@@ -40,7 +40,7 @@ android {
         targetSdk = 35
         // Fylgir BREYTINGAR.md og v-taggunum sem release.yml byggir a.
         // versionCode er versionName an punkts, fyllt i trja stafi
-        // (0.96 -> 960, 0.971 -> 971), svo tolurnar tvaer geti ekki rekid
+        // (0.96 -> 960, 0.972 -> 972), svo tolurnar tvaer geti ekki rekid
         // i sundur: v0.92 var gefid ut med versionCode 1 og versionName
         // "1.0", sem sagdi hvorugt satt. Tridji aukastafurinn gefur plass
         // fyrir margar utgafur enn adur en komid er ad 1.0.
