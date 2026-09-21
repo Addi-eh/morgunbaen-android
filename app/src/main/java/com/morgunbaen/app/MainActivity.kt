@@ -943,12 +943,20 @@ private fun nextDayName(dayOfWeek: Int): Int = when (dayOfWeek) {
 }
 
 /**
- * Hve langur svefninn verdur, fyrir tillogu sem enn hefur ekki verid
- * stadfest. Reiknad eins og hun vaeri thegar vistud, svo talan i glugganum
- * og talan i belgnum a eftir seu alltaf sama talan.
+ * Hvad tillagan i klukkuglugganum tydir, adur en hun er stadfest.
  *
- * null tegar engin naesta hringing er til - slokktur vekjari eda enginn
- * dagur valinn. Tha er ekkert ad segja og linan er falin.
+ * Reiknad a TEIM degi sem verid er ad stilla, ekki a naestu hringingu.
+ * Aetti linan alltaf vid naestu hringingu stodu hun kyrr tegar madur
+ * stillir dag sem hringir ekki naest - og glugginn liti ut fyrir ad
+ * bregdast ekki vid skifunni.
+ *
+ * Tess vegna eru ordin tvenns konar. Se dagurinn sjalfur naesta hringing
+ * er talan svefn, sama tala og belgurinn a spjaldinu synir a eftir.
+ * Annars er hun bid: "Hringir eftir 2 daga 6 klst". Enginn sefur i tvo
+ * daga, og linan ma ekki halda tvi fram.
+ *
+ * null tegar engin hringing er til - slokktur vekjari eda enginn dagur
+ * valinn. Tha er ekkert ad segja og linan er falin.
  */
 private fun sleepPreview(
     context: Context,
@@ -976,16 +984,32 @@ private fun sleepPreview(
         )
     }
 
-    val next = TriggerTimes.next(
-        days = days,
+    // Adeins tann dag sem verid er ad stilla, tegar tad a vid.
+    val scope = if (target is Picking.Day) setOf(target.day) else days
+    val picked = TriggerTimes.next(
+        days = scope,
         hour = hour,
         minute = minute,
         dayTimes = times,
         skipMillis = prefs.skipNextMillis
     ) ?: return null
 
-    val left = countdownText(context, next) ?: return null
-    return context.getString(R.string.sleep_preview, left)
+    val left = countdownText(context, picked) ?: return null
+
+    // Naesta raunveruleg hringing yfir ALLA daga. Se hun su sama er talan
+    // svefn; annars er hun bid fram ad teim degi.
+    val nextOfAll = TriggerTimes.next(
+        days = days,
+        hour = hour,
+        minute = minute,
+        dayTimes = times,
+        skipMillis = prefs.skipNextMillis
+    )
+    return if (picked == nextOfAll) {
+        context.getString(R.string.sleep_preview, left)
+    } else {
+        context.getString(R.string.sleep_preview_other, left)
+    }
 }
 
 /** Hversu langt profunarhringingin er fram i timann. */

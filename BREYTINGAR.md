@@ -3,6 +3,18 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.973
+
+- **Virku dagarnir eru komnir á sömu línu.** Föstudagurinn lenti með helginni
+  þótt nóg pláss væri fyrir hann uppi. Nú standa Má–Fö saman og helgin fyrir
+  neðan, á öllum venjulegum símum.
+- **Penni í stað undirstriks.** Stóra talan og „sjálfgefið“ eru merktar með
+  litlum penna frekar en striki undir — strikið las eins og vefhlekkur.
+- **Svefnlínan hreyfist með skífunni.** Stilltirðu dag sem hringir ekki á
+  morgun stóð talan kyrr og glugginn virtist ekki bregðast við. Nú telur hún
+  að þeim degi sem þú ert að stilla — og segir „Hringir eftir …“ í stað
+  „svefn“ þegar það á lengra í land en eina nótt.
+
 ## v0.972
 
 - **Vekjaratíminn er ekki lengur falinn á þremur stöðum.** Stóra talan sýnir

@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.972**.
+Staða: **v0.973**.
 
 ---
 
@@ -286,12 +286,25 @@ endurreiknast á þremur stöðum: mínútumótum, `ON_RESUME` og
 staðurinn sem gerir það — þessar línur voru áður afritaðar á alla þrjá
 staðina, sem er nákvæmlega hvernig fjórða afritið gleymist.
 
-**Dálkarnir nota `FlowRow(maxItemsInEachRow = 4)`**, ekki óheft `FlowRow` og
+**Dálkarnir nota `FlowRow(maxItemsInEachRow = 5)`**, ekki óheft `FlowRow` og
 alls ekki `Row` með `weight`. Reitur er 48 dp og bilið 6, svo sjö reitir taka
 372 dp — en spjaldið hefur aðeins skjábreidd mínus 80 (20 dp spássía á
-`Column` og 20 dp inn í `Card`, báðum megin). Óheft `FlowRow` gefur því 5+2 á
-360 dp síma og **6+1 á Pixel-flokki**, þar sem sunnudagurinn lendir einn á
-línu. Þakið 4 gefur 4+3 á hverju tæki; þakið 5 kemst ekki fyrir á 320 dp skjá.
+`Column` og 20 dp inn í `Card`, báðum megin). Óheft `FlowRow` gefur því **6+1
+á Pixel-flokki**, þar sem sunnudagurinn lendir einn á línu, og þakið útilokar
+það.
+
+**Þakið er ÞAK, ekki fastur fjöldi** — `FlowRow` brýtur línuna hvort sem er
+þegar breiddin klárast. Fimm reitir eru 264 dp, svo virku dagarnir lenda á
+fyrri línunni og helgin á þeirri síðari frá 360 dp og upp; á 320 dp skjá
+fellur það sjálfkrafa í 4+3. v0.972 hafði þakið á 4 af því að ég ruglaði
+þessu tvennu saman og þvingaði þar með versta tilfellið upp á öll tæki.
+
+**Penni, ekki undirstrik.** Stóra talan og „sjálfgefið HH:MM" eru báðar
+stillanlegar, og merkið um það er `Icons.Outlined.Edit` við hliðina á tölunni
+— 24 dp við þá stóru, 16 dp við þá litlu. Undirstrik var reynt fyrst en las
+sem vefhlekkur undir 45 sp tölu. Allur reiturinn, talan og penninn saman, er
+einn snertiflötur. Í `SNOOZE` er enginn penni: þá er talan frétt en ekki
+stilling og má ekki líta út fyrir að vera stillanleg.
 
 **Hvor snertiflötur er 48 dp.** Stafurinn og tíminn eru tveir aðskildir
 snertifletir hvor ofan á öðrum, og mistök þar slökkva á degi þegar átti að
@@ -301,10 +314,17 @@ að stilla; „—" er skraut og er haldið utan við tab-röðina.
 **Klukkuglugginn er `ui/TimePickDialog.kt`**, Material3, ekki
 `android.app.TimePickerDialog`. Pallaglugginn las þemað úr stillingu símans
 en ekki úr `AppTheme.mode`, svo „Dökkt" í ljósum síma skilaði ljósum glugga.
-Undir skífunni stendur hve langur svefninn verður — sama tala og í belgnum á
-spjaldinu, reiknuð með `TriggerTimes.next` á tillögunni sjálfri, **áður** en
-hún er staðfest. Áður sást sú tala aðeins eftir á, þótt hún sé einmitt það
-sem ákvörðunin snýst um.
+Undir skífunni stendur hvað tillagan þýðir, reiknað með `TriggerTimes.next` á
+henni sjálfri **áður** en hún er staðfest. Áður sást sú tala aðeins eftir á,
+þótt hún sé einmitt það sem ákvörðunin snýst um.
+
+**Talan er reiknuð á þeim degi sem verið er að stilla**, ekki á næstu
+hringingu. Ætti hún alltaf við næstu hringingu stæði hún kyrr þegar maður
+stillir dag sem hringir ekki næst — og glugginn liti út fyrir að bregðast
+ekki við skífunni. Þess vegna eru orðin tvenns konar: sé dagurinn sjálfur
+næsta hringing er talan **svefn**, sama tala og belgurinn sýnir á eftir;
+annars er hún **bið** („Hringir eftir 2 daga 6 klst"). Enginn sefur í tvo
+daga, og línan má ekki halda því fram.
 
 ---
 

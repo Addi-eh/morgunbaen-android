@@ -46,15 +46,19 @@ internal fun DayStrip(
     onToggleDay: (Int) -> Unit,
     onPickDayTime: (Int) -> Unit
 ) {
-    // maxItemsInEachRow = 4 gefur 4+3 a HVERJU taeki. Oheft FlowRow raest
-    // af skjabreidd: reitur er 48 dp og bilid 6, svo sjo reitir taka 372 dp
-    // en spjaldid hefur adeins skjabreidd minus 80. Tad gefur 5+2 a 360 dp
-    // sima og 6+1 a Pixel-flokki - sunnudagurinn einn a linu. Fjorir reitir
-    // eru 210 dp og komast fyrir alla leid nidur i 320 dp skja.
+    // Talan er EFRI MORK, ekki fastur fjoldi: FlowRow brytur linuna hvort
+    // sem er tegar breiddin klarast.
+    // Oheft myndi tad gefa 6+1 a Pixel-flokki - sunnudagurinn einn a
+    // linu - svo morkin utiloka tad.
+    //
+    // Reitur er 48 dp og bilid 6, svo fimm reitir taka 264 dp og spjaldid
+    // hefur skjabreidd minus 80. Virku dagarnir komast tvi a fyrri linuna
+    // og helgin a tha sidari fra 360 dp og upp. A 320 dp sima fellur tad
+    // sjalfkrafa i 4+3 frekar en ad klippa sunnudaginn af.
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
-        maxItemsInEachRow = 4
+        maxItemsInEachRow = 5
     ) {
         WEEK_ORDER.forEach { entry ->
             DayColumn(

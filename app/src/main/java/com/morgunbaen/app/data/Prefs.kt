@@ -114,18 +114,17 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putString(KEY_NEWS_ID, value).apply()
 
     /**
-     * Eigin tími einstakra daga.
+     * Eigin tími einstakra daga, í mínútum frá miðnætti. Dagur sem vantar
+     * hér notar alarmHour:alarmMinute.
      *
      * Morgunbænin er flutt alla daga. Þetta er hrein tímastilling: sofa
      * lengur á laugardögum, fara fyrr á fætur á föstudögum — og fá samt
      * bæn ÞESS dags. Leysti af hólmi „Annar tími um helgar" (v0.96), og
      * rofinn sem kveikti á því var lagður niður í v0.972 — sjá
      * migrateRetiredPerDaySwitch().
-     */
-    /**
-     * Mínútur frá miðnætti fyrir daga með eigin tíma. Dagur sem vantar hér
-     * notar alarmHour:alarmMinute. Vistað sem "1=540,7=540" — StringSet
-     * tapar engu en er óraðað og erfiðara að lesa í adb.
+     *
+     * Vistað sem "1=540,7=540" — StringSet tapar engu en er óraðað og
+     * erfiðara að lesa í adb.
      */
     var dayTimes: Map<Int, Int>
         get() = parseDayTimes(sp.getString(KEY_DAY_TIMES, null))

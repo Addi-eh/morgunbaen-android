@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
 
@@ -219,10 +218,8 @@ private fun BigClock(
         ClockMode.SNOOZE -> stringResource(R.string.cd_snooze_clock, label)
     }
 
-    Text(
-        text = label,
-        style = MaterialTheme.typography.displayMedium,
-        textDecoration = if (onClick != null) TextDecoration.Underline else null,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .then(
@@ -236,7 +233,23 @@ private fun BigClock(
                 }
             )
             .semantics(mergeDescendants = true) { contentDescription = description }
-    )
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.displayMedium
+        )
+        // Enginn penni medan blundad er: ta er talan frett en ekki stilling,
+        // og ma ekki lita ut fyrir ad vera stillanleg.
+        if (onClick != null) {
+            Spacer(Modifier.width(10.dp))
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
 }
 
 /** „sjálfgefið 07:00“ — leiðin að alarmHour/alarmMinute. */
@@ -244,11 +257,8 @@ private fun BigClock(
 private fun DefaultTimeLine(hour: Int, minute: Int, onClick: () -> Unit) {
     val label = clock(hour, minute)
     val description = stringResource(R.string.default_time_desc, label)
-    Text(
-        text = stringResource(R.string.default_time, label),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textDecoration = TextDecoration.Underline,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable(
@@ -258,9 +268,21 @@ private fun DefaultTimeLine(hour: Int, minute: Int, onClick: () -> Unit) {
             // Eina leidin ad sjalfgefna timanum - tvi ma hun ekki vera
             // minni en 48 dp, tott textinn sjalfur se lagur.
             .defaultMinSize(minHeight = 48.dp)
-            .wrapContentHeight(Alignment.CenterVertically)
             .semantics(mergeDescendants = true) { contentDescription = description }
-    )
+    ) {
+        Text(
+            text = stringResource(R.string.default_time, label),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(
+            imageVector = Icons.Outlined.Edit,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
+        )
+    }
 }
 
 /**
