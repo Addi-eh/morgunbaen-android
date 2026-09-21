@@ -39,47 +39,11 @@ import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
 import com.morgunbaen.app.data.Prefs
 import kotlinx.coroutines.delay
-import java.util.Calendar
 
 /**
  * Litlu endurnytanlegu einingarnar sem spjoldin thrju deila.
  * Fluttar hingad ur MainActivity tegar hun nalgadist 1000 linur.
  */
-
-/**
- * Dagavalid. Notar FlowRow svo allir sjo dagarnir komist fyrir
- * - i venjulegri Row dettur sunnudagurinn ut fyrir skjabrunina.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-internal fun DayPicker(selected: Set<Int>, onChange: (Set<Int>) -> Unit) {
-    // Calendar.SUNDAY = 1 ... Calendar.SATURDAY = 7
-    val labels = listOf(
-        Calendar.MONDAY to "Má",
-        Calendar.TUESDAY to "Þr",
-        Calendar.WEDNESDAY to "Mi",
-        Calendar.THURSDAY to "Fi",
-        Calendar.FRIDAY to "Fö",
-        Calendar.SATURDAY to "La",
-        Calendar.SUNDAY to "Su"
-    )
-
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        labels.forEach { (day, label) ->
-            val isOn = day in selected
-            FilterChip(
-                selected = isOn,
-                onClick = {
-                    onChange(if (isOn) selected - day else selected + day)
-                },
-                label = { Text(label) }
-            )
-        }
-    }
-}
 
 @Composable
 internal fun WarningCard(text: String, actionLabel: String, onAction: () -> Unit) {

@@ -36,14 +36,35 @@
     <string name="history_open">Fyrri bænir</string>
     <string name="history_empty">Náði ekki að sækja fyrri bænir frá RÚV.</string>
 
-    <string name="per_day_label">Mismunandi tími eftir dögum</string>
-    <string name="per_day_desc">Sami tími alla daga — kveiktu til að stilla hvern dag fyrir sig</string>
-    <string name="per_day_desc_on">Ýttu á klukku dagsins til að breyta. Dagar án eigin tíma fylgja stóru klukkunni.</string>
-    <string name="per_day_reset">Sjálfgefið</string>
-    <string name="per_day_open">Stilla daga ›</string>
-    <string name="per_day_sheet_title">Tími hvers dags</string>
-    <string name="per_day_done">Lokið</string>
-    <string name="per_day_all_same">Allir dagar kl. %1$s — ýttu á „Stilla daga“ til að breyta einstökum dögum</string>
+    <string name="ok">Í lagi</string>
+    <string name="cancel">Hætta við</string>
+
+    <string name="default_time">sjálfgefið %1$s</string>
+    <string name="default_time_desc">Sjálfgefinn tími %1$s, fyrir daga án eigin tíma</string>
+    <string name="day_off">—</string>
+    <string name="sleep_preview">Þú færð %1$s svefn</string>
+    <string name="time_input_keyboard">Slá inn tíma</string>
+    <string name="time_input_dial">Nota skífu</string>
+    <string name="pick_time_default">Sjálfgefinn tími</string>
+
+    <string name="cd_day_on">%1$s, kveikt</string>
+    <string name="cd_day_off">%1$s, slökkt</string>
+    <string name="cd_day_turn_on">Kveikja á deginum</string>
+    <string name="cd_day_turn_off">Slökkva á deginum</string>
+    <string name="cd_day_time_own">%1$s, %2$s, eigin tími</string>
+    <string name="cd_day_time_default">%1$s, %2$s, sjálfgefinn tími</string>
+    <string name="cd_next_ring_edit_day">Næsta hringing %1$s kl. %2$s. Ýttu til að breyta þeim degi.</string>
+    <string name="cd_default_clock">Sjálfgefinn tími %1$s</string>
+    <string name="cd_snooze_clock">Blundar til %1$s</string>
+
+    <string name="next_day_monday">mánudag</string>
+    <string name="next_day_tuesday">þriðjudag</string>
+    <string name="next_day_wednesday">miðvikudag</string>
+    <string name="next_day_thursday">fimmtudag</string>
+    <string name="next_day_friday">föstudag</string>
+    <string name="next_day_saturday">laugardag</string>
+    <string name="next_day_sunday">sunnudag</string>
+
     <string name="day_monday">Mánudagur</string>
     <string name="day_tuesday">Þriðjudagur</string>
     <string name="day_wednesday">Miðvikudagur</string>

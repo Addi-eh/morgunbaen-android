@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.952**.
+Staða: **v0.972**.
 
 ---
 
@@ -92,8 +92,9 @@ OemBatteryGuide.kt         „Remove permissions if app is unused"
 ui/AlarmCard.kt             Vekjaratími, dagar, tími hvers dags, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
-ui/DayTimesSheet.kt         Tími hvers dags í blaði neðan frá + samantektin
-ui/Components.kt            Deildar einingar (DayPicker, WarningCard, o.fl.)
+ui/DayStrip.kt              Vikan í sjö reitum: stafur kveikir, tíminn undir stillir
+ui/TimePickDialog.kt        Klukkuvalið — Material3, fylgir útliti appsins
+ui/Components.kt            Deildar einingar (SettingRow, MinuteStepper, o.fl.)
 ui/Theme.kt                 Litir, ljóst/dökkt og AppTheme.mode
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
 AboutActivity.kt           Um appið, styrkir og leiðir til að hjálpa
@@ -101,6 +102,7 @@ data/AlarmSoundStore.kt    Afritar valið vekjarahljóð í device-protected gey
 
 test/alarm/TriggerTimesTest.kt   26 próf á tímareikningnum, keyra með `./gradlew test`
 test/data/DayTimesParseTest.kt   3 próf á lestri vistaðra tíma hvers dags
+test/data/DayTimesLogicTest.kt   6 próf á dálkunum: eigin tími og niðurlagning rofans
 ```
 
 Lestu `TriggerTimes.kt` fyrst — hreinn tímareikningur, engin Android-tenging,
@@ -194,10 +196,31 @@ tilfelli.
 **Tími hvers dags** (v0.96) leysti „Annar tími um helgar" af hólmi.
 `TriggerTimes` tekur `dayTimes: Map<Int, Int>` — mínútur frá miðnætti fyrir
 þá daga sem hafa eigin tíma; aðrir dagar fylgja `alarmHour`/`alarmMinute`.
-`Prefs.activeDayTimes` skilar tómu korti þegar rofinn er af, svo fallið sjálft
-þarf ekki að vita af rofanum. Kveiktur helgartími úr eldri útgáfu færist yfir
-á lau/sun **einu sinni** í `Prefs.migrateWeekendTime()`, sem
-`Application.onCreate` kallar *á undan* fyrstu skráningu vekjarans.
+Kveiktur helgartími úr eldri útgáfu færist yfir á lau/sun **einu sinni** í
+`Prefs.migrateWeekendTime()`, sem `Application.onCreate` kallar *á undan*
+fyrstu skráningu vekjarans.
+
+**Rofinn „Mismunandi tími eftir dögum" var lagður niður í v0.972**, og það
+var hættulegri breyting en hún sýnist. Rofinn **faldi** tíma dagsins, eyddi
+honum ekki: sá sem stillti laugardag á 09:30 og slökkti svo á rofanum átti
+07:00 á laugardag. Yrði kortið virkt án hreinsunar myndi vekjarinn færast um
+tvo tíma — þegjandi, og enginn kæmist að því fyrr en hann vaknaði of seint.
+Þetta var ekki fræðilegt: `migrateWeekendTime()` skrifar bæði kortið **og**
+kveikir á rofanum, svo hver sem slökkti á honum eftir þá færslu átti enn
+laugardag og sunnudag í kortinu.
+
+`Prefs.migrateRetiredPerDaySwitch()` hreinsar því kortið hjá öllum sem höfðu
+rofann af, **á undan** `AlarmScheduler.schedule()`. Ákvörðunin sjálf er hreint
+fall — `retiredPerDayTimes(enabled, raw)` — svo hún sé prófanleg án `Context`,
+eins og `parseDayTimes`. `KEY_PER_DAY_ENABLED` er skrifaður áfram, jafnaður
+við kortið í setter `dayTimes`, svo hann geti ekki sagt ósatt.
+
+**Sjálfgefinn tími eyðir lyklinum.** `Prefs.applyPickedTime()` skráir dag
+aðeins ef valinn tími **víkur frá** sjálfgefnu; jafngildi eyðir honum. Þess
+vegna þarf engan „Sjálfgefið"-hnapp: dagurinn verður daufur um leið og hann
+er stilltur á sömu tölu og hinir. Afleiðing sem er vert að vita: breytist
+sjálfgefni tíminn síðar fylgir sá dagur með, þótt hann hafi verið stilltur
+handvirkt á sömu tölu.
 
 `countdown()` býr líka þarna: biðtíminn fram að næstu hringingu, sundurliðaður
 í daga, klukkustundir og mínútur. Mínúturnar eru námundaðar **upp** — annars
@@ -234,6 +257,54 @@ og klikkaður vekjari.
 Merkið er fryst meðan liðinn óhringdur tími stendur, svo `Application.onCreate`
 færi það ekki á morgundaginn áður en viðvörunin næði að birtast — og þítt aftur
 þegar notandinn kvittar, svo vöktunin þagni ekki að eilífu eftir fyrsta klikk.
+
+---
+
+## 6b. Vekjaraspjaldið
+
+**Stóra talan er næsta hringing, ekki sjálfgefni tíminn.** Hún svarar þeirri
+spurningu sem fólk vaknar með — „hvenær hringir hann næst?" — en ekki þeirri
+óbeinu, hver sjálfgefni tíminn sé. `ClockMode` ræður þremur ástandum:
+
+| `ClockMode` | Hvað talan sýnir | Ýt |
+|---|---|---|
+| `NEXT_RING` | næstu hringingu | stillir **þann dag** |
+| `DEFAULT` | sjálfgefna tímann (slökkt, eða enginn dagur valinn) | stillir sjálfgefið |
+| `SNOOZE` | blundslok | ekkert — talan er frétt, ekki stilling |
+
+**Ýt á stóru töluna breytir ekki allri vikunni.** Fyrri tillaga var að ýt
+stillti sjálfgefna tímann þegar næsti dagur fylgdi honum. Því var hafnað: sá
+sem vill sofa út á laugardag heldur að hann sé að stilla morgundaginn og
+hreyfir um leið alla daga vikunnar. Ýt á stóru töluna sendir því nákvæmlega
+sama atburð og ýt á dálk þess dags. Sjálfgefna línan — „sjálfgefið 07:00" —
+er eina leiðin að `alarmHour`/`alarmMinute`, og hún stendur alltaf þegar
+stóra talan sýnir eitthvað annað.
+
+**Talan tikkar.** Hún er leidd af `TriggerTimes.next` og verður því að
+endurreiknast á þremur stöðum: mínútumótum, `ON_RESUME` og
+`persistAndReschedule()`. `refreshAlarmView()` í `MainScreen` er eini
+staðurinn sem gerir það — þessar línur voru áður afritaðar á alla þrjá
+staðina, sem er nákvæmlega hvernig fjórða afritið gleymist.
+
+**Dálkarnir nota `FlowRow(maxItemsInEachRow = 4)`**, ekki óheft `FlowRow` og
+alls ekki `Row` með `weight`. Reitur er 48 dp og bilið 6, svo sjö reitir taka
+372 dp — en spjaldið hefur aðeins skjábreidd mínus 80 (20 dp spássía á
+`Column` og 20 dp inn í `Card`, báðum megin). Óheft `FlowRow` gefur því 5+2 á
+360 dp síma og **6+1 á Pixel-flokki**, þar sem sunnudagurinn lendir einn á
+línu. Þakið 4 gefur 4+3 á hverju tæki; þakið 5 kemst ekki fyrir á 320 dp skjá.
+
+**Hvor snertiflötur er 48 dp.** Stafurinn og tíminn eru tveir aðskildir
+snertifletir hvor ofan á öðrum, og mistök þar slökkva á degi þegar átti að
+stilla hann — sem þýðir að fólk vaknar ekki. Slökktur dagur hefur engan tíma
+að stilla; „—" er skraut og er haldið utan við tab-röðina.
+
+**Klukkuglugginn er `ui/TimePickDialog.kt`**, Material3, ekki
+`android.app.TimePickerDialog`. Pallaglugginn las þemað úr stillingu símans
+en ekki úr `AppTheme.mode`, svo „Dökkt" í ljósum síma skilaði ljósum glugga.
+Undir skífunni stendur hve langur svefninn verður — sama tala og í belgnum á
+spjaldinu, reiknuð með `TriggerTimes.next` á tillögunni sjálfri, **áður** en
+hún er staðfest. Áður sást sú tala aðeins eftir á, þótt hún sé einmitt það
+sem ákvörðunin snýst um.
 
 ---
 

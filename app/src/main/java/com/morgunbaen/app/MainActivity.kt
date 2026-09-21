@@ -1,7 +1,6 @@
 package com.morgunbaen.app
 
 import android.Manifest
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -58,9 +57,12 @@ import com.morgunbaen.app.data.RuvClient
 import com.morgunbaen.app.ui.AlarmCard
 import com.morgunbaen.app.ui.AppTheme
 import com.morgunbaen.app.ui.AppearanceCard
+import com.morgunbaen.app.ui.ClockMode
 import com.morgunbaen.app.ui.InfoCard
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import com.morgunbaen.app.ui.PrayerCard
+import com.morgunbaen.app.ui.TimePickDialog
+import com.morgunbaen.app.ui.WEEK_ORDER
 import com.morgunbaen.app.ui.WakeSettingsCard
 import com.morgunbaen.app.ui.WarningCard
 import com.morgunbaen.app.work.CatchUpScheduler
@@ -126,7 +128,6 @@ private fun MainScreen() {
     var vibrate by remember { mutableStateOf(prefs.vibrateEnabled) }
     var snoozeMinutes by remember { mutableIntStateOf(prefs.snoozeMinutes) }
     var themeMode by remember { mutableStateOf(prefs.themeMode) }
-    var perDayEnabled by remember { mutableStateOf(prefs.perDayEnabled) }
     var dayTimes by remember { mutableStateOf(prefs.dayTimes) }
     var cachedEpisodeId by remember { mutableStateOf(prefs.cachedEpisodeId) }
     var fallbackRas1 by remember { mutableStateOf(prefs.fallbackRas1) }
@@ -154,6 +155,18 @@ private fun MainScreen() {
         mutableStateOf(formatSkipTime(prefs.skipNextMillis))
     }
 
+    // Stora talan er LEIDD af prefs, ekki af hour/minute: hun svarar
+    // "hvenaer hringir hann naest?" og tarf tvi ad tikka. Tremur stodum -
+    // minutumot, ON_RESUME og persistAndReschedule - er haldid i takt af
+    // refreshAlarmView() her ad nedan.
+    var clockMode by remember { mutableStateOf(ClockMode.DEFAULT) }
+    var displayHour by remember { mutableIntStateOf(prefs.alarmHour) }
+    var displayMinute by remember { mutableIntStateOf(prefs.alarmMinute) }
+    var nextDay by remember { mutableStateOf<Int?>(null) }
+
+    // Hvad klukkuglugginn er ad stilla, eda null tegar hann er lokadur.
+    var picking by remember { mutableStateOf<Picking?>(null) }
+
     // Lettur spilari fyrir "Spila baenina" - hegdar ser eins og venjulegur
     // midill (USAGE_MEDIA + sjalfvirkur hljodfokus), OLIKT vekjaranum.
     val previewPlayer = remember {
@@ -180,6 +193,50 @@ private fun MainScreen() {
         onDispose { previewPlayer.release() }
     }
 
+    /**
+     * Allt sem raest af KLUKKUNNI A VEGGNUM frekar en af innslaetti
+     * notandans. Adur voru tessar linur afritadar a tremur stodum og
+     * tvaer teirra gleymdu stoku gildi; nu er einn stadur ad gleyma i.
+     */
+    fun refreshAlarmView() {
+        nextAlarmText = nextAlarmDescription(context, prefs)
+        countdownText = countdownDescription(context, prefs)
+        skipActive = prefs.skipNextMillis > System.currentTimeMillis()
+        skippedWhenText = formatSkipTime(prefs.skipNextMillis)
+
+        val snoozeAt = prefs.snoozeUntilMillis
+        val target = alarmTargetMillis(prefs)
+        when {
+            // Slokktur vekjari a enga naestu hringingu. Ta synir talan
+            // sjalfgefna timann og er stillanleg sem slik - annars hverfur
+            // adalstjorntaeki spjaldsins um leid og rofinn fer af.
+            !prefs.alarmEnabled || target == null -> {
+                clockMode = ClockMode.DEFAULT
+                displayHour = prefs.alarmHour
+                displayMinute = prefs.alarmMinute
+                nextDay = null
+            }
+            target == snoozeAt -> {
+                val cal = Calendar.getInstance().apply { timeInMillis = target }
+                clockMode = ClockMode.SNOOZE
+                displayHour = cal.get(Calendar.HOUR_OF_DAY)
+                displayMinute = cal.get(Calendar.MINUTE)
+                nextDay = null
+            }
+            else -> {
+                val cal = Calendar.getInstance().apply { timeInMillis = target }
+                clockMode = ClockMode.NEXT_RING
+                displayHour = cal.get(Calendar.HOUR_OF_DAY)
+                displayMinute = cal.get(Calendar.MINUTE)
+                nextDay = cal.get(Calendar.DAY_OF_WEEK)
+            }
+        }
+    }
+
+    // Fyrsta reikningin: state ofan vid var sett a sjalfgefna timann svo
+    // eitthvad se til adur en tetta keyrir.
+    LaunchedEffect(Unit) { refreshAlarmView() }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -189,10 +246,9 @@ private fun MainScreen() {
                     batteryOk = isIgnoringBatteryOptimizations(context)
                     notificationsOk = areNotificationsEnabled(context)
                     fullScreenOk = canUseFullScreenIntent(context)
-                    nextAlarmText = nextAlarmDescription(context, prefs)
-                    countdownText = countdownDescription(context, prefs)
-                    skipActive = prefs.skipNextMillis > System.currentTimeMillis()
-                    skippedWhenText = formatSkipTime(prefs.skipNextMillis)
+                    // Vekjarinn getur hafa hringt - eda verid blundad -
+                    // medan appid var i bakgrunni.
+                    refreshAlarmView()
                     cachedTitle = prefs.cachedTitle
                     cachedDate = prefs.cachedFirstrun
                     cachedEpisodeId = prefs.cachedEpisodeId
@@ -285,13 +341,10 @@ private fun MainScreen() {
     LaunchedEffect(Unit) {
         while (true) {
             delay(MINUTE_MILLIS - System.currentTimeMillis() % MINUTE_MILLIS + TICK_SLACK_MILLIS)
-            countdownText = countdownDescription(context, prefs)
             // Hringi vekjarinn a medan skjarinn er opinn faerist naesti
-            // timi a naesta dag - teljarinn og textinn undir honum verda
-            // ad snuast vid a sama augnabliki.
-            nextAlarmText = nextAlarmDescription(context, prefs)
-            skipActive = prefs.skipNextMillis > System.currentTimeMillis()
-            skippedWhenText = formatSkipTime(prefs.skipNextMillis)
+            // timi a naesta dag - stora talan, teljarinn og textinn undir
+            // teim verda ad snuast vid a sama augnabliki.
+            refreshAlarmView()
         }
     }
 
@@ -304,10 +357,7 @@ private fun MainScreen() {
         // Glugginn les vekjaradaga og frettastillingu - breytist annad hvort
         // tarf hann nyjan tima. Ohaett ad kalla oft.
         CatchUpScheduler.schedule(context)
-        nextAlarmText = nextAlarmDescription(context, prefs)
-        countdownText = countdownDescription(context, prefs)
-        skipActive = prefs.skipNextMillis > System.currentTimeMillis()
-        skippedWhenText = formatSkipTime(prefs.skipNextMillis)
+        refreshAlarmView()
         health = checkHealth(prefs)
     }
 
@@ -326,11 +376,14 @@ private fun MainScreen() {
         ) {
 
             AlarmCard(
-                hour = hour,
-                minute = minute,
+                displayHour = displayHour,
+                displayMinute = displayMinute,
+                clockMode = clockMode,
+                nextDayLabel = nextDay?.let { stringResource(nextDayName(it)) },
+                defaultHour = hour,
+                defaultMinute = minute,
                 enabled = enabled,
                 days = days,
-                perDayEnabled = perDayEnabled,
                 dayTimes = dayTimes,
                 nextAlarmText = nextAlarmText,
                 countdownText = countdownText,
@@ -342,49 +395,23 @@ private fun MainScreen() {
                     enabled = it
                     persistAndReschedule()
                 },
-                onPickTime = {
-                    TimePickerDialog(
-                        context,
-                        { _, h, m ->
-                            hour = h
-                            minute = m
-                            persistAndReschedule()
-                        },
-                        hour, minute, true
-                    ).show()
-                },
-                onDaysChange = {
-                    days = it
+                // Ýt á stóru töluna stillir ÞANN dag sem hringir næst, ekki
+                // sjálfgefna tímann. Annars héldi sá sem vill sofa út á
+                // laugardag að hann væri að stilla morgundaginn — og hreyfði
+                // um leið alla hina dagana sem fylgja sjálfgefnu.
+                onPickNext = { nextDay?.let { picking = Picking.Day(it) } },
+                onPickDefault = { picking = Picking.Default },
+                onToggleDay = { day ->
+                    days = if (day in days) days - day else days + day
                     persistAndReschedule()
                 },
-                onPerDayEnabledChange = {
-                    perDayEnabled = it
-                    prefs.perDayEnabled = it
-                    persistAndReschedule()
-                },
-                onPickDayTime = { day ->
-                    val current = dayTimes[day] ?: (hour * 60 + minute)
-                    TimePickerDialog(
-                        context,
-                        { _, h, m ->
-                            dayTimes = dayTimes + (day to h * 60 + m)
-                            prefs.dayTimes = dayTimes
-                            persistAndReschedule()
-                        },
-                        current / 60, current % 60, true
-                    ).show()
-                },
-                onResetDayTime = { day ->
-                    dayTimes = dayTimes - day
-                    prefs.dayTimes = dayTimes
-                    persistAndReschedule()
-                },
+                onPickDayTime = { picking = Picking.Day(it) },
                 onSkipNext = {
                     val toSkip = TriggerTimes.next(
                         days = days,
                         hour = hour,
                         minute = minute,
-                        dayTimes = if (perDayEnabled) dayTimes else emptyMap(),
+                        dayTimes = dayTimes,
                         skipMillis = 0L
                     )
                     prefs.skipNextMillis = toSkip ?: 0L
@@ -399,6 +426,44 @@ private fun MainScreen() {
                     testArmed = true
                 }
             )
+
+            picking?.let { target ->
+                val current = when (target) {
+                    Picking.Default -> hour * 60 + minute
+                    is Picking.Day -> dayTimes[target.day] ?: (hour * 60 + minute)
+                }
+                TimePickDialog(
+                    title = when (target) {
+                        Picking.Default -> stringResource(R.string.pick_time_default)
+                        is Picking.Day -> stringResource(WEEK_ORDER.first { it.day == target.day }.name)
+                    },
+                    initialHour = current / 60,
+                    initialMinute = current % 60,
+                    sleepPreview = { h, m ->
+                        sleepPreview(context, prefs, enabled, days, hour, minute, dayTimes, target, h, m)
+                    },
+                    onDismiss = { picking = null },
+                    onConfirm = { h, m ->
+                        when (target) {
+                            Picking.Default -> {
+                                hour = h
+                                minute = m
+                            }
+                            is Picking.Day -> {
+                                dayTimes = Prefs.applyPickedTime(
+                                    defaultMinutes = hour * 60 + minute,
+                                    dayTimes = dayTimes,
+                                    day = target.day,
+                                    pickedMinutes = h * 60 + m
+                                )
+                                prefs.dayTimes = dayTimes
+                            }
+                        }
+                        picking = null
+                        persistAndReschedule()
+                    }
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -498,7 +563,7 @@ private fun MainScreen() {
                     newsAttempted = newsAttempted,
                     newsFirstrun = newsFirstrun,
                     alarmHour = hour,
-                    dayTimes = if (perDayEnabled) dayTimes else emptyMap(),
+                    dayTimes = dayTimes,
                     days = days
                 ),
                 fallbackRas1 = fallbackRas1,
@@ -854,6 +919,75 @@ private fun formatSkipTime(millis: Long): String? {
     return format.format(Date(millis))
 }
 
+/** Hvad klukkuglugginn er ad stilla i tetta skiptid. */
+private sealed interface Picking {
+    /** alarmHour/alarmMinute - allir dagar an eigin tima. */
+    object Default : Picking
+
+    /** Einn dagur, Calendar.MONDAY .. Calendar.SUNDAY. */
+    data class Day(val day: Int) : Picking
+}
+
+/**
+ * Nafn dagsins eins og tad stendur undir storu tolunni: "laugardag".
+ * Tolfall, ekki nefnifall - "Naesta hringing laugardagur" er ekki islenska.
+ */
+private fun nextDayName(dayOfWeek: Int): Int = when (dayOfWeek) {
+    Calendar.MONDAY -> R.string.next_day_monday
+    Calendar.TUESDAY -> R.string.next_day_tuesday
+    Calendar.WEDNESDAY -> R.string.next_day_wednesday
+    Calendar.THURSDAY -> R.string.next_day_thursday
+    Calendar.FRIDAY -> R.string.next_day_friday
+    Calendar.SATURDAY -> R.string.next_day_saturday
+    else -> R.string.next_day_sunday
+}
+
+/**
+ * Hve langur svefninn verdur, fyrir tillogu sem enn hefur ekki verid
+ * stadfest. Reiknad eins og hun vaeri thegar vistud, svo talan i glugganum
+ * og talan i belgnum a eftir seu alltaf sama talan.
+ *
+ * null tegar engin naesta hringing er til - slokktur vekjari eda enginn
+ * dagur valinn. Tha er ekkert ad segja og linan er falin.
+ */
+private fun sleepPreview(
+    context: Context,
+    prefs: Prefs,
+    enabled: Boolean,
+    days: Set<Int>,
+    defaultHour: Int,
+    defaultMinute: Int,
+    dayTimes: Map<Int, Int>,
+    target: Picking,
+    pickedHour: Int,
+    pickedMinute: Int
+): String? {
+    if (!enabled || days.isEmpty()) return null
+
+    val hour = if (target is Picking.Default) pickedHour else defaultHour
+    val minute = if (target is Picking.Default) pickedMinute else defaultMinute
+    val times = when (target) {
+        Picking.Default -> dayTimes
+        is Picking.Day -> Prefs.applyPickedTime(
+            defaultMinutes = defaultHour * 60 + defaultMinute,
+            dayTimes = dayTimes,
+            day = target.day,
+            pickedMinutes = pickedHour * 60 + pickedMinute
+        )
+    }
+
+    val next = TriggerTimes.next(
+        days = days,
+        hour = hour,
+        minute = minute,
+        dayTimes = times,
+        skipMillis = prefs.skipNextMillis
+    ) ?: return null
+
+    val left = countdownText(context, next) ?: return null
+    return context.getString(R.string.sleep_preview, left)
+}
+
 /** Hversu langt profunarhringingin er fram i timann. */
 private const val TEST_ALARM_SECONDS = 30
 
@@ -892,7 +1026,12 @@ private fun alarmTargetMillis(prefs: Prefs): Long? {
  */
 private fun countdownDescription(context: Context, prefs: Prefs): String? {
     val target = alarmTargetMillis(prefs) ?: return null
-    val left = TriggerTimes.countdown(System.currentTimeMillis(), target) ?: return null
+    return countdownText(context, target)
+}
+
+/** Sami texti og i belgnum, en um hvada timapunkt sem er. */
+private fun countdownText(context: Context, targetMillis: Long): String? {
+    val left = TriggerTimes.countdown(System.currentTimeMillis(), targetMillis) ?: return null
     return when {
         left.days == 1 -> context.getString(R.string.countdown_day_hours, left.days, left.hours)
         left.days > 1 -> context.getString(R.string.countdown_days_hours, left.days, left.hours)

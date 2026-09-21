@@ -3,6 +3,25 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.972
+
+- **Vekjaratíminn er ekki lengur falinn á þremur stöðum.** Stóra talan sýnir
+  núna **næstu hringingu** — þann tíma sem þú vaknar við — og vikudaginn undir
+  henni. Ýttu á hana til að breyta þeim degi.
+- **Vikan er komin í dálka.** Hver dagur hefur staf og tíma: stafurinn kveikir
+  eða slekkur, talan undir honum stillir þann dag. Rofinn „Mismunandi tími
+  eftir dögum“, „Stilla daga“ og blaðið neðan frá eru öll farin — það þarf
+  ekki lengur að kveikja á neinu til að láta laugardaginn sofa út. Dagur sem
+  er stilltur á sama tíma og hinir fylgir þeim sjálfkrafa aftur.
+- **Nýtt klukkuval.** Gamli kerfisglugginn er farinn og í staðinn kemur
+  klukka í útliti appsins — sem fylgir loks Ljóst/Dökkt-valinu. Þú getur
+  slegið tímann inn í stað þess að snúa skífu, og **undir henni stendur hve
+  langur svefninn verður**, áður en þú staðfestir.
+- **Falinn helgartími getur ekki lengur vaknað til lífsins.** Hafðir þú stillt
+  einstaka daga og slökkt svo á rofanum voru tímarnir enn vistaðir, óvirkir.
+  Þeir eru hreinsaðir við uppfærslu, svo vekjarinn þinn haldist nákvæmlega
+  þar sem hann var.
+
 ## v0.971
 
 - **Þú velur blundlengdina sjálf(ur).** Áður voru fastir kostir — 5, 9, 10, 15

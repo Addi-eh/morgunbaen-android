@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
@@ -21,32 +23,43 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.morgunbaen.app.R
-import java.util.Locale
 
 /**
- * Efsta spjaldid: vekjaratimi, dagar, timi hvers dags og profunarhnappur.
+ * Hvad stora talan a spjaldinu synir.
+ *
+ * NEXT_RING er venjulega astandid: talan svarar teirri spurningu sem
+ * notandinn vaknar med - "hvenaer hringir hann naest?" - en ekki teirri
+ * obeinu, hver sjalfgefni timinn se.
+ */
+internal enum class ClockMode { NEXT_RING, DEFAULT, SNOOZE }
+
+/**
+ * Efsta spjaldid: naesta hringing, vikan i dalkum og profunarhnappur.
  *
  * Allt state byr i MainScreen - spjaldid faer gildi og skilar atburdum.
- * TimePickerDialog er lika hja MainScreen, tvi hann tarf Activity-context;
- * her eru bara onPickTime/onPickDayTime.
+ * Klukkuglugginn er lika hja MainScreen, tvi hann tarf ad vita hvad er
+ * verid ad stilla; her eru bara onPickNext/onPickDefault/onPickDayTime.
  */
 @Composable
 internal fun AlarmCard(
-    hour: Int,
-    minute: Int,
+    displayHour: Int,
+    displayMinute: Int,
+    clockMode: ClockMode,
+    nextDayLabel: String?,
+    defaultHour: Int,
+    defaultMinute: Int,
     enabled: Boolean,
     days: Set<Int>,
-    perDayEnabled: Boolean,
     dayTimes: Map<Int, Int>,
     nextAlarmText: String,
     countdownText: String?,
@@ -55,11 +68,10 @@ internal fun AlarmCard(
     testArmed: Boolean,
     testSeconds: Int,
     onEnabledChange: (Boolean) -> Unit,
-    onPickTime: () -> Unit,
-    onDaysChange: (Set<Int>) -> Unit,
-    onPerDayEnabledChange: (Boolean) -> Unit,
+    onPickNext: () -> Unit,
+    onPickDefault: () -> Unit,
+    onToggleDay: (Int) -> Unit,
     onPickDayTime: (Int) -> Unit,
-    onResetDayTime: (Int) -> Unit,
     onSkipNext: () -> Unit,
     onUndoSkip: () -> Unit,
     onTest: () -> Unit
@@ -71,81 +83,75 @@ internal fun AlarmCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ad yta a klukkuna sjalfa er fyrsta hreyfing margra. Hun
-                // opnar sama tolvalsglugga og "Breyta tima"-hnappurinn, sem
-                // stendur afram - flytileid fyrir ta sem giska a hana, ekki
-                // stadgengill fyrir synilegu leidina.
-                BigClock(hour = hour, minute = minute, onClick = onPickTime)
+                // Blundur er eina astandid tar sem talan er ekki stilling
+                // heldur frett: hun segir hvenaer hann hringir aftur i
+                // dag. Morgundagurinn er stilltur i dalkunum.
+                BigClock(
+                    hour = displayHour,
+                    minute = displayMinute,
+                    mode = clockMode,
+                    nextDayLabel = nextDayLabel,
+                    onClick = when (clockMode) {
+                        ClockMode.NEXT_RING -> onPickNext
+                        ClockMode.DEFAULT -> onPickDefault
+                        ClockMode.SNOOZE -> null
+                    }
+                )
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
 
-            Spacer(Modifier.height(4.dp))
-
-            // "Breyta tima" beint undir klukkunni, teljarinn haegra megin
-            // a somu linu. Tha stendur ekkert a milli klukkunnar og
-            // hnappsins sem breytir henni.
-            //
-            // Teljarinn svarar teirri spurningu sem klukkan sjalf svarar
-            // ekki: hve lengi ma eg enn sofa? Adeins tegar vekjarinn er a -
-            // slokktur vekjari hefur engan bidtima.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onPickTime) {
-                    Text(stringResource(R.string.change_time))
-                }
-                if (enabled && countdownText != null) {
-                    CountdownPill(text = countdownText)
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-            DayPicker(selected = days, onChange = onDaysChange)
-
-            Spacer(Modifier.height(16.dp))
-
-            // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er hrein
-            // timastilling: sofa lengur, eda fara fyrr a faetur, an tess
-            // ad missa af baen tess dags. Leysti helgartimann af holmi.
-            //
-            // Listinn sjalfur er i bladi nedan fra (DayTimesSheet): inni a
-            // spjaldinu ytti hann "Naest:" og "Sleppa naestu" allt ad sjo
-            // linur nidur. Spjaldid synir adeins samantekt - hvada dagar
-            // vikja fra storu klukkunni - svo ekki turfi ad opna neitt til
-            // ad sja stoduna.
-            var sheetOpen by rememberSaveable { mutableStateOf(false) }
-
-            SettingRow(
-                label = stringResource(R.string.per_day_label),
-                description = if (perDayEnabled) {
-                    dayTimesSummary(days, dayTimes, hour, minute)
-                } else {
-                    stringResource(R.string.per_day_desc)
-                },
-                checked = perDayEnabled,
-                onCheckedChange = onPerDayEnabledChange
-            )
-
-            if (perDayEnabled) {
-                TextButton(onClick = { sheetOpen = true }) {
-                    Text(stringResource(R.string.per_day_open))
-                }
-            }
-
-            // Lokast ef rofinn fer af - bladid a ekkert erindi an hans.
-            if (sheetOpen && perDayEnabled) {
-                DayTimesSheet(
-                    days = days,
-                    dayTimes = dayTimes,
-                    hour = hour,
-                    minute = minute,
-                    onPickDayTime = onPickDayTime,
-                    onResetDayTime = onResetDayTime,
-                    onDismiss = { sheetOpen = false }
+            if (nextDayLabel != null) {
+                Text(
+                    text = nextDayLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Lysing storu tolunnar nefnir daginn tegar. An tessa
+                    // laesi TalkBack "laugardag" tvisvar.
+                    modifier = Modifier.clearAndSetSemantics { }
                 )
             }
+
+            // Sjalfgefni timinn er eina leidin ad alarmHour/alarmMinute.
+            // Hann stendur ALLTAF tegar stora talan synir eitthvad annad,
+            // ekki adeins tegar naesti dagur vikur fra - annars veit enginn
+            // hvert a ad fara til ad breyta ollum dogunum i einu.
+            //
+            // Belgurinn deilir linunni med honum frekar en ad standa vid
+            // hlidina a storu tolunni: a 320 dp skja tekur "9 klst 30 min"
+            // svo mikid plass ad klukkan sjalf kemst ekki fyrir.
+            if (clockMode != ClockMode.DEFAULT) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    DefaultTimeLine(
+                        hour = defaultHour,
+                        minute = defaultMinute,
+                        onClick = onPickDefault
+                    )
+                    // Teljarinn svarar teirri spurningu sem klukkan sjalf
+                    // svarar ekki: hve lengi ma eg enn sofa?
+                    if (enabled && countdownText != null) {
+                        CountdownPill(text = countdownText)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Vikan: stafur kveikir eda slekkur, talan undir stillir tann
+            // dag. Morgunbaenin er DAGLEG - lika um helgar - svo tetta er
+            // hrein timastilling: sofa lengur, eda fara fyrr a faetur, an
+            // tess ad missa af baen tess dags.
+            DayStrip(
+                days = days,
+                dayTimes = dayTimes,
+                defaultHour = defaultHour,
+                defaultMinute = defaultMinute,
+                onToggleDay = onToggleDay,
+                onPickDayTime = onPickDayTime
+            )
 
             if (enabled) {
                 Spacer(Modifier.height(12.dp))
@@ -193,25 +199,76 @@ internal fun AlarmCard(
 }
 
 /**
+ * Stora talan. Undirstrikid er eina merkid um ad hun se stillanleg -
+ * "Breyta tima"-hnappurinn undir henni for ut tegar hann og hun gerdu
+ * ordid sama hlutinn.
+ */
+@Composable
+private fun BigClock(
+    hour: Int,
+    minute: Int,
+    mode: ClockMode,
+    nextDayLabel: String?,
+    onClick: (() -> Unit)?
+) {
+    val label = clock(hour, minute)
+    val description = when (mode) {
+        ClockMode.NEXT_RING ->
+            stringResource(R.string.cd_next_ring_edit_day, nextDayLabel.orEmpty(), label)
+        ClockMode.DEFAULT -> stringResource(R.string.cd_default_clock, label)
+        ClockMode.SNOOZE -> stringResource(R.string.cd_snooze_clock, label)
+    }
+
+    Text(
+        text = label,
+        style = MaterialTheme.typography.displayMedium,
+        textDecoration = if (onClick != null) TextDecoration.Underline else null,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        onClickLabel = stringResource(R.string.change_time),
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .semantics(mergeDescendants = true) { contentDescription = description }
+    )
+}
+
+/** „sjálfgefið 07:00“ — leiðin að alarmHour/alarmMinute. */
+@Composable
+private fun DefaultTimeLine(hour: Int, minute: Int, onClick: () -> Unit) {
+    val label = clock(hour, minute)
+    val description = stringResource(R.string.default_time_desc, label)
+    Text(
+        text = stringResource(R.string.default_time, label),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textDecoration = TextDecoration.Underline,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(
+                onClickLabel = stringResource(R.string.change_time),
+                onClick = onClick
+            )
+            // Eina leidin ad sjalfgefna timanum - tvi ma hun ekki vera
+            // minni en 48 dp, tott textinn sjalfur se lagur.
+            .defaultMinSize(minHeight = 48.dp)
+            .wrapContentHeight(Alignment.CenterVertically)
+            .semantics(mergeDescendants = true) { contentDescription = description }
+    )
+}
+
+/**
  * Bidtiminn i litlum belg: klukkutakn og "2 klst 7 min".
  *
  * Textinn er nu tegar samsettur - belgurinn veit ekkert um klukkur.
  * Taknid faer lysinguna svo skjalesarar segi hvad talan tydir.
  */
-@Composable
-private fun BigClock(hour: Int, minute: Int, onClick: () -> Unit) {
-    Text(
-        text = String.format(Locale.getDefault(), "%02d:%02d", hour, minute),
-        style = MaterialTheme.typography.displayMedium,
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(
-                onClickLabel = stringResource(R.string.change_time),
-                onClick = onClick
-            )
-    )
-}
-
 @Composable
 private fun CountdownPill(text: String) {
     Surface(

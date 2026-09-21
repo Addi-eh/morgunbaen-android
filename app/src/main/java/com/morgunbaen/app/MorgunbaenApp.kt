@@ -27,6 +27,10 @@ class MorgunbaenApp : Application() {
         // Á undan schedule(): annars reiknast fyrsta hringing eftir
         // uppfærslu án helgartímans sem notandinn hafði stillt.
         prefs.migrateWeekendTime()
+        // Á eftir helgarflutningnum — hann getur sjálfur skrifað kort og
+        // kveikt á rofanum — og á undan schedule(), svo vekjarinn lesi
+        // aldrei falinn tíma sem notandinn hafði slökkt á.
+        prefs.migrateRetiredPerDaySwitch()
 
         // Á undan öllum skjám, svo enginn þeirra teikni sig í röngu útliti.
         // Prefs situr í device-protected geymslu, svo vekjaraskjárinn fær

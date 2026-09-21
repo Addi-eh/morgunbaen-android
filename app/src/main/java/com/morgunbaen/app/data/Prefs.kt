@@ -114,31 +114,37 @@ class Prefs(context: Context) {
         set(value) = sp.edit().putString(KEY_NEWS_ID, value).apply()
 
     /**
-     * Mismunandi tími eftir dögum.
+     * Eigin tími einstakra daga.
      *
      * Morgunbænin er flutt alla daga. Þetta er hrein tímastilling: sofa
      * lengur á laugardögum, fara fyrr á fætur á föstudögum — og fá samt
-     * bæn ÞESS dags. Leysti af hólmi „Annar tími um helgar" (v0.96).
+     * bæn ÞESS dags. Leysti af hólmi „Annar tími um helgar" (v0.96), og
+     * rofinn sem kveikti á því var lagður niður í v0.972 — sjá
+     * migrateRetiredPerDaySwitch().
      */
-    var perDayEnabled: Boolean
-        get() = sp.getBoolean(KEY_PER_DAY_ENABLED, false)
-        set(value) = sp.edit().putBoolean(KEY_PER_DAY_ENABLED, value).apply()
-
     /**
-     * Eigin tími einstakra daga, í mínútum frá miðnætti.
-     * Dagur sem vantar hér notar alarmHour:alarmMinute.
-     * Vistað sem "1=540,7=540" — StringSet tapar engu en er óraðað og
-     * erfiðara að lesa í adb.
+     * Mínútur frá miðnætti fyrir daga með eigin tíma. Dagur sem vantar hér
+     * notar alarmHour:alarmMinute. Vistað sem "1=540,7=540" — StringSet
+     * tapar engu en er óraðað og erfiðara að lesa í adb.
      */
     var dayTimes: Map<Int, Int>
         get() = parseDayTimes(sp.getString(KEY_DAY_TIMES, null))
+        // KEY_PER_DAY_ENABLED fylgir kortinu. Rofinn sem hann stýrði var
+        // lagður niður í v0.972 — dagarnir eru nú stilltir beint í dálkunum
+        // og tómt kort þýðir „sami tími alla daga". Lykillinn er skrifaður
+        // áfram, jafnaður við kortið, svo hann geti ekki sagt ósatt.
         set(value) = sp.edit()
             .putString(KEY_DAY_TIMES, value.entries.joinToString(",") { "${it.key}=${it.value}" })
+            .putBoolean(KEY_PER_DAY_ENABLED, value.isNotEmpty())
             .apply()
 
-    /** Kortið sem TriggerTimes á að nota: tómt ef rofinn er af. */
+    /**
+     * Kortið sem TriggerTimes á að nota. Áður var það tómt þegar rofinn var
+     * af; nú er kortið sjálft sannleikurinn — sjá migrateRetiredPerDaySwitch,
+     * sem hreinsaði falda tíma ÁÐUR en þeir gátu orðið virkir.
+     */
     val activeDayTimes: Map<Int, Int>
-        get() = if (perDayEnabled) dayTimes else emptyMap()
+        get() = dayTimes
 
     /**
      * Færir „Annar tími um helgar" (til og með v0.952) yfir í tíma fyrir
@@ -158,6 +164,35 @@ class Prefs(context: Context) {
             .putBoolean(KEY_PER_DAY_MIGRATED, true)
             // commit: vekjarinn les þetta strax á eftir í sama ferli,
             // og tapist skrifin fer helgartíminn forgörðum.
+            .commit()
+    }
+
+    /**
+     * Rofinn „Mismunandi tími eftir dögum" var lagður niður í v0.972.
+     * Hann FALDI tíma dagsins, eyddi honum ekki: sá sem stillti laugardag
+     * 09:30 og slökkti svo á rofanum á 07:00 á laugardag. Yrði kortið
+     * virkt án hreinsunar myndi vekjarinn færast — þegjandi.
+     *
+     * Þetta er ekki fræðilegt: migrateWeekendTime() skrifar bæði kortið OG
+     * kveikir á rofanum, svo hver sem slökkti á honum eftir þá færslu á enn
+     * laugardag og sunnudag í kortinu.
+     *
+     * Keyrir einu sinni, á eftir migrateWeekendTime() og á undan
+     * AlarmScheduler.schedule().
+     */
+    fun migrateRetiredPerDaySwitch() {
+        if (sp.getBoolean(KEY_DAY_TIMES_SWITCH_REMOVED, false)) return
+
+        val kept = retiredPerDayTimes(
+            enabled = sp.getBoolean(KEY_PER_DAY_ENABLED, false),
+            raw = sp.getString(KEY_DAY_TIMES, null)
+        )
+        sp.edit()
+            .putString(KEY_DAY_TIMES, kept)
+            .putBoolean(KEY_PER_DAY_ENABLED, !kept.isNullOrEmpty())
+            .putBoolean(KEY_DAY_TIMES_SWITCH_REMOVED, true)
+            // commit af somu astaedu og i migrateWeekendTime: vekjarinn
+            // les tetta strax a eftir i sama ferli.
             .commit()
     }
 
@@ -331,6 +366,7 @@ class Prefs(context: Context) {
         private const val KEY_WAKE_MODE = "wake_mode"
         private const val KEY_AFTER_WAKE = "after_wake"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_DAY_TIMES_SWITCH_REMOVED = "day_times_switch_removed"
 
         const val WAKE_PRAYER = "prayer"
         const val WAKE_SOUND = "sound"
@@ -349,6 +385,32 @@ class Prefs(context: Context) {
 
         // Manudagur (2) til fostudags (6) - venja, ekki takmorkun
         private val DEFAULT_DAYS = setOf("2", "3", "4", "5", "6")
+
+        /**
+         * Hvað verður eftir af tímakortinu þegar rofinn er lagður niður.
+         * Slökktur rofi þýddi „þessir tímar gilda ekki", svo þeir mega
+         * ekki lifa af breytinguna. Hreint fall svo það sé prófanlegt án
+         * Context — sama mynstur og parseDayTimes.
+         */
+        internal fun retiredPerDayTimes(enabled: Boolean, raw: String?): String? =
+            if (enabled) raw else null
+
+        /**
+         * Kortið eftir að notandinn valdi tíma fyrir einn dag.
+         *
+         * Jafngildi sjálfgefna tímans EYÐIR lyklinum í stað þess að skrá
+         * hann. Þá þarf engan „Sjálfgefið"-hnapp: dagurinn verður daufur
+         * aftur um leið og hann er stilltur á sömu tölu og hinir. Dagur
+         * sem fylgir sjálfgefnu fylgir því líka þegar því er breytt síðar.
+         */
+        internal fun applyPickedTime(
+            defaultMinutes: Int,
+            dayTimes: Map<Int, Int>,
+            day: Int,
+            pickedMinutes: Int
+        ): Map<Int, Int> =
+            if (pickedMinutes == defaultMinutes) dayTimes - day
+            else dayTimes + (day to pickedMinutes)
 
         /** Ógild færsla er hunsuð frekar en að fella vekjarann. */
         internal fun parseDayTimes(raw: String?): Map<Int, Int> =
