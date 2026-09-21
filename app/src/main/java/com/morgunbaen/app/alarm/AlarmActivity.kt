@@ -59,6 +59,27 @@ import java.util.Locale
  */
 class AlarmActivity : ComponentActivity() {
 
+    // AlarmService reynir ad koma skjanum aftur upp medan hann sest ekki.
+    // Sja AlarmService.scheduleScreenRetries().
+    override fun onResume() {
+        super.onResume()
+        AlarmService.screenVisible.value = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Ytt a Slokkva eda Blunda: skjarinn lokar ser (onPause) ADUR en
+        // tjonustan faer skipunina. Segdi hann sig osynilegan tarna gaeti
+        // endurtilraun lent a milli og opnad skjainn aftur eftir ad
+        // notandinn slokkti. Stodvunin sjalf hreinsar tilraunirnar.
+        if (!isFinishing) AlarmService.screenVisible.value = false
+    }
+
+    override fun onDestroy() {
+        AlarmService.screenVisible.value = false
+        super.onDestroy()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

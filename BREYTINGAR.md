@@ -3,6 +3,15 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.974
+
+- **Vekjaraskjárinn gleymist ekki lengur á bak við annan vekjara.** Hringdu
+  Morgunbæn og annað vekjaraforrit á sömu sekúndu gat hitt lagst ofan á
+  skjáinn okkar — og þá kom hann aldrei aftur. Bænin spilaði og ekkert var
+  hægt að gera nema drepa appið. Nú athugar Morgunbæn hvort skjárinn sést, og
+  reynir að koma honum upp aftur nokkrum sinnum fyrstu fjörutíu sekúndurnar —
+  líka eftir að hinn vekjarinn hefur verið afgreiddur.
+
 ## v0.973
 
 - **Virku dagarnir eru komnir á sömu línu.** Föstudagurinn lenti með helginni

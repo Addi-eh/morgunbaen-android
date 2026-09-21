@@ -44,8 +44,8 @@ android {
         // i sundur: v0.92 var gefid ut med versionCode 1 og versionName
         // "1.0", sem sagdi hvorugt satt. Tridji aukastafurinn gefur plass
         // fyrir margar utgafur enn adur en komid er ad 1.0.
-        versionCode = 973
-        versionName = "0.973"
+        versionCode = 974
+        versionName = "0.974"
 
         // Styrktarsidan er EKKI i appinu: kennitala og reikningsnumer
         // i APK-i eda git-sogu verda ekki tekin til baka. Appid geymir

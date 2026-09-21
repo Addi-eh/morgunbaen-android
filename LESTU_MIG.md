@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.973**.
+Staða: **v0.974**.
 
 ---
 
@@ -244,9 +244,56 @@ ekki fastir kostir. Að halda hnappnum inni telur áfram eftir 400 ms; smellurin
 sem kemur við að sleppa er þá hunsaður, svo talan hoppi ekki um eitt umfram það.
 
 **Full-screen intent.** Frá Android 14 er heimildin ekki sjálfvirk og
-hliðarhlaðin APK fær hana ekki. Appið varar við og býður þrjár varaleiðir:
-bein ræsing skjásins, tilkynning með Slökkva/Blunda, og ýt á tilkynninguna.
-Í Play Store undir vekjaraflokki fæst heimildin sjálfkrafa.
+hliðarhlaðin APK fær hana ekki. Appið varar við henni efst á forsíðunni. Í
+Play Store undir vekjaraflokki fæst heimildin sjálfkrafa.
+
+**Full-screen intent er eina leiðin sem kemur skjánum upp — staðfest með
+logcat.** Þrjú próf á Galaxy A54 (Android 14, 2026-09-21), Morgunbæn og Sleep
+as Android á sömu mínútu:
+
+- **Bein ræsing** (`launchAlarmScreenDirectly()`) fékk `BAL_BLOCK`, result 102,
+  í öll þrjú skiptin. Staða sem forgrunnsþjónusta veitir **ekkert** leyfi til
+  bakgrunnsræsingar. Kallið stendur samt, því það kostar ekkert og virkar
+  þegar appið er sjálft opið.
+- **Full-screen intent** kom skjánum upp í öll skiptin
+  (`BAL_ALLOW_PENDING_INTENT`, sent af systemui), 0,65–1,54 sek eftir að
+  vekjarinn hringdi.
+- **Sá sem ræsir skjáinn síðast lendir efst.** Sleep as Android fær alltaf leyfi
+  (`BAL_ALLOW_SAW_PERMISSION` — það hefur „Birta yfir öðrum forritum").
+  Tvisvar kom það á undan okkur og við unnum; einu sinni 28 ms á eftir og við
+  töpuðum.
+- **Tilkynningin er ekki varaleið á One UI.** SystemUI bældi heads-up
+  („no Heads up : edgelighting enabled app") og sýndi Edge Lighting í staðinn,
+  án hnappa. Tilkynningin var í skúffunni allan tímann og rásin á hæsta
+  mikilvægi, en hún fannst ekki þótt skúffan væri opnuð tvisvar.
+- **Tapaður skjár kemur ekki aftur.** Hann er í eigin verkefni og
+  `excludeFromRecents`, svo þegar hinn vekjarinn er afgreiddur fellur síminn á
+  heimaskjáinn. Eina leiðin út var að drepa appið.
+
+**Því reynir `AlarmService` að koma skjánum aftur upp** (v0.974).
+`AlarmActivity` setur `AlarmService.screenVisible` í `onResume` og tekur það
+niður í `onPause` — **ekki** í `onCreate`, því hulinn skjár er búinn til en
+ósýnilegur. Hringi vekjarinn og skjárinn sjáist ekki eftir 2, 5, 10, 20 eða
+40 sek, birtir þjónustan **nýja** tilkynningu (auðkenni 44) með full-screen
+intent. Tvennt virkar ekki og á ekki að reyna aftur: `startActivity` (fær
+`BAL_BLOCK`) og `updateNotification()` á sama auðkenni (uppfærsla ræsir
+skjáinn ekki aftur — það gerist á hverjum morgni án þess).
+
+Þrjú smáatriði sem skipta máli:
+
+- Endurtilkynningin hefur **eigið `requestCode`** (4). `PendingIntent` greinir
+  ekki á milli intent-fána, svo með sama kóða og aðaltilkynningin myndi
+  `FLAG_UPDATE_CURRENT` skila útgáfunni með `CLEAR_TASK`.
+- `onPause` segir skjáinn **ekki** ósýnilegan þegar hann er að loka sér
+  (`isFinishing`). Ýtt á Slökkva lokar skjánum áður en þjónustan fær
+  skipunina, og endurtilraun sem félli þar á milli myndi opna hann aftur.
+- Endurtilraunirnar keyra á **eigin `Handler`** og allar stöðvanir hreinsa þær á
+  einum stað, `cancelScreenRetries()`. `scheduleScreenRetries()` kallar hana
+  ekki, því hún setur `ringing = false`.
+
+Óstaðfest: hvort ný full-screen-tilkynning ræsi skjáinn **ofan á** skjá annars
+forrits meðan síminn er í notkun, eða verði aðeins heads-up. Logcat-línan
+`Vekjaraskjárinn sést ekki eftir …s` segir hvenær tilraun var gerð.
 
 **Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru og
 ber saman við `lastScheduledTriggerMillis` — tímann sem var *raunverulega*

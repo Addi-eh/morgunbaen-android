@@ -64,6 +64,19 @@ class AlarmService : Service() {
      */
     private var listening = false
     private val handler = Handler(Looper.getMainLooper())
+
+    /**
+     * Vekjarinn hringir og notandinn hefur ekki brugdist vid. Adeins ta
+     * a ad reyna ad koma skjanum aftur upp - ekki i hlustun eda spurningu.
+     */
+    private var ringing = false
+
+    /**
+     * Eigin Handler fyrir endurtilraunir skjasins, svo taer taemist ekki med
+     * fade-in-skrefunum og timamorkunum - og oll stodvun hreinsi taer
+     * a einum stad, sja cancelScreenRetries().
+     */
+    private val screenHandler = Handler(Looper.getMainLooper())
     private lateinit var prefs: Prefs
 
     override fun onCreate() {
@@ -104,6 +117,10 @@ class AlarmService : Service() {
         }
 
         stage = Stage.PRAYER
+        ringing = true
+        // Skjarinn er ekki kominn upp enn. Stodvud gildi fra i gaer mega
+        // ekki segja ad hann se tad - ta vaeri endurtilraununum sleppt.
+        screenVisible.value = false
 
         // Halda ordgjafanum vakandi medan spilad er.
         acquireWakeLock()
@@ -112,15 +129,17 @@ class AlarmService : Service() {
         // birtast ofan a laestum skja, eins og venjuleg vekjaraklukka.
         startForeground(NOTIFICATION_ID, buildNotification())
 
-        // Full-screen intent er RETTA leidin til ad birta vekjarann - en fra
-        // Android 14 getur kerfid neitad honum. Tha spilar hljodid an tess ad
-        // nokkur skjar birtist og notandinn hefur enga leid til ad slokkva
-        // nema drepa appid.
-        //
-        // Tess vegna reynum vid lika ad opna skjainn beint. Tetta er
-        // bakgrunnsraesing sem Android getur hafnad, svo hun er varin -
-        // en tegar hun tekst bjargar hun deginum.
+        // Full-screen intent er EINA leidin sem kemur skjanum upp a laestum
+        // sima. Beina raesingin her fyrir nedan fekk BAL_BLOCK (result 102)
+        // i ollum tremur logcat-profunum a Galaxy A54 (2026-09-21): stada
+        // sem forgrunnstjonusta veitir ekkert leyfi til bakgrunnsraesingar.
+        // Hun er latin standa af tvi hun kostar ekkert og VIRKAR tegar
+        // appid er sjalft opid - ta hefur tad synilegan glugga.
         launchAlarmScreenDirectly()
+
+        // Annad vekjaraapp a somu sekundu getur lagst ofan a okkar skja, og
+        // ta kemur hann aldrei aftur af sjalfu ser. Sja scheduleScreenRetries().
+        scheduleScreenRetries()
 
         // Tha sem er ad spila - Spotify, hladvarp - er thaggad medan
         // vekjarinn hringir. An tessa blandast hljodin saman.
@@ -172,6 +191,7 @@ class AlarmService : Service() {
         listening = false
         listeningState.value = false
         handler.removeCallbacksAndMessages(null)
+        cancelScreenRetries()
         vibrator?.cancel()
         vibrator = null
         player?.release()
@@ -196,6 +216,66 @@ class AlarmService : Service() {
             )
         } catch (e: Exception) {
             Log.w(TAG, "Náði ekki að opna vekjaraskjá beint", e)
+        }
+    }
+
+    /**
+     * Skjarinn gaeti verid hulinn: annad vekjaraapp a somu sekundu
+     * raesir sinn eigin skja, og sa sem raesir sig SIDAST lendir efst.
+     * Logcat syndi ad full-screen intent okkar kemur 0,65-1,54 sek eftir
+     * ad vekjarinn hringir, svo tad er ekki i okkar hondum hvor verdur
+     * sidastur. Tapist kapphlaupid kemur skjarinn ekki aftur - hann er
+     * i eigin verkefni og excludeFromRecents, svo tegar hinn vekjarinn er
+     * afgreiddur fellur siminn a heimaskjainn.
+     *
+     * Endurtilraun er NY tilkynning med full-screen intent. Hvorki
+     * startActivity (BAL_BLOCK) ne updateNotification() (uppfaersla a
+     * sama audkenni raesir skjainn ekki aftur - hun gerist a hverjum
+     * morgni an tess) koma skjanum upp.
+     *
+     * Hver tilraun gerir ekkert ef skjarinn sest. Fimm tilraunir, engin
+     * lykkja: tvo forrit sem baedi endurheimta skja i sifellu vaeru flokt,
+     * ekki vekjari.
+     */
+    private fun scheduleScreenRetries() {
+        // Ekki cancelScreenRetries(): hun setur ringing = false, og ta
+        // haettu allar tilraunirnar an tess ad gera nokkud.
+        screenHandler.removeCallbacksAndMessages(null)
+        SCREEN_RETRY_SECONDS.forEach { seconds ->
+            screenHandler.postDelayed({ retryScreen(seconds) }, seconds * 1000L)
+        }
+    }
+
+    private fun retryScreen(seconds: Long) {
+        if (!ringing) return
+        if (screenVisible.value) {
+            // Kominn upp - aukatilkynningin a ekki lengur erindi i skuffuna.
+            cancelRetryNotification()
+            return
+        }
+        Log.i(TAG, "Vekjaraskjárinn sést ekki eftir ${seconds}s — birti full-screen intent aftur")
+        try {
+            val manager = getSystemService(NotificationManager::class.java)
+            // Aflyst og birt a ny, ekki uppfaerd: adeins NY tilkynning
+            // raesir full-screen intent.
+            manager.cancel(RETRY_NOTIFICATION_ID)
+            manager.notify(RETRY_NOTIFICATION_ID, buildNotification(retry = true))
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að birta vekjaraskjá aftur", e)
+        }
+    }
+
+    private fun cancelScreenRetries() {
+        ringing = false
+        screenHandler.removeCallbacksAndMessages(null)
+        cancelRetryNotification()
+    }
+
+    private fun cancelRetryNotification() {
+        try {
+            getSystemService(NotificationManager::class.java).cancel(RETRY_NOTIFICATION_ID)
+        } catch (e: Exception) {
+            Log.w(TAG, "Náði ekki að fjarlægja aukatilkynningu", e)
         }
     }
 
@@ -515,12 +595,24 @@ class AlarmService : Service() {
         }
     }
 
-    private fun buildNotification(contentText: String? = null): Notification {
+    /**
+     * @param retry Endurtilraun ur scheduleScreenRetries(). Ta ma ekki
+     *              hreinsa verkefnid (CLEAR_TASK) - skjarinn er til, bara
+     *              hulinn, og a ad koma aftur eins og hann var. Eigid
+     *              requestCode er naudsynlegt: PendingIntent greinir ekki a
+     *              milli intent-fana, svo med sama koda (0) myndi
+     *              FLAG_UPDATE_CURRENT skila upphaflegu utgafunni.
+     */
+    private fun buildNotification(contentText: String? = null, retry: Boolean = false): Notification {
         val fullScreenIntent = PendingIntent.getActivity(
             this,
-            0,
+            if (retry) RETRY_REQUEST_CODE else 0,
             Intent(this, AlarmActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                flags = if (retry) {
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                } else {
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -760,6 +852,7 @@ class AlarmService : Service() {
         listening = false
         listeningState.value = false
         handler.removeCallbacksAndMessages(null)
+        cancelScreenRetries()
         restoreAlarmVolume()
         abandonAudioFocus()
         vibrator?.cancel()
@@ -791,6 +884,7 @@ class AlarmService : Service() {
     override fun onDestroy() {
         listeningState.value = false
         handler.removeCallbacksAndMessages(null)
+        cancelScreenRetries()
         restoreAlarmVolume()
         abandonAudioFocus()
         vibrator?.cancel()
@@ -829,6 +923,17 @@ class AlarmService : Service() {
         private const val EXTRA_FROM_SCREEN = "from_screen"
 
         private const val LISTEN_LATER_NOTIFICATION_ID = 43
+
+        /** Aukatilkynningin sem reynir ad koma huldum vekjaraskja aftur upp. */
+        private const val RETRY_NOTIFICATION_ID = 44
+        private const val RETRY_REQUEST_CODE = 4
+
+        /**
+         * Hvenaer athugad er hvort skjarinn sjaist. Su fyrsta kemur a eftir
+         * badum raesingunum i logcat-profunum (0,65-1,54 sek); hinar na
+         * skjanum aftur eftir ad hinn vekjarinn hefur verid afgreiddur.
+         */
+        private val SCREEN_RETRY_SECONDS = listOf(2L, 5L, 10L, 20L, 40L)
         private const val LISTEN_LATER_TIMEOUT_MS = 12 * 60 * 60 * 1000L
 
         /**
@@ -837,6 +942,14 @@ class AlarmService : Service() {
          * Sama ferli, svo einfalt StateFlow dugar.
          */
         val listeningState = MutableStateFlow(false)
+
+        /**
+         * Er vekjaraskjarinn synilegur? AlarmActivity setur tetta i onResume
+         * og tekur tad nidur i onPause - EKKI i onCreate, tvi huldur skjar
+         * er buinn til en osynilegur, og ta haettu endurtilraunirnar
+         * einmitt tegar taer attu ad keyra.
+         */
+        val screenVisible = MutableStateFlow(false)
 
         /** Slokkt a vekjarahljodinu a skjanum - baenin fylgir samkvaemt afterWake. */
         fun awake(context: Context) {
