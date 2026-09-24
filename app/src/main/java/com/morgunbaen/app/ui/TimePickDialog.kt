@@ -34,18 +34,29 @@ import com.morgunbaen.app.R
  * adeins synileg EFTIR ad glugganum var lokad - i belgnum a spjaldinu -
  * tott tad se einmitt talan sem akvordunin snyst um.
  *
- * @param sleepPreview Hvad tessi tillaga tydir i svefni. null tegar engin
- *                     naesta hringing er til (slokkt, enginn dagur valinn).
+ * Flisarnar tvaer efst segja HVAD verdur breytt. Adur voru tvaer adskildar
+ * valmyndir - stora klukkan og "Sjalfgefid" - og hvorug sagdi hvad hun aetladi
+ * ad snerta. Ein valmynd sem nefnir tad sjalf leysir tad an tess ad taka
+ * neitt burt.
+ *
+ * @param dayLabel      Dagurinn sem vinstri flisin a vid.
+ * @param showScope     Falsk tegar adeins einn dagur er kveiktur - ta gera
+ *                      flisarnar tvaer nakvaemlega tad sama.
+ * @param sleepPreview  Hvad tillagan tydir i svefni, fyrir valinn hop. null
+ *                      tegar engin naesta hringing er til (slokkt, enginn
+ *                      dagur valinn).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TimePickDialog(
-    title: String,
+    dayLabel: String,
+    showScope: Boolean,
+    initialAllDays: Boolean,
     initialHour: Int,
     initialMinute: Int,
-    sleepPreview: (Int, Int) -> String?,
+    sleepPreview: (Boolean, Int, Int) -> String?,
     onDismiss: () -> Unit,
-    onConfirm: (Int, Int) -> Unit
+    onConfirm: (Boolean, Int, Int) -> Unit
 ) {
     val state = rememberTimePickerState(
         initialHour = initialHour,
@@ -53,11 +64,12 @@ internal fun TimePickDialog(
         is24Hour = true
     )
     var typing by rememberSaveable { mutableStateOf(false) }
+    var allDays by rememberSaveable { mutableStateOf(initialAllDays) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour, state.minute) }) {
+            TextButton(onClick = { onConfirm(allDays, state.hour, state.minute) }) {
                 Text(stringResource(R.string.ok))
             }
         },
@@ -66,7 +78,14 @@ internal fun TimePickDialog(
                 Text(stringResource(R.string.cancel))
             }
         },
-        title = { Text(title) },
+        // Titillinn nefnir daginn tegar flisarnar eru faldar OG eitt dagsval
+        // er i gangi. Seu engir dagar valdir er ekkert dagsnafn ad nefna.
+        title = {
+            Text(
+                if (!showScope && !allDays) dayLabel
+                else stringResource(R.string.pick_time_title)
+            )
+        },
         text = {
             // Skifan er ha. A litlum skja i landslagi kemst hun ekki fyrir
             // an skruns, og tha er glugginn ekki haegt ad stadfesta.
@@ -76,11 +95,23 @@ internal fun TimePickDialog(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                if (showScope) {
+                    ChoiceChips(
+                        options = listOf(
+                            SCOPE_DAY to dayLabel,
+                            SCOPE_ALL to stringResource(R.string.all_days)
+                        ),
+                        selected = if (allDays) SCOPE_ALL else SCOPE_DAY,
+                        onSelect = { allDays = it == SCOPE_ALL }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+
                 if (typing) TimeInput(state = state) else TimePicker(state = state)
 
                 // state.hour/minute eru Compose-stada, svo tetta uppfaerist
                 // medan fingurinn er enn a skifunni.
-                sleepPreview(state.hour, state.minute)?.let { preview ->
+                sleepPreview(allDays, state.hour, state.minute)?.let { preview ->
                     Text(
                         text = preview,
                         style = MaterialTheme.typography.bodyMedium,
@@ -100,3 +131,7 @@ internal fun TimePickDialog(
         }
     )
 }
+
+/** Adeins innri audkenni fyrir ChoiceChips - notandinn ser merkin. */
+private const val SCOPE_DAY = "day"
+private const val SCOPE_ALL = "all"

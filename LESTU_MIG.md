@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.974**.
+Staða: **v0.975**.
 
 ---
 
@@ -93,7 +93,7 @@ ui/AlarmCard.kt             Vekjaratími, dagar, tími hvers dags, sleppa næstu
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
 ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
 ui/DayStrip.kt              Vikan í sjö reitum: stafur kveikir, tíminn undir stillir
-ui/TimePickDialog.kt        Klukkuvalið — Material3, fylgir útliti appsins
+ui/TimePickDialog.kt        Klukkuvalið — ein valmynd, dagur eða allir dagar
 ui/Components.kt            Deildar einingar (SettingRow, MinuteStepper, o.fl.)
 ui/Theme.kt                 Litir, ljóst/dökkt og AppTheme.mode
 HistoryActivity.kt         Fyrri bænir, spilun og deiling
@@ -323,7 +323,7 @@ spurningu sem fólk vaknar með — „hvenær hringir hann næst?" — en ekki 
 stillti sjálfgefna tímann þegar næsti dagur fylgdi honum. Því var hafnað: sá
 sem vill sofa út á laugardag heldur að hann sé að stilla morgundaginn og
 hreyfir um leið alla daga vikunnar. Ýt á stóru töluna sendir því nákvæmlega
-sama atburð og ýt á dálk þess dags. Sjálfgefna línan — „sjálfgefið 07:00" —
+sama atburð og ýt á dálk þess dags. Sjálfgefna línan — „Sjálfgefið 07:00" —
 er eina leiðin að `alarmHour`/`alarmMinute`, og hún stendur alltaf þegar
 stóra talan sýnir eitthvað annað.
 
@@ -346,7 +346,7 @@ fyrri línunni og helgin á þeirri síðari frá 360 dp og upp; á 320 dp skjá
 fellur það sjálfkrafa í 4+3. v0.972 hafði þakið á 4 af því að ég ruglaði
 þessu tvennu saman og þvingaði þar með versta tilfellið upp á öll tæki.
 
-**Penni, ekki undirstrik.** Stóra talan og „sjálfgefið HH:MM" eru báðar
+**Penni, ekki undirstrik.** Stóra talan og „Sjálfgefið HH:MM" eru báðar
 stillanlegar, og merkið um það er `Icons.Outlined.Edit` við hliðina á tölunni
 — 24 dp við þá stóru, 16 dp við þá litlu. Undirstrik var reynt fyrst en las
 sem vefhlekkur undir 45 sp tölu. Allur reiturinn, talan og penninn saman, er
@@ -357,6 +357,18 @@ stilling og má ekki líta út fyrir að vera stillanleg.
 snertifletir hvor ofan á öðrum, og mistök þar slökkva á degi þegar átti að
 stilla hann — sem þýðir að fólk vaknar ekki. Slökktur dagur hefur engan tíma
 að stilla; „—" er skraut og er haldið utan við tab-röðina.
+
+**Ein klukkuvalmynd, ekki tvær** (v0.975). Áður opnuðu stóra talan og
+„Sjálfgefið" sinn hvorn gluggann, og hvorugur sagði hvað hann ætlaði að
+snerta. Nú er ein valmynd með tveimur flísum efst — **dagsnafninu og „Alla
+daga"** — sem segja það sjálfar. Flísarnar eru faldar þegar aðeins einn dagur
+er kveiktur; þá gera þær hvort eð er það sama, og titillinn nefnir daginn.
+
+**„Alla daga" hreinsar eigin tíma daganna.** Hún setur `alarmHour`/`alarmMinute`
+og tæmir `dayTimes`. Það er vísvitandi: flís sem segir „alla daga" en hreyfir
+ekki laugardaginn á 09:30 lýgur. Útkoman sést samstundis í dálkunum fyrir
+neðan, og eitt ýt á laugardaginn færir hann til baka. `sleepPreview` reiknar
+með sama korti, svo talan í glugganum og belgurinn á eftir segja það sama.
 
 **Klukkuglugginn er `ui/TimePickDialog.kt`**, Material3, ekki
 `android.app.TimePickerDialog`. Pallaglugginn las þemað úr stillingu símans
@@ -494,8 +506,10 @@ staðfestingin sem til er á verkefninu.
    `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
 9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su. Ýttu á stóru
    töluna og gættu að því að hún stilli **þann dag** en ekki alla vikuna;
-   ýttu á „sjálfgefið" til að hreyfa hina alla í einu. Stilltu dag á sama
-   tíma og sjálfgefið — hann á að verða daufur aftur. Opnaðu dag sem hringir
+   ýttu á „Sjálfgefið" til að hreyfa hina alla í einu. Stilltu dag á sama
+   tíma og sjálfgefið — hann á að verða daufur aftur. Skiptu yfir á flísina
+   „Alla daga" í valmyndinni og staðfestu — allir dálkar eiga að standa á
+   sömu tölu á eftir, líka sá sem átti eigin tíma. Opnaðu dag sem hringir
    **ekki** næst og snúðu skífunni: talan undir henni á að hreyfast og segja
    „Hringir eftir …"; opnirðu daginn sem hringir næst á hún að segja „Þú færð
    … svefn" og vera sama tala og belgurinn á spjaldinu. Blundaðu og gáðu að

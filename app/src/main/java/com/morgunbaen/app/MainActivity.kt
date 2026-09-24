@@ -400,7 +400,7 @@ private fun MainScreen() {
                 // laugardag að hann væri að stilla morgundaginn — og hreyfði
                 // um leið alla hina dagana sem fylgja sjálfgefnu.
                 onPickNext = { nextDay?.let { picking = Picking.Day(it) } },
-                onPickDefault = { picking = Picking.Default },
+                onPickDefault = { picking = Picking.AllDays },
                 onToggleDay = { day ->
                     days = if (day in days) days - day else days + day
                     persistAndReschedule()
@@ -428,36 +428,46 @@ private fun MainScreen() {
             )
 
             picking?.let { target ->
+                // Vinstri flisin tarf alltaf dag. Opnist valmyndin ur
+                // "Sjalfgefid" er tad dagurinn sem hringir naest.
+                val chipDay = when (target) {
+                    Picking.AllDays -> nextDay ?: days.minOrNull() ?: Calendar.MONDAY
+                    is Picking.Day -> target.day
+                }
                 val current = when (target) {
-                    Picking.Default -> hour * 60 + minute
+                    Picking.AllDays -> hour * 60 + minute
                     is Picking.Day -> dayTimes[target.day] ?: (hour * 60 + minute)
                 }
                 TimePickDialog(
-                    title = when (target) {
-                        Picking.Default -> stringResource(R.string.pick_time_default)
-                        is Picking.Day -> stringResource(WEEK_ORDER.first { it.day == target.day }.name)
-                    },
+                    dayLabel = stringResource(WEEK_ORDER.first { it.day == chipDay }.name),
+                    showScope = days.size > 1,
+                    initialAllDays = target is Picking.AllDays,
                     initialHour = current / 60,
                     initialMinute = current % 60,
-                    sleepPreview = { h, m ->
-                        sleepPreview(context, prefs, enabled, days, hour, minute, dayTimes, target, h, m)
+                    sleepPreview = { allDays, h, m ->
+                        sleepPreview(
+                            context, prefs, enabled, days, hour, minute, dayTimes,
+                            if (allDays) Picking.AllDays else Picking.Day(chipDay), h, m
+                        )
                     },
                     onDismiss = { picking = null },
-                    onConfirm = { h, m ->
-                        when (target) {
-                            Picking.Default -> {
-                                hour = h
-                                minute = m
-                            }
-                            is Picking.Day -> {
-                                dayTimes = Prefs.applyPickedTime(
-                                    defaultMinutes = hour * 60 + minute,
-                                    dayTimes = dayTimes,
-                                    day = target.day,
-                                    pickedMinutes = h * 60 + m
-                                )
-                                prefs.dayTimes = dayTimes
-                            }
+                    onConfirm = { allDays, h, m ->
+                        if (allDays) {
+                            // "Alla daga" verdur ad gera tad sem hun segir:
+                            // eigin timar daganna vikja, annars stodu teir
+                            // eftir og flisin lygi.
+                            hour = h
+                            minute = m
+                            dayTimes = emptyMap()
+                            prefs.dayTimes = dayTimes
+                        } else {
+                            dayTimes = Prefs.applyPickedTime(
+                                defaultMinutes = hour * 60 + minute,
+                                dayTimes = dayTimes,
+                                day = chipDay,
+                                pickedMinutes = h * 60 + m
+                            )
+                            prefs.dayTimes = dayTimes
                         }
                         picking = null
                         persistAndReschedule()
@@ -921,8 +931,8 @@ private fun formatSkipTime(millis: Long): String? {
 
 /** Hvad klukkuglugginn er ad stilla i tetta skiptid. */
 private sealed interface Picking {
-    /** alarmHour/alarmMinute - allir dagar an eigin tima. */
-    object Default : Picking
+    /** Allir dagar i einu: sjalfgefni timinn og eigin timar daganna hreinsadir. */
+    object AllDays : Picking
 
     /** Einn dagur, Calendar.MONDAY .. Calendar.SUNDAY. */
     data class Day(val day: Int) : Picking
@@ -972,10 +982,11 @@ private fun sleepPreview(
 ): String? {
     if (!enabled || days.isEmpty()) return null
 
-    val hour = if (target is Picking.Default) pickedHour else defaultHour
-    val minute = if (target is Picking.Default) pickedMinute else defaultMinute
+    val hour = if (target is Picking.AllDays) pickedHour else defaultHour
+    val minute = if (target is Picking.AllDays) pickedMinute else defaultMinute
     val times = when (target) {
-        Picking.Default -> dayTimes
+        // Samrymist onConfirm: "Alla daga" hreinsar eigin timana.
+        Picking.AllDays -> emptyMap()
         is Picking.Day -> Prefs.applyPickedTime(
             defaultMinutes = defaultHour * 60 + defaultMinute,
             dayTimes = dayTimes,

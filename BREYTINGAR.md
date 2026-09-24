@@ -3,6 +3,15 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.975
+
+- **Ein klukkuvalmynd í stað tveggja.** Stóra talan og „Sjálfgefið“ opnuðu sinn
+  hvorn gluggann og hvorugur sagði hvað hann ætlaði að breyta. Nú er ein
+  valmynd með tveimur flísum efst — deginum sjálfum og „Alla daga“ — svo það
+  standi skýrt hvað þú ert að stilla. „Alla daga“ gerir það sem hún segir:
+  setur tímann á alla daga, líka þá sem áttu sinn eigin.
+- **„Sjálfgefið“ með stórum staf.**
+
 ## v0.974
 
 - **Vekjaraskjárinn gleymist ekki lengur á bak við annan vekjara.** Hringdu
