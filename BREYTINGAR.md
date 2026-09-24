@@ -5,6 +5,21 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
 
 ## v0.976
 
+- **Vekjaraskjárinn gleymist ekki lengur á bak við annan vekjara.** Hringdu
+  Morgunbæn og annað vekjaraforrit á sömu sekúndu gat hitt lagst ofan á
+  skjáinn okkar — og þá kom hann aldrei aftur. Bænin spilaði og ekkert var
+  hægt að gera nema drepa appið. Nú athugar Morgunbæn hvort skjárinn sést og
+  reynir að koma honum upp aftur fyrstu fjörutíu sekúndurnar — líka eftir að
+  hinn vekjarinn hefur verið afgreiddur.
+- **Slökkvitakki inni í appinu sjálfu.** Komist skjárinn samt ekki upp birtist
+  spjald efst á forsíðunni með „Slökkva“ og „Blunda“ meðan hringt er. Það
+  hverfur um leið og slökkt er. Appið sjálft er eina leiðin sem getur ekki
+  brugðist.
+- **Ein klukkuvalmynd í stað tveggja.** Stóra talan og „Sjálfgefið“ opnuðu sinn
+  hvorn gluggann og hvorugur sagði hvað hann ætlaði að breyta. Nú er ein
+  valmynd með tveimur flísum efst — deginum sjálfum og „Alla daga“ — svo það
+  standi skýrt hvað þú ert að stilla. „Alla daga“ gerir það sem hún segir:
+  setur tímann á alla daga, líka þá sem áttu sinn eigin.
 - **Einn dagur, eitt ýt.** Áður voru fjórtán ósýnilega merktir fletir í
   vikustrimlinum — stafurinn kveikti og slökkti, talan opnaði klukkuna — og
   ekkert sagði hvor gerði hvað. Nú opnar dagurinn sína eigin valmynd, þar sem
@@ -15,33 +30,12 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
 - **Rólegri haus.** Vikudagurinn og biðtíminn eru komnir saman í eina línu
   undir klukkunni — „Föstudag · eftir 23 klst 39 mín“ — og gráa hylkið, sem
   deildi línu með stillingu, er farið.
-- **Vikudagar byrja á stórum staf** þar sem þeir standa einir og sér.
+- **Stór stafur** á vikudögum þar sem þeir standa einir og sér, og á
+  „Sjálfgefið“.
 - **Hljóð fékk sitt eigið spjald.** „Vakning“ var átta stillingar í röð.
   Vekjarahljóð, fréttir og varahljóð eru nú undir „Hljóð“.
 - **Blundteljarinn stendur fyrir miðju** í stað þess að teygja sig milli
   skjábrúnanna.
-
-## v0.975
-
-- **Ein klukkuvalmynd í stað tveggja.** Stóra talan og „Sjálfgefið“ opnuðu sinn
-  hvorn gluggann og hvorugur sagði hvað hann ætlaði að breyta. Nú er ein
-  valmynd með tveimur flísum efst — deginum sjálfum og „Alla daga“ — svo það
-  standi skýrt hvað þú ert að stilla. „Alla daga“ gerir það sem hún segir:
-  setur tímann á alla daga, líka þá sem áttu sinn eigin.
-- **Slökkvitakki inni í appinu sjálfu.** Komist vekjaraskjárinn ekki upp — til
-  dæmis af því að annað vekjaraforrit varð á undan — birtist spjald efst á
-  forsíðunni með „Slökkva“ og „Blunda“ meðan hann hringir. Það hverfur um leið
-  og slökkt er. Appið sjálft er eina leiðin sem getur ekki brugðist.
-- **„Sjálfgefið“ með stórum staf.**
-
-## v0.974
-
-- **Vekjaraskjárinn gleymist ekki lengur á bak við annan vekjara.** Hringdu
-  Morgunbæn og annað vekjaraforrit á sömu sekúndu gat hitt lagst ofan á
-  skjáinn okkar — og þá kom hann aldrei aftur. Bænin spilaði og ekkert var
-  hægt að gera nema drepa appið. Nú athugar Morgunbæn hvort skjárinn sést, og
-  reynir að koma honum upp aftur nokkrum sinnum fyrstu fjörutíu sekúndurnar —
-  líka eftir að hinn vekjarinn hefur verið afgreiddur.
 
 ## v0.973
 
