@@ -111,28 +111,26 @@ internal fun TimePickDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                run {
-                    if (typing) TimeInput(state = state) else TimePicker(state = state)
+                if (typing) TimeInput(state = state) else TimePicker(state = state)
 
-                    // state.hour/minute eru Compose-stada, svo tetta uppfaerist
-                    // medan fingurinn er enn a skifunni.
-                    sleepPreview(allDays, state.hour, state.minute)?.let { preview ->
-                        Text(
-                            text = preview,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(4.dp))
-                    }
+                // state.hour/minute eru Compose-stada, svo tetta uppfaerist
+                // medan fingurinn er enn a skifunni.
+                sleepPreview(allDays, state.hour, state.minute)?.let { preview ->
+                    Text(
+                        text = preview,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
 
-                    TextButton(onClick = { typing = !typing }) {
-                        Text(
-                            stringResource(
-                                if (typing) R.string.time_input_dial
-                                else R.string.time_input_keyboard
-                            )
+                TextButton(onClick = { typing = !typing }) {
+                    Text(
+                        stringResource(
+                            if (typing) R.string.time_input_dial
+                            else R.string.time_input_keyboard
                         )
-                    }
+                    )
                 }
             }
         }

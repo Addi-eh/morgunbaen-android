@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.977**.
+Staða: **v0.978**.
 
 ---
 
@@ -394,6 +394,12 @@ eftir sem áður um **alla** fimmtudaga; `today` er reiknaður í
 klukkunni, „Næst:"-línan, dagsetningar í sögunni. Í miðri setningu, eins og í
 sleppitextanum, eru þau smáletruð eins og íslenskan segir til um.
 `Dates.capitalized()` er eini staðurinn sem gerir þetta.
+
+**Flísarnar birtast aðeins úr stóru tölunni** (v0.978). Dálkur dagsins er
+spurning um ÞANN dag; flís sem breytir allri vikunni á ekkert erindi þangað.
+`Picking.Day` ber því `fromClock`, og `showScope` er satt aðeins þegar
+valmyndin var opnuð úr stóru tölunni — eða úr `Picking.AllDays`, sem verður
+til þegar slökkt er og enginn dagur er valinn.
 
 **Ein klukkuvalmynd, ekki tvær** (v0.975). Áður opnuðu stóra talan og
 „Sjálfgefið" sinn hvorn gluggann, og hvorugur sagði hvað hann ætlaði að

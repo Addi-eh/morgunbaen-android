@@ -436,7 +436,7 @@ private fun MainScreen() {
                 // sjálfgefna tímann. Annars héldi sá sem vill sofa út á
                 // laugardag að hann væri að stilla morgundaginn — og hreyfði
                 // um leið alla hina dagana sem fylgja sjálfgefnu.
-                onPickNext = { nextDay?.let { picking = Picking.Day(it) } },
+                onPickNext = { nextDay?.let { picking = Picking.Day(it, fromClock = true) } },
                 onPickDefault = { picking = Picking.AllDays },
                 today = today,
                 onToggleDay = { day ->
@@ -488,7 +488,9 @@ private fun MainScreen() {
                         )
                         else -> chipName
                     },
-                    showScope = days.size > 1,
+                    // "Alla daga" bydst adeins ur storu tolunni.
+                    showScope = days.size > 1 &&
+                        (target is Picking.AllDays || (target as? Picking.Day)?.fromClock == true),
                     initialAllDays = target is Picking.AllDays,
                     initialHour = current / 60,
                     initialMinute = current % 60,
@@ -987,8 +989,14 @@ private sealed interface Picking {
     /** Allir dagar i einu: sjalfgefni timinn og eigin timar daganna hreinsadir. */
     object AllDays : Picking
 
-    /** Einn dagur, Calendar.MONDAY .. Calendar.SUNDAY. */
-    data class Day(val day: Int) : Picking
+    /**
+     * Einn dagur, Calendar.MONDAY .. Calendar.SUNDAY.
+     *
+     * fromClock: opnad ur storu tolunni frekar en ur dalki dagsins. Adeins
+     * ta bjodast "Alla daga". Dalkur dagsins er spurning um TANN dag, og
+     * flis sem breytir allri vikunni a ekkert erindi tangad.
+     */
+    data class Day(val day: Int, val fromClock: Boolean = false) : Picking
 }
 
 /**

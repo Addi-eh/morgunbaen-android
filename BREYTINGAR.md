@@ -3,6 +3,12 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.978
+
+- **„Alla daga“ býðst aðeins úr stóru tölunni.** Ýtirðu á tíma eins dags
+  snýst valmyndin um þann dag og ekkert annað. Flís sem breytir allri vikunni
+  átti ekkert erindi þangað.
+
 ## v0.977
 
 - **Dagavalið er aftur eitt ýt.** Í v0.976 opnaði dagurinn valmynd með rofa —
