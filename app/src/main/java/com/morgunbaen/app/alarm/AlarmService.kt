@@ -66,12 +66,6 @@ class AlarmService : Service() {
     private val handler = Handler(Looper.getMainLooper())
 
     /**
-     * Vekjarinn hringir og notandinn hefur ekki brugdist vid. Adeins ta
-     * a ad reyna ad koma skjanum aftur upp - ekki i hlustun eda spurningu.
-     */
-    private var ringing = false
-
-    /**
      * Eigin Handler fyrir endurtilraunir skjasins, svo taer taemist ekki med
      * fade-in-skrefunum og timamorkunum - og oll stodvun hreinsi taer
      * a einum stad, sja cancelScreenRetries().
@@ -117,7 +111,7 @@ class AlarmService : Service() {
         }
 
         stage = Stage.PRAYER
-        ringing = true
+        ringingState.value = true
         // Skjarinn er ekki kominn upp enn. Stodvud gildi fra i gaer mega
         // ekki segja ad hann se tad - ta vaeri endurtilraununum sleppt.
         screenVisible.value = false
@@ -247,7 +241,7 @@ class AlarmService : Service() {
     }
 
     private fun retryScreen(seconds: Long) {
-        if (!ringing) return
+        if (!ringingState.value) return
         if (screenVisible.value) {
             // Kominn upp - aukatilkynningin a ekki lengur erindi i skuffuna.
             cancelRetryNotification()
@@ -266,7 +260,7 @@ class AlarmService : Service() {
     }
 
     private fun cancelScreenRetries() {
-        ringing = false
+        ringingState.value = false
         screenHandler.removeCallbacksAndMessages(null)
         cancelRetryNotification()
     }
@@ -951,6 +945,13 @@ class AlarmService : Service() {
          */
         val screenVisible = MutableStateFlow(false)
 
+        /**
+         * Hringir vekjarinn NUNA og notandinn hefur ekki brugdist vid?
+         * Adeins ta a ad reyna ad koma skjanum aftur upp - ekki i hlustun
+         * eda spurningu - og adeins ta synir forsidan slokkvitakkann.
+         */
+        val ringingState = MutableStateFlow(false)
+
         /** Slokkt a vekjarahljodinu a skjanum - baenin fylgir samkvaemt afterWake. */
         fun awake(context: Context) {
             context.startService(
@@ -965,6 +966,24 @@ class AlarmService : Service() {
         fun listen(context: Context) {
             context.startForegroundService(
                 Intent(context, AlarmService::class.java).apply { action = ACTION_LISTEN }
+            )
+        }
+
+        /**
+         * Slokkt ur appinu sjalfu. Sama val og Slokkva-takkinn a
+         * tilkynningunni: i "vekjarahljod, svo baen" tydir tad "eg er
+         * vaknadur" og baenin fylgir samkvaemt afterWake.
+         *
+         * fromScreen = false: engin spurning er a skjanum her, svo
+         * "Spyrja mig" verdur ad skila tilkynningu i stadinn.
+         */
+        fun dismissFromApp(context: Context) {
+            val action = if (Prefs(context).wakeWithSound) ACTION_AWAKE else ACTION_DISMISS
+            context.startService(
+                Intent(context, AlarmService::class.java).apply {
+                    this.action = action
+                    putExtra(EXTRA_FROM_SCREEN, false)
+                }
             )
         }
 

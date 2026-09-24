@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +48,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.morgunbaen.app.alarm.AlarmScheduler
+import com.morgunbaen.app.alarm.AlarmService
 import com.morgunbaen.app.alarm.TriggerTimes
 import com.morgunbaen.app.data.AlarmSoundStore
 import com.morgunbaen.app.data.Dates
@@ -166,6 +168,9 @@ private fun MainScreen() {
 
     // Hvad klukkuglugginn er ad stilla, eda null tegar hann er lokadur.
     var picking by remember { mutableStateOf<Picking?>(null) }
+
+    // Sama ferli, svo StateFlow dugar - eins og listeningState.
+    val ringingNow by AlarmService.ringingState.collectAsState()
 
     // Lettur spilari fyrir "Spila baenina" - hegdar ser eins og venjulegur
     // midill (USAGE_MEDIA + sjalfvirkur hljodfokus), OLIKT vekjaranum.
@@ -374,6 +379,22 @@ private fun MainScreen() {
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+
+            // Hringi vekjarinn en skjarinn hafi ekki komist upp - annad
+            // vekjaraforrit vard a undan - er tetta eina leidin sem getur
+            // ekki brugdist: appid er i forgrunni og ma allt sem tarf.
+            // Synilegt AÐEINS medan hann hringir.
+            if (ringingNow) {
+                InfoCard(
+                    title = stringResource(R.string.ringing_now_title),
+                    text = stringResource(R.string.ringing_now_text),
+                    primaryLabel = stringResource(R.string.dismiss),
+                    onPrimary = { AlarmService.dismissFromApp(context) },
+                    secondaryLabel = stringResource(R.string.snooze),
+                    onSecondary = { AlarmService.snooze(context) }
+                )
+                Spacer(Modifier.height(16.dp))
+            }
 
             AlarmCard(
                 displayHour = displayHour,

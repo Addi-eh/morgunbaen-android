@@ -10,6 +10,10 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
   valmynd með tveimur flísum efst — deginum sjálfum og „Alla daga“ — svo það
   standi skýrt hvað þú ert að stilla. „Alla daga“ gerir það sem hún segir:
   setur tímann á alla daga, líka þá sem áttu sinn eigin.
+- **Slökkvitakki inni í appinu sjálfu.** Komist vekjaraskjárinn ekki upp — til
+  dæmis af því að annað vekjaraforrit varð á undan — birtist spjald efst á
+  forsíðunni með „Slökkva“ og „Blunda“ meðan hann hringir. Það hverfur um leið
+  og slökkt er. Appið sjálft er eina leiðin sem getur ekki brugðist.
 - **„Sjálfgefið“ með stórum staf.**
 
 ## v0.974

@@ -49,6 +49,9 @@
     <string name="pick_time_title">Vekjaratími</string>
     <string name="all_days">Alla daga</string>
 
+    <string name="ringing_now_title">Vekjarinn hringir</string>
+    <string name="ringing_now_text">Birtist vekjaraskjárinn ekki — til dæmis ef annað vekjaraforrit varð á undan — má slökkva eða blunda hér.</string>
+
     <string name="cd_day_on">%1$s, kveikt</string>
     <string name="cd_day_off">%1$s, slökkt</string>
     <string name="cd_day_turn_on">Kveikja á deginum</string>

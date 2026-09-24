@@ -295,6 +295,18 @@ skjáinn ekki aftur — það gerist á hverjum morgni án þess).
 forrits meðan síminn er í notkun, eða verði aðeins heads-up. Logcat-línan
 `Vekjaraskjárinn sést ekki eftir …s` segir hvenær tilraun var gerð.
 
+**Þriðja lagið er appið sjálft.** Í prófinu opnaði notandinn Morgunbæn til að
+slökkva og fann engan hnapp — og drap appið. Nú birtist spjald efst á
+forsíðunni meðan `AlarmService.ringingState` er satt, með „Slökkva" og
+„Blunda". Þetta lag getur ekki brugðist: appið er í forgrunni og má allt sem
+þarf, óháð `BAL` og full-screen-heimildum. Spjaldið sést **aðeins** meðan
+hringt er — ekki í hlustun og ekki í spurningu.
+
+`AlarmService.dismissFromApp()` velur sömu aðgerð og Slökkva-takkinn á
+tilkynningunni (`ACTION_AWAKE` í „vekjarahljóð, svo bæn", annars
+`ACTION_DISMISS`) en sendir `EXTRA_FROM_SCREEN = false`: engin spurning er á
+skjánum, svo „Spyrja mig" verður að skila tilkynningu í staðinn.
+
 **Heilsuvöktun.** Appið skráir í hvert sinn sem vekjarinn hringir í alvöru og
 ber saman við `lastScheduledTriggerMillis` — tímann sem var *raunverulega*
 skráður, ekki endurreiknaðan út frá núverandi stillingum. Sá munur skiptir máli:
