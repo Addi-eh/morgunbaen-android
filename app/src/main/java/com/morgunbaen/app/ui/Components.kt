@@ -79,11 +79,14 @@ internal fun SettingRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(text = label, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Tom lysing tekur annars upp linu undir merkinu.
+            if (description.isNotBlank()) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         Spacer(Modifier.width(12.dp))
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -97,8 +100,12 @@ internal fun SettingRow(
  */
 @Composable
 internal fun MinuteStepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {
+    // Hoparnir trir standa saman fyrir midju. Adur teygdi Row sig yfir
+    // allan skjainn med minus lengst til vinstri og plus lengst til haegri,
+    // og talan svifandi i midjunni - tad las sem trju stjorntaeki, ekki eitt.
     Row(
         modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         StepButton(
@@ -107,11 +114,12 @@ internal fun MinuteStepper(value: Int, range: IntRange, onChange: (Int) -> Unit)
             enabled = value > range.first,
             onStep = { onChange((value - 1).coerceAtLeast(range.first)) }
         )
+        // Fost breidd svo talan hoppi ekki til tegar hun fer ur 9 i 10.
         Text(
             text = stringResource(R.string.snooze_value, value),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.width(80.dp)
         )
         StepButton(
             icon = Icons.Outlined.Add,

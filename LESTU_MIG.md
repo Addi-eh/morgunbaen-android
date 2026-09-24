@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.975**.
+Staða: **v0.976**.
 
 ---
 
@@ -91,7 +91,8 @@ MainActivity.kt            Samhæfingarlag: state og hliðarverk fyrir spjöldin
 OemBatteryGuide.kt         „Remove permissions if app is unused"
 ui/AlarmCard.kt             Vekjaratími, dagar, tími hvers dags, sleppa næstu, prófun
 ui/PrayerCard.kt            Staða bænarinnar, sókn, spilun, saga, deiling
-ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, fréttir, vekjarahljóð, blundur
+ui/WakeSettingsCard.kt      Vakna við, fade-in, titringur, blundur
+ui/SoundCard.kt             Vekjarahljóð, fréttir, varahljóð
 ui/DayStrip.kt              Vikan í sjö reitum: stafur kveikir, tíminn undir stillir
 ui/TimePickDialog.kt        Klukkuvalið — ein valmynd, dagur eða allir dagar
 ui/Components.kt            Deildar einingar (SettingRow, MinuteStepper, o.fl.)
@@ -365,10 +366,17 @@ sem vefhlekkur undir 45 sp tölu. Allur reiturinn, talan og penninn saman, er
 einn snertiflötur. Í `SNOOZE` er enginn penni: þá er talan frétt en ekki
 stilling og má ekki líta út fyrir að vera stillanleg.
 
-**Hvor snertiflötur er 48 dp.** Stafurinn og tíminn eru tveir aðskildir
-snertifletir hvor ofan á öðrum, og mistök þar slökkva á degi þegar átti að
-stilla hann — sem þýðir að fólk vaknar ekki. Slökktur dagur hefur engan tíma
-að stilla; „—" er skraut og er haldið utan við tab-röðina.
+**Hver dagur er EINN snertiflötur** (v0.976). Áður voru þeir tveir — stafurinn
+kveikti og slökkti, tíminn opnaði klukkuna — fjórtán fletir og ekkert sem
+sagði hvor gerði hvað. Mistök þar slökktu á degi þegar átti að stilla hann,
+sem þýðir að fólk vaknar ekki. Nú opnar reiturinn valmynd dagsins, og rofinn
+þar heitir sínu nafni: „Hringja á föstudögum". Slökktur dagur sýnir „—" og
+valmyndin hans stendur þá aðeins af rofanum — það er ekkert að stilla.
+
+**Vikudagsnöfn byrja á hástaf þar sem þau standa ein og sér** — merkið undir
+klukkunni, „Næst:"-línan, dagsetningar í sögunni. Í miðri setningu, eins og í
+sleppitextanum, eru þau smáletruð eins og íslenskan segir til um.
+`Dates.capitalized()` er eini staðurinn sem gerir þetta.
 
 **Ein klukkuvalmynd, ekki tvær** (v0.975). Áður opnuðu stóra talan og
 „Sjálfgefið" sinn hvorn gluggann, og hvorugur sagði hvað hann ætlaði að
@@ -516,12 +524,12 @@ staðfestingin sem til er á verkefninu.
 8. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
    appinu (heim-takkinn) — hljóðið á að þagna. Kom það ekki, er
    `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
-9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su. Ýttu á stóru
-   töluna og gættu að því að hún stilli **þann dag** en ekki alla vikuna;
-   ýttu á „Sjálfgefið" til að hreyfa hina alla í einu. Stilltu dag á sama
-   tíma og sjálfgefið — hann á að verða daufur aftur. Skiptu yfir á flísina
-   „Alla daga" í valmyndinni og staðfestu — allir dálkar eiga að standa á
-   sömu tölu á eftir, líka sá sem átti eigin tíma. Opnaðu dag sem hringir
+9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su. Ýttu á dag —
+   hvar sem er á reitnum — og valmyndin á að opnast með nafni hans og rofa.
+   Slökktu á degi þar og gættu að því að hann sýni „—". Ýttu á stóru töluna
+   og gættu að því að hún stilli **þann dag** en ekki alla vikuna. Skiptu yfir
+   á flísina „Alla daga" og staðfestu — allir dálkar eiga að standa á sömu
+   tölu á eftir, líka sá sem átti eigin tíma. Opnaðu dag sem hringir
    **ekki** næst og snúðu skífunni: talan undir henni á að hreyfast og segja
    „Hringir eftir …"; opnirðu daginn sem hringir næst á hún að segja „Þú færð
    … svefn" og vera sama tala og belgurinn á spjaldinu. Blundaðu og gáðu að

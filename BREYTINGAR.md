@@ -3,6 +3,24 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.976
+
+- **Einn dagur, eitt ýt.** Áður voru fjórtán ósýnilega merktir fletir í
+  vikustrimlinum — stafurinn kveikti og slökkti, talan opnaði klukkuna — og
+  ekkert sagði hvor gerði hvað. Nú opnar dagurinn sína eigin valmynd, þar sem
+  rofinn heitir „Hringja á föstudögum“ og klukkan stendur undir honum.
+- **Dagurinn og tíminn hans hanga saman.** Tíminn var sjónrænt nær næstu röð
+  en sínum eigin degi, svo strimillinn las eins og tvær aðskildar raðir af
+  tölum.
+- **Rólegri haus.** Vikudagurinn og biðtíminn eru komnir saman í eina línu
+  undir klukkunni — „Föstudag · eftir 23 klst 39 mín“ — og gráa hylkið, sem
+  deildi línu með stillingu, er farið.
+- **Vikudagar byrja á stórum staf** þar sem þeir standa einir og sér.
+- **Hljóð fékk sitt eigið spjald.** „Vakning“ var átta stillingar í röð.
+  Vekjarahljóð, fréttir og varahljóð eru nú undir „Hljóð“.
+- **Blundteljarinn stendur fyrir miðju** í stað þess að teygja sig milli
+  skjábrúnanna.
+
 ## v0.975
 
 - **Ein klukkuvalmynd í stað tveggja.** Stóra talan og „Sjálfgefið“ opnuðu sinn

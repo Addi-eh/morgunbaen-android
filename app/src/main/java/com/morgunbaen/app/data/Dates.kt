@@ -44,11 +44,19 @@ object Dates {
         datePart(firstrun)
     }
 
-    /** "2026-08-13T06:55:00" -> "fimmtudagur 13. ágúst". */
+    /**
+     * Hastafur a fyrsta staf. Islensk vikudagsnofn eru smaletrud i setningu
+     * ("a fostudag"), en tegar tau standa EIN og ser - sem merki undir
+     * klukkunni eda dagsetning i lista - byrja tau a hastaf.
+     */
+    fun capitalized(text: String): String =
+        text.replaceFirstChar { it.titlecase(icelandic) }
+
+    /** "2026-08-13T06:55:00" -> "Fimmtudagur 13. ágúst". */
     fun formatWithWeekday(firstrun: String): String = try {
         val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             .parse(datePart(firstrun))!!
-        SimpleDateFormat("EEEE d. MMMM", icelandic).format(parsed)
+        capitalized(SimpleDateFormat("EEEE d. MMMM", icelandic).format(parsed))
     } catch (e: Exception) {
         datePart(firstrun)
     }

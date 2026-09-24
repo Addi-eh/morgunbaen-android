@@ -63,6 +63,7 @@ import com.morgunbaen.app.ui.ClockMode
 import com.morgunbaen.app.ui.InfoCard
 import com.morgunbaen.app.ui.MorgunbaenTheme
 import com.morgunbaen.app.ui.PrayerCard
+import com.morgunbaen.app.ui.SoundCard
 import com.morgunbaen.app.ui.TimePickDialog
 import com.morgunbaen.app.ui.WEEK_ORDER
 import com.morgunbaen.app.ui.WakeSettingsCard
@@ -396,18 +397,30 @@ private fun MainScreen() {
                 Spacer(Modifier.height(16.dp))
             }
 
+            // Ein lina undir storu tolunni: dagurinn og bidtiminn saman.
+            // Vikudagurinn einn tegar ekkert er ad telja nidur, bidtiminn
+            // einn i blundi - tar a enginn vikudagur vid.
+            val day = nextDay
+            val left = countdownText
+            val statusLine = when {
+                day != null && left != null && enabled ->
+                    stringResource(R.string.next_line, stringResource(nextDayName(day)), left)
+                day != null -> stringResource(nextDayName(day))
+                enabled && left != null -> stringResource(R.string.countdown_only, left)
+                else -> null
+            }
+
             AlarmCard(
                 displayHour = displayHour,
                 displayMinute = displayMinute,
                 clockMode = clockMode,
-                nextDayLabel = nextDay?.let { stringResource(nextDayName(it)) },
+                statusLine = statusLine,
                 defaultHour = hour,
                 defaultMinute = minute,
                 enabled = enabled,
                 days = days,
                 dayTimes = dayTimes,
                 nextAlarmText = nextAlarmText,
-                countdownText = countdownText,
                 skipActive = skipActive,
                 skippedWhenText = skippedWhenText,
                 testArmed = testArmed,
@@ -422,11 +435,7 @@ private fun MainScreen() {
                 // um leið alla hina dagana sem fylgja sjálfgefnu.
                 onPickNext = { nextDay?.let { picking = Picking.Day(it) } },
                 onPickDefault = { picking = Picking.AllDays },
-                onToggleDay = { day ->
-                    days = if (day in days) days - day else days + day
-                    persistAndReschedule()
-                },
-                onPickDayTime = { picking = Picking.Day(it) },
+                onOpenDay = { picking = Picking.Day(it) },
                 onSkipNext = {
                     val toSkip = TriggerTimes.next(
                         days = days,
@@ -461,6 +470,8 @@ private fun MainScreen() {
                 }
                 TimePickDialog(
                     dayLabel = stringResource(WEEK_ORDER.first { it.day == chipDay }.name),
+                    dayPlural = stringResource(dayPluralName(chipDay)),
+                    dayEnabled = chipDay in days,
                     showScope = days.size > 1,
                     initialAllDays = target is Picking.AllDays,
                     initialHour = current / 60,
@@ -472,7 +483,7 @@ private fun MainScreen() {
                         )
                     },
                     onDismiss = { picking = null },
-                    onConfirm = { allDays, h, m ->
+                    onConfirm = { allDays, ringing, h, m ->
                         if (allDays) {
                             // "Alla daga" verdur ad gera tad sem hun segir:
                             // eigin timar daganna vikja, annars stodu teir
@@ -489,6 +500,9 @@ private fun MainScreen() {
                                 pickedMinutes = h * 60 + m
                             )
                             prefs.dayTimes = dayTimes
+                            // Rofinn i valmyndinni leysti stafinn i
+                            // strimlinum af holmi.
+                            days = if (ringing) days + chipDay else days - chipDay
                         }
                         picking = null
                         persistAndReschedule()
@@ -587,19 +601,6 @@ private fun MainScreen() {
                 fadeIn = fadeIn,
                 fadeSeconds = fadeSeconds,
                 vibrate = vibrate,
-                newsEnabled = newsEnabled,
-                newsDescription = newsDescription(
-                    newsEnabled = newsEnabled,
-                    newsSyncing = newsSyncing,
-                    newsAttempted = newsAttempted,
-                    newsFirstrun = newsFirstrun,
-                    alarmHour = hour,
-                    dayTimes = dayTimes,
-                    days = days
-                ),
-                fallbackRas1 = fallbackRas1,
-                alarmSoundTitle = alarmSoundTitle,
-                soundImporting = soundImporting,
                 snoozeMinutes = snoozeMinutes,
                 onWakeModeChange = {
                     wakeMode = it
@@ -620,6 +621,47 @@ private fun MainScreen() {
                 onVibrateChange = {
                     vibrate = it
                     prefs.vibrateEnabled = it
+                },
+                onSnoozeChange = {
+                    snoozeMinutes = it
+                    prefs.snoozeMinutes = it
+                }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            SoundCard(
+                newsEnabled = newsEnabled,
+                newsDescription = newsDescription(
+                    newsEnabled = newsEnabled,
+                    newsSyncing = newsSyncing,
+                    newsAttempted = newsAttempted,
+                    newsFirstrun = newsFirstrun,
+                    alarmHour = hour,
+                    dayTimes = dayTimes,
+                    days = days
+                ),
+                fallbackRas1 = fallbackRas1,
+                alarmSoundTitle = alarmSoundTitle,
+                soundImporting = soundImporting,
+                onNewsChange = {
+                    newsEnabled = it
+                    prefs.newsEnabled = it
+                    CatchUpScheduler.schedule(context)
+
+                    // Saekja strax tegar kveikt er - annars bidur notandinn
+                    // i allt ad sex klst eftir ad sja hvort tetta virki.
+                    if (it) {
+                        newsSyncing = true
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                EpisodeRepository(context).syncNews()
+                            }
+                            newsSyncing = false
+                            newsAttempted = true
+                            newsFirstrun = prefs.newsFirstrun
+                        }
+                    }
                 },
                 onFallbackRas1Change = {
                     fallbackRas1 = it
@@ -642,29 +684,6 @@ private fun MainScreen() {
                 onResetSound = {
                     AlarmSoundStore(context).clear()
                     alarmSoundTitle = null
-                },
-                onNewsChange = {
-                    newsEnabled = it
-                    prefs.newsEnabled = it
-                    CatchUpScheduler.schedule(context)
-
-                    // Saekja strax tegar kveikt er - annars bidur notandinn
-                    // i allt ad sex klst eftir ad sja hvort tetta virki.
-                    if (it) {
-                        newsSyncing = true
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                EpisodeRepository(context).syncNews()
-                            }
-                            newsSyncing = false
-                            newsAttempted = true
-                            newsFirstrun = prefs.newsFirstrun
-                        }
-                    }
-                },
-                onSnoozeChange = {
-                    snoozeMinutes = it
-                    prefs.snoozeMinutes = it
                 }
             )
 
@@ -959,8 +978,19 @@ private sealed interface Picking {
     data class Day(val day: Int) : Picking
 }
 
+/** "a laugardogum" - merking rofans i klukkuvalmyndinni. */
+private fun dayPluralName(dayOfWeek: Int): Int = when (dayOfWeek) {
+    Calendar.MONDAY -> R.string.day_monday_plural
+    Calendar.TUESDAY -> R.string.day_tuesday_plural
+    Calendar.WEDNESDAY -> R.string.day_wednesday_plural
+    Calendar.THURSDAY -> R.string.day_thursday_plural
+    Calendar.FRIDAY -> R.string.day_friday_plural
+    Calendar.SATURDAY -> R.string.day_saturday_plural
+    else -> R.string.day_sunday_plural
+}
+
 /**
- * Nafn dagsins eins og tad stendur undir storu tolunni: "laugardag".
+ * Nafn dagsins eins og tad stendur undir storu tolunni: "Laugardag".
  * Tolfall, ekki nefnifall - "Naesta hringing laugardagur" er ekki islenska.
  */
 private fun nextDayName(dayOfWeek: Int): Int = when (dayOfWeek) {
@@ -1108,7 +1138,13 @@ private fun nextAlarmDescription(context: Context, prefs: Prefs): String {
         return context.getString(R.string.snoozing_until, format.format(Date(target)))
     }
     val format = SimpleDateFormat("EEEE d. MMMM 'kl.' HH:mm", Locale("is", "IS"))
-    return context.getString(R.string.next_alarm, format.format(Date(target)))
+    // Hastafur: dagurinn stendur her sem merki a eftir "Naest:", ekki inni
+    // i setningu. Sleppitextinn ad nedan er annad mal - tar er hann i
+    // midri setningu og a ad vera smaletradur.
+    return context.getString(
+        R.string.next_alarm,
+        Dates.capitalized(format.format(Date(target)))
+    )
 }
 
 private fun openExactAlarmSettings(context: Context) {

@@ -54,14 +54,13 @@ internal fun AlarmCard(
     displayHour: Int,
     displayMinute: Int,
     clockMode: ClockMode,
-    nextDayLabel: String?,
+    statusLine: String?,
     defaultHour: Int,
     defaultMinute: Int,
     enabled: Boolean,
     days: Set<Int>,
     dayTimes: Map<Int, Int>,
     nextAlarmText: String,
-    countdownText: String?,
     skipActive: Boolean,
     skippedWhenText: String?,
     testArmed: Boolean,
@@ -69,8 +68,7 @@ internal fun AlarmCard(
     onEnabledChange: (Boolean) -> Unit,
     onPickNext: () -> Unit,
     onPickDefault: () -> Unit,
-    onToggleDay: (Int) -> Unit,
-    onPickDayTime: (Int) -> Unit,
+    onOpenDay: (Int) -> Unit,
     onSkipNext: () -> Unit,
     onUndoSkip: () -> Unit,
     onTest: () -> Unit
@@ -89,7 +87,7 @@ internal fun AlarmCard(
                     hour = displayHour,
                     minute = displayMinute,
                     mode = clockMode,
-                    nextDayLabel = nextDayLabel,
+                    statusLine = statusLine,
                     onClick = when (clockMode) {
                         ClockMode.NEXT_RING -> onPickNext
                         ClockMode.DEFAULT -> onPickDefault
@@ -99,9 +97,12 @@ internal fun AlarmCard(
                 Switch(checked = enabled, onCheckedChange = onEnabledChange)
             }
 
-            if (nextDayLabel != null) {
+            // Ein lina undir klukkunni: hvada dag hun a vid og hve lengi ma
+            // enn sofa. Adur var vikudagurinn her og bidtiminn i grau hylki
+            // vid hlidina a stillingunni fyrir nedan - tvennt olikt a sama stad.
+            if (statusLine != null) {
                 Text(
-                    text = nextDayLabel,
+                    text = statusLine,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     // Lysing storu tolunnar nefnir daginn tegar. An tessa
@@ -119,28 +120,17 @@ internal fun AlarmCard(
             // hlidina a storu tolunni: a 320 dp skja tekur "9 klst 30 min"
             // svo mikid plass ad klukkan sjalf kemst ekki fyrir.
             if (clockMode != ClockMode.DEFAULT) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    DefaultTimeLine(
-                        hour = defaultHour,
-                        minute = defaultMinute,
-                        onClick = onPickDefault
-                    )
-                    // Teljarinn svarar teirri spurningu sem klukkan sjalf
-                    // svarar ekki: hve lengi ma eg enn sofa?
-                    if (enabled && countdownText != null) {
-                        CountdownPill(text = countdownText)
-                    }
-                }
+                DefaultTimeLine(
+                    hour = defaultHour,
+                    minute = defaultMinute,
+                    onClick = onPickDefault
+                )
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Vikan: stafur kveikir eda slekkur, talan undir stillir tann
-            // dag. Morgunbaenin er DAGLEG - lika um helgar - svo tetta er
+            // Vikan. Hver reitur opnar valmynd dagsins - rofa og klukku.
+            // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er
             // hrein timastilling: sofa lengur, eda fara fyrr a faetur, an
             // tess ad missa af baen tess dags.
             DayStrip(
@@ -148,8 +138,7 @@ internal fun AlarmCard(
                 dayTimes = dayTimes,
                 defaultHour = defaultHour,
                 defaultMinute = defaultMinute,
-                onToggleDay = onToggleDay,
-                onPickDayTime = onPickDayTime
+                onOpenDay = onOpenDay
             )
 
             if (enabled) {
@@ -207,13 +196,13 @@ private fun BigClock(
     hour: Int,
     minute: Int,
     mode: ClockMode,
-    nextDayLabel: String?,
+    statusLine: String?,
     onClick: (() -> Unit)?
 ) {
     val label = clock(hour, minute)
     val description = when (mode) {
         ClockMode.NEXT_RING ->
-            stringResource(R.string.cd_next_ring_edit_day, nextDayLabel.orEmpty(), label)
+            stringResource(R.string.cd_next_ring_edit_day, statusLine.orEmpty(), label)
         ClockMode.DEFAULT -> stringResource(R.string.cd_default_clock, label)
         ClockMode.SNOOZE -> stringResource(R.string.cd_snooze_clock, label)
     }
@@ -285,33 +274,3 @@ private fun DefaultTimeLine(hour: Int, minute: Int, onClick: () -> Unit) {
     }
 }
 
-/**
- * Bidtiminn i litlum belg: klukkutakn og "2 klst 7 min".
- *
- * Textinn er nu tegar samsettur - belgurinn veit ekkert um klukkur.
- * Taknid faer lysinguna svo skjalesarar segi hvad talan tydir.
- */
-@Composable
-private fun CountdownPill(text: String) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Alarm,
-                contentDescription = stringResource(R.string.cd_countdown),
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-    }
-}
