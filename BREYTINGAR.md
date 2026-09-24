@@ -5,6 +5,8 @@ af hverju, `git log` fyrir fullar commit-lýsingar.
 
 ## v0.978
 
+- **Vikudagurinn í klukkuvalmyndinni byrjar á stórum staf** — „Í dag ·
+  Fimmtudagur“. Hann er merki, ekki hluti af setningu.
 - **„Alla daga“ býðst aðeins úr stóru tölunni.** Ýtirðu á tíma eins dags
   snýst valmyndin um þann dag og ekkert annað. Flís sem breytir allri vikunni
   átti ekkert erindi þangað.

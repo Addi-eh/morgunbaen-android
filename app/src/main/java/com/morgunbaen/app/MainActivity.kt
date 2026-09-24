@@ -480,12 +480,8 @@ private fun MainScreen() {
                 TimePickDialog(
                     dayLabel = chipName,
                     dayTitle = when (chipDay) {
-                        today -> stringResource(
-                            R.string.day_title_today, Dates.lowercased(chipName)
-                        )
-                        today % 7 + 1 -> stringResource(
-                            R.string.day_title_tomorrow, Dates.lowercased(chipName)
-                        )
+                        today -> stringResource(R.string.day_title_today, chipName)
+                        today % 7 + 1 -> stringResource(R.string.day_title_tomorrow, chipName)
                         else -> chipName
                     },
                     // "Alla daga" bydst adeins ur storu tolunni.

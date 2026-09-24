@@ -52,10 +52,6 @@ object Dates {
     fun capitalized(text: String): String =
         text.replaceFirstChar { it.titlecase(icelandic) }
 
-    /** Ofugt vid capitalized: "Fimmtudagur" -> "fimmtudagur". */
-    fun lowercased(text: String): String =
-        text.replaceFirstChar { it.lowercase(icelandic) }
-
     /** "2026-08-13T06:55:00" -> "Fimmtudagur 13. ágúst". */
     fun formatWithWeekday(firstrun: String): String = try {
         val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US)
