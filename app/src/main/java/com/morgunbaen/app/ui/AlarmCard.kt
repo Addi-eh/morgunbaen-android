@@ -67,8 +67,14 @@ internal fun AlarmCard(
     testSeconds: Int,
     onEnabledChange: (Boolean) -> Unit,
     onPickNext: () -> Unit,
+    // Adeins fyrir stora talan tegar slokkt er eda enginn dagur valinn.
+    // Synilega "Sjalfgefid"-linan for ut i v0.977: flisin "Alla daga" i
+    // klukkuvalmyndinni gerir sama gagn, og ta stendur ein tala faerri
+    // a spjaldinu.
     onPickDefault: () -> Unit,
-    onOpenDay: (Int) -> Unit,
+    today: Int,
+    onToggleDay: (Int) -> Unit,
+    onPickDayTime: (Int) -> Unit,
     onSkipNext: () -> Unit,
     onUndoSkip: () -> Unit,
     onTest: () -> Unit
@@ -119,17 +125,9 @@ internal fun AlarmCard(
             // Belgurinn deilir linunni med honum frekar en ad standa vid
             // hlidina a storu tolunni: a 320 dp skja tekur "9 klst 30 min"
             // svo mikid plass ad klukkan sjalf kemst ekki fyrir.
-            if (clockMode != ClockMode.DEFAULT) {
-                DefaultTimeLine(
-                    hour = defaultHour,
-                    minute = defaultMinute,
-                    onClick = onPickDefault
-                )
-            }
-
             Spacer(Modifier.height(12.dp))
 
-            // Vikan. Hver reitur opnar valmynd dagsins - rofa og klukku.
+            // Vikan: dagurinn kveikir og slekkur, timinn opnar klukkuna.
             // Morgunbaenin er DAGLEG - lika um helgar - svo tetta er
             // hrein timastilling: sofa lengur, eda fara fyrr a faetur, an
             // tess ad missa af baen tess dags.
@@ -138,7 +136,9 @@ internal fun AlarmCard(
                 dayTimes = dayTimes,
                 defaultHour = defaultHour,
                 defaultMinute = defaultMinute,
-                onOpenDay = onOpenDay
+                today = today,
+                onToggleDay = onToggleDay,
+                onPickDayTime = onPickDayTime
             )
 
             if (enabled) {
@@ -241,36 +241,4 @@ private fun BigClock(
     }
 }
 
-/** „sjálfgefið 07:00“ — leiðin að alarmHour/alarmMinute. */
-@Composable
-private fun DefaultTimeLine(hour: Int, minute: Int, onClick: () -> Unit) {
-    val label = clock(hour, minute)
-    val description = stringResource(R.string.default_time_desc, label)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(
-                onClickLabel = stringResource(R.string.change_time),
-                onClick = onClick
-            )
-            // Eina leidin ad sjalfgefna timanum - tvi ma hun ekki vera
-            // minni en 48 dp, tott textinn sjalfur se lagur.
-            .defaultMinSize(minHeight = 48.dp)
-            .semantics(mergeDescendants = true) { contentDescription = description }
-    ) {
-        Text(
-            text = stringResource(R.string.default_time, label),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.width(6.dp))
-        Icon(
-            imageVector = Icons.Outlined.Edit,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp)
-        )
-    }
-}
 

@@ -39,12 +39,10 @@ import com.morgunbaen.app.R
  * ad snerta. Ein valmynd sem nefnir tad sjalf leysir tad an tess ad taka
  * neitt burt.
  *
- * Rofinn efst er merking dagsins. Adur var kveikt og slokkt med tvi ad
- * yta a stafinn i strimlinum, og ekkert sagdi ad hann gerdi tad.
- *
  * @param dayLabel      Dagurinn sem vinstri flisin a vid.
- * @param dayPlural     "a fostudogum" - merking rofans.
- * @param dayEnabled    Hringir tessi dagur nuna?
+ * @param dayTitle      Sami dagur i titlinum, en med stadsetningu i vikunni:
+ *                      "I dag - fimmtudagur". Vikudagsnafnid eitt segir ekki
+ *                      hvar i vikunni tu ert staddur.
  * @param showScope     Falsk tegar adeins einn dagur er kveiktur - ta gera
  *                      flisarnar tvaer nakvaemlega tad sama.
  * @param sleepPreview  Hvad tillagan tydir i svefni, fyrir valinn hop. null
@@ -55,15 +53,14 @@ import com.morgunbaen.app.R
 @Composable
 internal fun TimePickDialog(
     dayLabel: String,
-    dayPlural: String,
-    dayEnabled: Boolean,
+    dayTitle: String,
     showScope: Boolean,
     initialAllDays: Boolean,
     initialHour: Int,
     initialMinute: Int,
     sleepPreview: (Boolean, Int, Int) -> String?,
     onDismiss: () -> Unit,
-    onConfirm: (Boolean, Boolean, Int, Int) -> Unit
+    onConfirm: (Boolean, Int, Int) -> Unit
 ) {
     val state = rememberTimePickerState(
         initialHour = initialHour,
@@ -72,16 +69,11 @@ internal fun TimePickDialog(
     )
     var typing by rememberSaveable { mutableStateOf(false) }
     var allDays by rememberSaveable { mutableStateOf(initialAllDays) }
-    var ringing by rememberSaveable { mutableStateOf(dayEnabled) }
-
-    // Slokktur dagur hefur engan tima ad stilla. Ta stendur rofinn einn
-    // eftir og glugginn verdur eins litill og erindid.
-    val showTime = allDays || ringing
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onConfirm(allDays, ringing, state.hour, state.minute) }) {
+            TextButton(onClick = { onConfirm(allDays, state.hour, state.minute) }) {
                 Text(stringResource(R.string.ok))
             }
         },
@@ -95,7 +87,7 @@ internal fun TimePickDialog(
         title = {
             Text(
                 if (initialAllDays) stringResource(R.string.pick_time_title)
-                else dayLabel
+                else dayTitle
             )
         },
         text = {
@@ -107,19 +99,7 @@ internal fun TimePickDialog(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Rofinn a adeins vid einn dag. Se "Alla daga" valid er
-                // ekkert eitt ad kveikja eda slokkva.
-                if (!allDays) {
-                    SettingRow(
-                        label = stringResource(R.string.ring_on_day, dayPlural),
-                        description = "",
-                        checked = ringing,
-                        onCheckedChange = { ringing = it }
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-
-                if (showTime && showScope) {
+                if (showScope) {
                     ChoiceChips(
                         options = listOf(
                             SCOPE_DAY to dayLabel,
@@ -131,7 +111,7 @@ internal fun TimePickDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                if (showTime) {
+                run {
                     if (typing) TimeInput(state = state) else TimePicker(state = state)
 
                     // state.hour/minute eru Compose-stada, svo tetta uppfaerist

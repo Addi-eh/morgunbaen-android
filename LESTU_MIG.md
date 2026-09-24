@@ -3,7 +3,7 @@
 Vekjaraklukka sem spilar „Morgunbæn og orð dagsins" af Rás 1, og valkvætt
 fréttirnar kl. 07:00 á eftir.
 
-Staða: **v0.976**.
+Staða: **v0.977**.
 
 ---
 
@@ -332,6 +332,12 @@ spurningu sem fólk vaknar með — „hvenær hringir hann næst?" — en ekki 
 | `DEFAULT` | sjálfgefna tímann (slökkt, eða enginn dagur valinn) | stillir sjálfgefið |
 | `SNOOZE` | blundslok | ekkert — talan er frétt, ekki stilling |
 
+**Sjálfgefna línan fór út í v0.977.** Hún var þriðja klukkan á spjaldinu og
+sagði ekki sjálf hvað hún ætti við; flísin „Alla daga" í klukkuvalmyndinni
+gerir sama gagn. `alarmHour`/`alarmMinute` lifa áfram sem sáðkorn — dagur án
+eigin tíma notar þau, og stóra talan stillir þau þegar slökkt er eða enginn
+dagur valinn, því þá er ekkert annað til að ýta á.
+
 **Ýt á stóru töluna breytir ekki allri vikunni.** Fyrri tillaga var að ýt
 stillti sjálfgefna tímann þegar næsti dagur fylgdi honum. Því var hafnað: sá
 sem vill sofa út á laugardag heldur að hann sé að stilla morgundaginn og
@@ -366,12 +372,23 @@ sem vefhlekkur undir 45 sp tölu. Allur reiturinn, talan og penninn saman, er
 einn snertiflötur. Í `SNOOZE` er enginn penni: þá er talan frétt en ekki
 stilling og má ekki líta út fyrir að vera stillanleg.
 
-**Hver dagur er EINN snertiflötur** (v0.976). Áður voru þeir tveir — stafurinn
-kveikti og slökkti, tíminn opnaði klukkuna — fjórtán fletir og ekkert sem
-sagði hvor gerði hvað. Mistök þar slökktu á degi þegar átti að stilla hann,
-sem þýðir að fólk vaknar ekki. Nú opnar reiturinn valmynd dagsins, og rofinn
-þar heitir sínu nafni: „Hringja á föstudögum". Slökktur dagur sýnir „—" og
-valmyndin hans stendur þá aðeins af rofanum — það er ekkert að stilla.
+**Tveir snertifletir á dag, og það er viljandi** (v0.977). Í v0.976 var
+reiturinn einn flötur sem opnaði valmynd með merktum rofa. Það var skýrara á
+blaði en hægvirkara í hendi, og notandinn sagði dagavalið hafa verið skýrast
+í útgáfunum þar á undan — þegar dagarnir voru `FilterChip`-flísar. Ástæðan var
+ekki fjöldi flatanna heldur **útlitið á slökktu stöðunni**: fylltur hringur
+gegn engu les eins og tómt pláss, ekki eins og stjórntæki sem er af.
+
+Þess vegna: dagurinn kveikir og slekkur með einu ýti, tíminn undir honum
+opnar klukkuna, **slökktur dagur hefur útlínu**, og skýringarlína undir
+strimlinum segir hvað hvort ýtið gerir. Slökktur dagur sýnir „—" sem er skraut
+og stendur utan tab-raðarinnar — það er enginn tími að stilla.
+
+**Dagurinn í dag fær sterkari hring.** Vikudagsnafnið eitt segir ekki hvar í
+vikunni þú ert staddur, svo klukkuvalmyndin heitir líka „Í dag · fimmtudagur"
+eða „Á morgun · föstudagur" þegar það á við. Rofinn — og stillingin — gilda
+eftir sem áður um **alla** fimmtudaga; `today` er reiknaður í
+`refreshAlarmView()` svo hann frjósi ekki á miðnætti.
 
 **Vikudagsnöfn byrja á hástaf þar sem þau standa ein og sér** — merkið undir
 klukkunni, „Næst:"-línan, dagsetningar í sögunni. Í miðri setningu, eins og í
@@ -524,9 +541,10 @@ staðfestingin sem til er á verkefninu.
 8. **Spila bænina.** Ýttu á „Spila bænina" á forsíðunni og farðu svo úr
    appinu (heim-takkinn) — hljóðið á að þagna. Kom það ekki, er
    `ON_PAUSE`-stöðvunin í `MainActivity.kt` biluð.
-9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su. Ýttu á dag —
-   hvar sem er á reitnum — og valmyndin á að opnast með nafni hans og rofa.
-   Slökktu á degi þar og gættu að því að hann sýni „—". Ýttu á stóru töluna
+9. **Vekjaraspjaldið.** Dagarnir eiga að brotna Má–Fö / La Su, og dagurinn í
+   dag á að hafa sterkari hring. Ýttu á dag: hann á að slokkna strax, fá
+   útlínu og sýna „—". Ýttu á tímann: klukkan opnast og titillinn segir „Í
+   dag" eða „Á morgun" þegar það á við. Ýttu á stóru töluna
    og gættu að því að hún stilli **þann dag** en ekki alla vikuna. Skiptu yfir
    á flísina „Alla daga" og staðfestu — allir dálkar eiga að standa á sömu
    tölu á eftir, líka sá sem átti eigin tíma. Opnaðu dag sem hringir

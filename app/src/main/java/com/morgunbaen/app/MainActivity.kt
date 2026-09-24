@@ -166,6 +166,8 @@ private fun MainScreen() {
     var displayHour by remember { mutableIntStateOf(prefs.alarmHour) }
     var displayMinute by remember { mutableIntStateOf(prefs.alarmMinute) }
     var nextDay by remember { mutableStateOf<Int?>(null) }
+    // Dagurinn i dag ma ekki frjosa a midnaetti - tikkid endurreiknar hann.
+    var today by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) }
 
     // Hvad klukkuglugginn er ad stilla, eda null tegar hann er lokadur.
     var picking by remember { mutableStateOf<Picking?>(null) }
@@ -205,6 +207,7 @@ private fun MainScreen() {
      * tvaer teirra gleymdu stoku gildi; nu er einn stadur ad gleyma i.
      */
     fun refreshAlarmView() {
+        today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
         nextAlarmText = nextAlarmDescription(context, prefs)
         countdownText = countdownDescription(context, prefs)
         skipActive = prefs.skipNextMillis > System.currentTimeMillis()
@@ -435,7 +438,12 @@ private fun MainScreen() {
                 // um leið alla hina dagana sem fylgja sjálfgefnu.
                 onPickNext = { nextDay?.let { picking = Picking.Day(it) } },
                 onPickDefault = { picking = Picking.AllDays },
-                onOpenDay = { picking = Picking.Day(it) },
+                today = today,
+                onToggleDay = { day ->
+                    days = if (day in days) days - day else days + day
+                    persistAndReschedule()
+                },
+                onPickDayTime = { picking = Picking.Day(it) },
                 onSkipNext = {
                     val toSkip = TriggerTimes.next(
                         days = days,
@@ -468,10 +476,18 @@ private fun MainScreen() {
                     Picking.AllDays -> hour * 60 + minute
                     is Picking.Day -> dayTimes[target.day] ?: (hour * 60 + minute)
                 }
+                val chipName = stringResource(WEEK_ORDER.first { it.day == chipDay }.name)
                 TimePickDialog(
-                    dayLabel = stringResource(WEEK_ORDER.first { it.day == chipDay }.name),
-                    dayPlural = stringResource(dayPluralName(chipDay)),
-                    dayEnabled = chipDay in days,
+                    dayLabel = chipName,
+                    dayTitle = when (chipDay) {
+                        today -> stringResource(
+                            R.string.day_title_today, Dates.lowercased(chipName)
+                        )
+                        today % 7 + 1 -> stringResource(
+                            R.string.day_title_tomorrow, Dates.lowercased(chipName)
+                        )
+                        else -> chipName
+                    },
                     showScope = days.size > 1,
                     initialAllDays = target is Picking.AllDays,
                     initialHour = current / 60,
@@ -483,7 +499,7 @@ private fun MainScreen() {
                         )
                     },
                     onDismiss = { picking = null },
-                    onConfirm = { allDays, ringing, h, m ->
+                    onConfirm = { allDays, h, m ->
                         if (allDays) {
                             // "Alla daga" verdur ad gera tad sem hun segir:
                             // eigin timar daganna vikja, annars stodu teir
@@ -500,9 +516,6 @@ private fun MainScreen() {
                                 pickedMinutes = h * 60 + m
                             )
                             prefs.dayTimes = dayTimes
-                            // Rofinn i valmyndinni leysti stafinn i
-                            // strimlinum af holmi.
-                            days = if (ringing) days + chipDay else days - chipDay
                         }
                         picking = null
                         persistAndReschedule()
@@ -976,17 +989,6 @@ private sealed interface Picking {
 
     /** Einn dagur, Calendar.MONDAY .. Calendar.SUNDAY. */
     data class Day(val day: Int) : Picking
-}
-
-/** "a laugardogum" - merking rofans i klukkuvalmyndinni. */
-private fun dayPluralName(dayOfWeek: Int): Int = when (dayOfWeek) {
-    Calendar.MONDAY -> R.string.day_monday_plural
-    Calendar.TUESDAY -> R.string.day_tuesday_plural
-    Calendar.WEDNESDAY -> R.string.day_wednesday_plural
-    Calendar.THURSDAY -> R.string.day_thursday_plural
-    Calendar.FRIDAY -> R.string.day_friday_plural
-    Calendar.SATURDAY -> R.string.day_saturday_plural
-    else -> R.string.day_sunday_plural
 }
 
 /**

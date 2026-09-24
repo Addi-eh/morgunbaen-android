@@ -3,6 +3,23 @@
 Stutt útgáfusaga — sjá `LESTU_MIG.md` fyrir hvernig hlutirnir hanga saman og
 af hverju, `git log` fyrir fullar commit-lýsingar.
 
+## v0.977
+
+- **Dagavalið er aftur eitt ýt.** Í v0.976 opnaði dagurinn valmynd með rofa —
+  merkt en hægvirkt. Nú kveikir og slekkur dagurinn strax eins og áður, og
+  tíminn undir honum opnar klukkuna.
+- **Slökktur dagur hefur útlínu.** Fylltur hringur gegn engu las eins og tómt
+  pláss frekar en stjórntæki sem er af. Þetta var það sem gerði dagavalið
+  óskýrara en gömlu flísarnar.
+- **Skýringarlína undir strimlinum** segir hvað hvort ýtið gerir, svo takkinn
+  sé ekki ómerktur þótt valmyndin sé farin.
+- **„Sjálfgefið“-línan er farin.** Hún var þriðja klukkan á spjaldinu og sagði
+  ekki sjálf hvað hún ætti við. Flísin „Alla daga“ í klukkuvalmyndinni gerir
+  sama gagn, og hún stendur þar sem þú ert hvort eð er.
+- **Dagurinn í dag er merktur** með sterkari hring, svo vikan hafi
+  upphafspunkt — og klukkuvalmyndin segir „Í dag · fimmtudagur“ eða
+  „Á morgun · föstudagur“ í stað vikudagsnafnsins eins.
+
 ## v0.976
 
 - **Vekjaraskjárinn gleymist ekki lengur á bak við annan vekjara.** Hringdu

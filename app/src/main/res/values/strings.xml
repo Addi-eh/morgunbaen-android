@@ -39,8 +39,6 @@
     <string name="ok">Í lagi</string>
     <string name="cancel">Hætta við</string>
 
-    <string name="default_time">Sjálfgefið %1$s</string>
-    <string name="default_time_desc">Sjálfgefinn tími %1$s, fyrir daga án eigin tíma</string>
     <string name="day_off">—</string>
     <string name="sleep_preview">Þú færð %1$s svefn</string>
     <string name="sleep_preview_other">Hringir eftir %1$s</string>
@@ -48,7 +46,16 @@
     <string name="time_input_dial">Nota skífu</string>
     <string name="pick_time_title">Vekjaratími</string>
     <string name="all_days">Alla daga</string>
-    <string name="ring_on_day">Hringja %1$s</string>
+    <string name="day_strip_title">Vekjaradagar</string>
+    <string name="day_strip_hint">Ýttu á dag til að kveikja eða slökkva, á tímann til að breyta honum.</string>
+    <string name="day_title_today">Í dag · %1$s</string>
+    <string name="day_title_tomorrow">Á morgun · %1$s</string>
+    <string name="cd_day_on">%1$s, kveikt</string>
+    <string name="cd_day_today">%1$s, í dag</string>
+    <string name="cd_day_turn_on">Kveikja á deginum</string>
+    <string name="cd_day_turn_off">Slökkva á deginum</string>
+    <string name="cd_day_time_own">%1$s, %2$s, eigin tími</string>
+    <string name="cd_day_time_default">%1$s, %2$s, sjálfgefinn tími</string>
     <string name="next_line">%1$s · eftir %2$s</string>
     <string name="countdown_only">Eftir %1$s</string>
     <string name="sound_title">Hljóð</string>
@@ -56,8 +63,6 @@
     <string name="ringing_now_title">Vekjarinn hringir</string>
     <string name="ringing_now_text">Birtist vekjaraskjárinn ekki — til dæmis ef annað vekjaraforrit varð á undan — má slökkva eða blunda hér.</string>
 
-    <string name="cd_day_on_at">%1$s, kveikt, %2$s</string>
-    <string name="cd_open_day">Stilla daginn</string>
     <string name="cd_day_off">%1$s, slökkt</string>
     <string name="cd_next_ring_edit_day">Næsta hringing á %1$s kl. %2$s. Ýttu til að breyta þeim degi.</string>
     <string name="cd_default_clock">Sjálfgefinn tími %1$s</string>
@@ -78,13 +83,6 @@
     <string name="day_friday">Föstudagur</string>
     <string name="day_saturday">Laugardagur</string>
     <string name="day_sunday">Sunnudagur</string>
-    <string name="day_monday_plural">á mánudögum</string>
-    <string name="day_tuesday_plural">á þriðjudögum</string>
-    <string name="day_wednesday_plural">á miðvikudögum</string>
-    <string name="day_thursday_plural">á fimmtudögum</string>
-    <string name="day_friday_plural">á föstudögum</string>
-    <string name="day_saturday_plural">á laugardögum</string>
-    <string name="day_sunday_plural">á sunnudögum</string>
 
     <string name="day_monday_short">Mán</string>
     <string name="day_tuesday_short">Þri</string>
