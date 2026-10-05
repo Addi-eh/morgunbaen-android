@@ -75,7 +75,7 @@ uppfærir ekki þetta app — það þyrfti að fjarlægja appið fyrst.
 - „Um Morgunbæn“-skjár með upplýsingum um verkefnið og leiðum til að styrkja
   það. Appið er ókeypis og styrkur opnar ekkert í því.
 
-Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md), og
+Ítarleg lýsing á öllum kerfum er í [LESTU_MIG.md](LESTU_MIG.md) og
 breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).
 
 ---
@@ -83,7 +83,7 @@ breytingasaga í [BREYTINGAR.md](BREYTINGAR.md).
 ## Að byggja
 
 Kotlin og Jetpack Compose. Opnaðu möppuna í Android Studio — veldu **Gradle JVM
-21**, nýrri Java ræður Gradle ekki við.
+21**; Gradle ræður ekki við nýrri útgáfur af Java.
 
 ```bash
 ./gradlew test            # einingapróf á tímareikningi vekjarans
@@ -94,15 +94,15 @@ Kotlin og Jetpack Compose. Opnaðu möppuna í Android Studio — veldu **Gradle
 
 ## Um efnið frá RÚV
 
-Appið hvorki geymir né dreifir efni RÚV. Það sækir sömu MP3-skrár og
-[Spilari RÚV](https://www.ruv.is/utvarp) birtir, í tæki notandans, og deiling
-sendir hlekk á ruv.is frekar en hljóðskrána sjálfa.
+Appið geymir hvorki né dreifir efni RÚV. Það sækir sömu MP3-skrár og
+[Spilari RÚV](https://www.ruv.is/utvarp) birtir, beint í tæki notandans, og deiling
+sendir tengil á ruv.is en ekki hljóðskrána sjálfa.
 
-Viðmótið sem notað er (`spilari.nyr.ruv.is/gql/`) er **óskjalfest og getur
-breyst án fyrirvara.** Hætti appið að finna bænina er það fyrsta sem á að
+Viðmótið sem appið notar (`spilari.nyr.ruv.is/gql/`) er **óskjalfest og getur
+breyst án fyrirvara**. Hætti appið að finna bænina er það fyrsta sem á að
 athuga — sjá lið 1 í LESTU_MIG.md.
 
-Allt efni er höfundarréttarvarið RÚV. Þetta verkefni er ótengt RÚV.
+Allt efni er í höfundarrétti RÚV. Þetta verkefni er ótengt RÚV.
 
 ---
 
